@@ -1,0 +1,214 @@
+<Window
+    x:Class="FileViewerApp.Views.MainWindow"
+    xmlns="https://github.com/avaloniaui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:avaloniaEdit="https://github.com/avaloniaui/avaloniaedit"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:vm="using:FileViewerApp.ViewModels"
+    Title="File Viewer App"
+    Width="1200"
+    Height="800"
+    d:DesignHeight="800"
+    d:DesignWidth="1200"
+    x:DataType="vm:MainWindowViewModel"
+    mc:Ignorable="d">
+
+    <Design.DataContext>
+        <vm:MainWindowViewModel />
+    </Design.DataContext>
+
+    <Grid RowDefinitions="Auto,*">
+        <!--  Toolbar  -->
+        <Border
+            Grid.Row="0"
+            Background="#F5F5F5"
+            BorderBrush="#E0E0E0"
+            BorderThickness="0,0,0,1">
+            <StackPanel Margin="10,5" Orientation="Horizontal">
+                <Button
+                    Margin="5,0"
+                    Padding="15,8"
+                    Background="#2563EB"
+                    Command="{Binding OpenFileCommand}"
+                    Content="📁 Apri File"
+                    Foreground="White" />
+                <Button
+                    Margin="5,0"
+                    Padding="15,8"
+                    Background="#DC2626"
+                    Command="{Binding CloseFileCommand}"
+                    Content="❌ Chiudi"
+                    Foreground="White" />
+            </StackPanel>
+        </Border>
+
+        <!--  Main Content Area con TabControl  -->
+        <TabControl
+            Grid.Row="1"
+            Background="White"
+            TabStripPlacement="Top">
+
+            <!--  Tab Editor  -->
+            <TabItem Header="📝 Editor">
+                <Border Background="White">
+                    <TextBox
+                        Margin="10"
+                        Background="White"
+                        BorderThickness="0"
+                        FontFamily="Cascadia Code, Consolas, 'Courier New'"
+                        FontSize="12"
+                        Foreground="#1F2937"
+                        IsReadOnly="True"
+                        Text="{Binding EditorText}"
+                        TextWrapping="Wrap" />
+                </Border>
+            </TabItem>
+
+            <!--  Tab Hex View  -->
+            <TabItem Header="🔢 Hex View">
+                <Border Background="White">
+                    <ScrollViewer>
+                        <TextBox
+                            Margin="10"
+                            Background="White"
+                            BorderThickness="0"
+                            FontFamily="Cascadia Code, Consolas, 'Courier New'"
+                            FontSize="12"
+                            Foreground="#1F2937"
+                            IsReadOnly="True"
+                            Text="{Binding HexView}"
+                            TextWrapping="Wrap" />
+                    </ScrollViewer>
+                </Border>
+            </TabItem>
+
+            <!--  Tab Decoder  -->
+            <TabItem Header="🔧 Decoder">
+                <Border Background="White">
+                    <ScrollViewer>
+                        <TextBox
+                            Margin="10"
+                            Background="White"
+                            BorderThickness="0"
+                            FontFamily="Cascadia Code, Consolas, 'Courier New'"
+                            FontSize="12"
+                            Foreground="#1F2937"
+                            IsReadOnly="True"
+                            Text="{Binding DecodedData}"
+                            TextWrapping="Wrap" />
+                    </ScrollViewer>
+                </Border>
+            </TabItem>
+
+            <!--  Tab Istruzioni  -->
+            <TabItem Header="📋 Istruzioni">
+                <Grid RowDefinitions="Auto,*">
+                    <!--  Area del contenuto delle istruzioni  -->
+                    <Border Grid.Row="1" Background="White">
+                        <ScrollViewer>
+                            <TextBox
+                                Margin="10"
+                                AcceptsReturn="True"
+                                Background="White"
+                                BorderThickness="0"
+                                FontFamily="Cascadia Code, Consolas, 'Courier New'"
+                                FontSize="12"
+                                Foreground="#1F2937"
+                                IsReadOnly="True"
+                                Text="{Binding InstructionView}"
+                                TextWrapping="NoWrap" />
+                        </ScrollViewer>
+                    </Border>
+                </Grid>
+            </TabItem>
+
+            <!--  Tab Properties  -->
+            <TabItem Header="📋 Proprietà">
+                <Border Background="White">
+                    <ScrollViewer>
+                        <StackPanel Margin="20">
+                            <TextBlock
+                                Margin="0,0,0,10"
+                                FontSize="16"
+                                FontWeight="Bold"
+                                Foreground="#1F2937"
+                                Text="Informazioni File" />
+
+                            <Grid
+                                Margin="0,10"
+                                ColumnDefinitions="150,*"
+                                RowDefinitions="Auto,Auto,Auto,Auto,Auto">
+
+                                <TextBlock
+                                    Grid.Row="0"
+                                    Grid.Column="0"
+                                    Margin="0,5"
+                                    Foreground="#6B7280"
+                                    Text="Nome file:" />
+                                <TextBlock
+                                    Grid.Row="0"
+                                    Grid.Column="1"
+                                    Margin="10,5,0,5"
+                                    Foreground="#1F2937"
+                                    Text="{Binding FileName}" />
+
+                                <TextBlock
+                                    Grid.Row="1"
+                                    Grid.Column="0"
+                                    Margin="0,5"
+                                    Foreground="#6B7280"
+                                    Text="Dimensione:" />
+                                <TextBlock
+                                    Grid.Row="1"
+                                    Grid.Column="1"
+                                    Margin="10,5,0,5"
+                                    Foreground="#1F2937"
+                                    Text="{Binding FileSize}" />
+
+                                <TextBlock
+                                    Grid.Row="2"
+                                    Grid.Column="0"
+                                    Margin="0,5"
+                                    Foreground="#6B7280"
+                                    Text="Linee:" />
+                                <TextBlock
+                                    Grid.Row="2"
+                                    Grid.Column="1"
+                                    Margin="10,5,0,5"
+                                    Foreground="#1F2937"
+                                    Text="{Binding LineCount}" />
+
+                                <TextBlock
+                                    Grid.Row="3"
+                                    Grid.Column="0"
+                                    Margin="0,5"
+                                    Foreground="#6B7280"
+                                    Text="Caratteri:" />
+                                <TextBlock
+                                    Grid.Row="3"
+                                    Grid.Column="1"
+                                    Margin="10,5,0,5"
+                                    Foreground="#1F2937"
+                                    Text="{Binding CharCount}" />
+
+                                <TextBlock
+                                    Grid.Row="4"
+                                    Grid.Column="0"
+                                    Margin="0,5"
+                                    Foreground="#6B7280"
+                                    Text="Encoding:" />
+                                <TextBlock
+                                    Grid.Row="4"
+                                    Grid.Column="1"
+                                    Margin="10,5,0,5"
+                                    Foreground="#1F2937"
+                                    Text="{Binding FileEncoding}" />
+                            </Grid>
+                        </StackPanel>
+                    </ScrollViewer>
+                </Border>
+            </TabItem>
+        </TabControl>
+    </Grid>
+</Window>
