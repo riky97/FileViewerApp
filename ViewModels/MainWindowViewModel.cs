@@ -9,6 +9,8 @@ using System.Text;
 using System.Collections.Generic;
 using System.Linq;
 using CommunityToolkit.Mvvm.Input;
+using FileViewerApp.Models;
+using System.Collections.ObjectModel;
 
 namespace FileViewerApp.ViewModels
 {
@@ -107,6 +109,21 @@ namespace FileViewerApp.ViewModels
         {
             get => _recordCount;
             set => this.RaiseAndSetIfChanged(ref _recordCount, value);
+        }
+
+        private ObservableCollection<InstructionNode> _instructionTree = new();
+        private InstructionNode? _selectedNode;
+
+        public ObservableCollection<InstructionNode> InstructionTree
+        {
+            get => _instructionTree;
+            set => this.RaiseAndSetIfChanged(ref _instructionTree, value);
+        }
+
+        public InstructionNode? SelectedNode
+        {
+            get => _selectedNode;
+            set => this.RaiseAndSetIfChanged(ref _selectedNode, value);
         }
 
         // Comandi
@@ -218,6 +235,8 @@ namespace FileViewerApp.ViewModels
             StartOffset = 0x32; // 50 decimale - CORRETTO
             RecordCount = 100;
             _currentFileBytes = null;
+            InstructionTree.Clear();
+            SelectedNode = null;
 
             await Task.CompletedTask;
         }
@@ -265,6 +284,7 @@ namespace FileViewerApp.ViewModels
             {
                 DecodedData = "Nessun file caricato";
                 InstructionView = "Nessun file caricato";
+                InstructionTree.Clear();
                 return;
             }
 
@@ -276,15 +296,19 @@ namespace FileViewerApp.ViewModels
                     await LoadOpCodeDefinitions();
                 }
 
+                // Clear existing tree
+                InstructionTree.Clear();
+
                 // Genera vista tecnica (decoder)
                 var decodedBuilder = new StringBuilder();
                 decodedBuilder.AppendLine("DECODER CODICE PROGRAMMA");
                 decodedBuilder.AppendLine("=" + new string('=', 80));
 
                 // Analizza header
+                string headerText = "";
                 if (_currentFileBytes.Length >= 8)
                 {
-                    var headerText = Encoding.ASCII.GetString(_currentFileBytes, 0, 8);
+                    headerText = Encoding.ASCII.GetString(_currentFileBytes, 0, 8);
                     decodedBuilder.AppendLine($"Header: '{headerText.Trim()}'");
                     decodedBuilder.AppendLine($"Start Offset: 0x{StartOffset:X8} ({StartOffset})");
                     decodedBuilder.AppendLine();
@@ -295,39 +319,39 @@ namespace FileViewerApp.ViewModels
                 decodedBuilder.AppendLine("Num | Offset | OpCode/Nome         | Parametri");
                 decodedBuilder.AppendLine("-" + new string('-', 80));
 
-                // Genera vista istruzioni semplificata - SOLO NOMI OPCODE
+                // Genera vista istruzioni semplificata
                 var instructionBuilder = new StringBuilder();
                 instructionBuilder.AppendLine("// PROGRAMMA DECODIFICATO");
                 instructionBuilder.AppendLine("// " + new string('=', 60));
+                instructionBuilder.AppendLine($"// File: {headerText.Trim()}");
+                instructionBuilder.AppendLine();
 
-                if (_currentFileBytes.Length >= 8)
+                // Stack per gestire la gerarchia della TreeView
+                var nodeStack = new Stack<InstructionNode>();
+                var rootNode = new InstructionNode
                 {
-                    var headerText = Encoding.ASCII.GetString(_currentFileBytes, 0, 8);
-                    instructionBuilder.AppendLine($"// File: {headerText.Trim()}");
-                    instructionBuilder.AppendLine();
-                }
+                    Name = $"PROGRAMMA: {headerText.Trim()}",
+                    Details = $"File binario - {_currentFileBytes.Length} bytes"
+                };
+                InstructionTree.Add(rootNode);
+                nodeStack.Push(rootNode);
 
-                // Usa StartOffset corretto (0x32 = 50)
+                // Usa StartOffset corretto
                 int offset = StartOffset;
                 int instructionNumber = 1;
                 int maxInstructions = RecordCount;
                 int indentLevel = 0;
 
-                Console.WriteLine($"DEBUG: Inizio decodifica da offset 0x{offset:X} ({offset})");
-
                 while (offset + 36 <= _currentFileBytes.Length && instructionNumber <= maxInstructions)
                 {
-                    // Leggi OpCode (primo intero)
+                    // Leggi OpCode
                     var opCodeBytes = new byte[4];
                     Array.Copy(_currentFileBytes, offset, opCodeBytes, 0, 4);
                     int opCode = BitConverter.ToInt32(opCodeBytes, 0);
 
-                    Console.WriteLine($"DEBUG: Offset 0x{offset:X}, OpCode letto: {opCode}");
-
                     if (opCode == 0)
                     {
-                        Console.WriteLine("DEBUG: OpCode 0 trovato, salto...");
-                        offset += 36; // Salta blocchi vuoti
+                        offset += 36;
                         continue;
                     }
 
@@ -335,13 +359,7 @@ namespace FileViewerApp.ViewModels
                     string opName = _opCodeInfos.ContainsKey(opCode) ? _opCodeInfos[opCode].Name : $"UNKNOWN_{opCode}";
                     int expectedParams = _opCodeInfos.ContainsKey(opCode) ? _opCodeInfos[opCode].ParamCount : 8;
 
-                    Console.WriteLine($"DEBUG: OpCode {opCode} -> {opName}");
-
-                    // Vista tecnica (decoder)
-                    decodedBuilder.Append($"{instructionNumber,3:D} | 0x{offset:X6} | ");
-                    decodedBuilder.Append($"{opCode,3} {opName,-15} ");
-
-                    // Leggi i parametri (8 interi dopo l'OpCode)
+                    // Leggi i parametri
                     var parameters = new List<int>();
                     for (int i = 1; i <= 8 && offset + (i * 4) + 3 < _currentFileBytes.Length; i++)
                     {
@@ -350,66 +368,77 @@ namespace FileViewerApp.ViewModels
                         parameters.Add(BitConverter.ToInt32(paramBytes, 0));
                     }
 
-                    // Vista tecnica - parametri
                     var significantParams = parameters.Take(expectedParams).ToArray();
-                    if (significantParams.Length > 0)
-                    {
-                        decodedBuilder.Append($"| {string.Join(", ", significantParams.Select(p => p.ToString().PadLeft(8)))}");
-                    }
-                    else if (expectedParams == 0)
-                    {
-                        decodedBuilder.Append("| (nessun parametro)");
-                    }
-                    decodedBuilder.AppendLine();
+                    string paramString = significantParams.Length > 0 ?
+                        string.Join(", ", significantParams) : "(nessun parametro)";
 
-                    // *** LOGICA DI INDENTAZIONE CORRETTA ***
-                    // Diminuisci indentazione PRIMA di scrivere queste istruzioni
+                    // Vista tecnica
+                    decodedBuilder.Append($"{instructionNumber,3:D} | 0x{offset:X6} | ");
+                    decodedBuilder.Append($"{opCode,3} {opName,-15} ");
+                    decodedBuilder.AppendLine($"| {paramString}");
+
+                    // *** GESTIONE GERARCHIA TREEVIEW ***
+                    // Gestisci la chiusura di blocchi per la TreeView
                     if (opName == "END IF" || opName == "ENDCALL")
                     {
+                        // Pop dal stack per tornare al livello precedente
+                        if (nodeStack.Count > 1) // Non rimuovere il root
+                        {
+                            nodeStack.Pop();
+                        }
                         indentLevel = Math.Max(0, indentLevel - 1);
                     }
                     else if (opName == "ELSE")
                     {
-                        // ELSE rimane allo stesso livello del IF corrispondente
-                        // Ma se è un ELSE annidato, mantiene il livello attuale
-                        if (indentLevel > 0)
+                        // ELSE: chiude IF e apre nuovo blocco allo stesso livello
+                        if (nodeStack.Count > 1 && indentLevel > 0)
                         {
+                            nodeStack.Pop(); // Chiudi il blocco IF
                             indentLevel = Math.Max(0, indentLevel - 1);
                         }
                     }
 
-                    // Calcola spazi basato sul pattern osservato
+                    // Crea il nodo per questa istruzione
+                    var currentNode = new InstructionNode
+                    {
+                        Name = opName,
+                        InstructionNumber = instructionNumber,
+                        Offset = offset,
+                        OpCode = opCode,
+                        Parameters = paramString,
+                        Details = $"Offset: 0x{offset:X6} | OpCode: {opCode}"
+                    };
+
+                    // Aggiungi al nodo parent corrente
+                    var parentNode = nodeStack.Peek();
+                    parentNode.Children.Add(currentNode);
+
+                    // Calcola indentazione per la vista testo
                     string indent;
                     switch (indentLevel)
                     {
-                        case 0:
-                            indent = "";        // 0 spazi
-                            break;
-                        case 1:
-                            indent = "     ";   // 5 spazi
-                            break;
-                        case 2:
-                            indent = "        "; // 8 spazi
-                            break;
-                        default:
-                            indent = new string(' ', 5 + (indentLevel - 1) * 3); // Pattern: 5, 8, 11, 14...
-                            break;
+                        case 0: indent = ""; break;
+                        case 1: indent = "     "; break;
+                        case 2: indent = "        "; break;
+                        default: indent = new string(' ', 5 + (indentLevel - 1) * 3); break;
                     }
 
                     instructionBuilder.AppendLine($"{indent}{opName}");
 
-                    // Aumenta indentazione DOPO aver scritto queste istruzioni
+                    // Gestisci l'apertura di nuovi blocchi
                     if (opName == "IF" || opName == "IF_MEM" || opName == "IF_NUM" ||
                         opName == "CALL" || opName == "LABEL")
                     {
+                        nodeStack.Push(currentNode); // Questo diventa il nuovo parent
                         indentLevel++;
                     }
                     else if (opName == "ELSE")
                     {
-                        indentLevel++; // ELSE apre un nuovo blocco
+                        nodeStack.Push(currentNode); // ELSE apre un nuovo blocco
+                        indentLevel++;
                     }
 
-                    offset += 36; // Ogni istruzione è di 36 byte (1 opcode + 8 parametri)
+                    offset += 36;
                     instructionNumber++;
                 }
 
@@ -417,33 +446,40 @@ namespace FileViewerApp.ViewModels
                 {
                     decodedBuilder.AppendLine("Nessuna istruzione trovata all'offset specificato");
                     instructionBuilder.AppendLine($"// Nessuna istruzione trovata all'offset 0x{StartOffset:X}");
-                    Console.WriteLine("DEBUG: Nessuna istruzione trovata!");
+
+                    var emptyNode = new InstructionNode
+                    {
+                        Name = "Nessuna istruzione trovata",
+                        Details = $"Offset: 0x{StartOffset:X}"
+                    };
+                    rootNode.Children.Add(emptyNode);
                 }
                 else
                 {
                     decodedBuilder.AppendLine();
                     decodedBuilder.AppendLine($"Processate {instructionNumber - 1} istruzioni.");
-                    decodedBuilder.AppendLine($"OpCodes caricati: {_opCodeInfos.Count}");
-
-                    instructionBuilder.AppendLine();
                     instructionBuilder.AppendLine($"// Totale istruzioni: {instructionNumber - 1}");
-                    Console.WriteLine($"DEBUG: Processate {instructionNumber - 1} istruzioni");
+
+                    rootNode.Details = $"File binario - {instructionNumber - 1} istruzioni";
                 }
 
                 DecodedData = decodedBuilder.ToString();
                 InstructionView = instructionBuilder.ToString();
+
+                // Espandi il root node
+                rootNode.IsExpanded = true;
             }
             catch (Exception ex)
             {
                 var errorMsg = $"Errore nel decoder: {ex.Message}\n{ex.StackTrace}";
                 DecodedData = errorMsg;
                 InstructionView = errorMsg;
+                InstructionTree.Clear();
                 Console.WriteLine($"ERRORE: {ex.Message}");
             }
 
             await Task.CompletedTask;
         }
-
         private async Task LoadOpCodeDefinitions()
         {
             try
