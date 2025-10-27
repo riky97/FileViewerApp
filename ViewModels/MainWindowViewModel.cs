@@ -563,6 +563,7 @@ namespace FileViewerApp.ViewModels
         }
     }
 
+
     // Classe helper per le informazioni degli OpCode
     public class OpCodeInfo
     {
