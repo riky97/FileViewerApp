@@ -5,19 +5,25 @@ using Avalonia.Platform.Storage;
 using System;
 using System.Windows.Input;
 using ReactiveUI;
-using System.Text;
 using System.Collections.Generic;
 using System.Linq;
 using CommunityToolkit.Mvvm.Input;
 using FileViewerApp.Models;
 using FileViewerApp.Services;
 using System.Collections.ObjectModel;
+using FileViewerApp.Enums;
 
 namespace FileViewerApp.ViewModels
 {
     public class MainWindowViewModel : ReactiveObject
     {
         private Window? _currentWindow;
+        private readonly FileProcessorOrchestrator _orchestrator;
+
+        // Current processed file
+        private ProcessedFile? _currentProcessedFile;
+
+        // UI Properties
         private string _editorText = string.Empty;
         private string _hexView = string.Empty;
         private string _decodedData = string.Empty;
@@ -27,22 +33,33 @@ namespace FileViewerApp.ViewModels
         private int _lineCount = 0;
         private int _charCount = 0;
         private string _fileEncoding = "UTF-8";
-        private int _startOffset = 0x32; // 50 decimale - CORRETTO
+        private int _startOffset = 0x32; // 50 decimale
         private int _recordCount = 100;
-        private byte[]? _currentFileBytes;
-
-        // Servizio per gestire gli OpCodes
-        private readonly OpCodeService _opCodeService = new();
 
         // TreeView properties
         private ObservableCollection<InstructionNode> _instructionTree = new();
         private InstructionNode? _selectedNode;
 
+        // Status properties
+        private string _statusText = "Pronto";
+        private bool _isProcessing = false;
+        private string _currentFileType = "Nessuno";
+
         public MainWindowViewModel()
         {
+            // CREAZIONE DIRETTA SENZA SERVICE LOCATOR
+            var opCodeService = new OpCodeService();
+            _orchestrator = new FileProcessorOrchestrator(opCodeService);
+
+            // Initialize commands
             OpenFileCommand = new AsyncRelayCommand(OpenFileAsync);
             CloseFileCommand = new AsyncRelayCommand(CloseFileAsync);
-            UpdateDecoderCommand = new AsyncRelayCommand(UpdateDecoderAsync);
+            SaveFileCommand = new AsyncRelayCommand(SaveFileAsync);
+            ConvertFileCommand = new AsyncRelayCommand(ConvertFileAsync);
+            RefreshCommand = new AsyncRelayCommand(RefreshAsync);
+
+            // Set initial status
+            UpdateStatus("Pronto - Seleziona un file per iniziare");
         }
 
         public void SetWindow(Window window)
@@ -50,7 +67,8 @@ namespace FileViewerApp.ViewModels
             _currentWindow = window;
         }
 
-        // Proprietà per il binding
+        #region Properties for UI Binding
+
         public string EditorText
         {
             get => _editorText;
@@ -117,7 +135,6 @@ namespace FileViewerApp.ViewModels
             set => this.RaiseAndSetIfChanged(ref _recordCount, value);
         }
 
-        // TreeView Properties
         public ObservableCollection<InstructionNode> InstructionTree
         {
             get => _instructionTree;
@@ -130,10 +147,37 @@ namespace FileViewerApp.ViewModels
             set => this.RaiseAndSetIfChanged(ref _selectedNode, value);
         }
 
-        // Comandi
+        public string StatusText
+        {
+            get => _statusText;
+            set => this.RaiseAndSetIfChanged(ref _statusText, value);
+        }
+
+        public bool IsProcessing
+        {
+            get => _isProcessing;
+            set => this.RaiseAndSetIfChanged(ref _isProcessing, value);
+        }
+
+        public string CurrentFileType
+        {
+            get => _currentFileType;
+            set => this.RaiseAndSetIfChanged(ref _currentFileType, value);
+        }
+
+        #endregion
+
+        #region Commands
+
         public ICommand OpenFileCommand { get; }
         public ICommand CloseFileCommand { get; }
-        public ICommand UpdateDecoderCommand { get; }
+        public ICommand SaveFileCommand { get; }
+        public ICommand ConvertFileCommand { get; }
+        public ICommand RefreshCommand { get; }
+
+        #endregion
+
+        #region Command Implementations
 
         private async Task OpenFileAsync()
         {
@@ -141,13 +185,13 @@ namespace FileViewerApp.ViewModels
             {
                 if (_currentWindow?.StorageProvider == null)
                 {
-                    Console.WriteLine("StorageProvider non disponibile");
+                    UpdateStatus("Errore: StorageProvider non disponibile");
                     return;
                 }
 
                 if (!_currentWindow.StorageProvider.CanOpen)
                 {
-                    Console.WriteLine("StorageProvider non supporta l'apertura di file");
+                    UpdateStatus("Errore: StorageProvider non supporta l'apertura di file");
                     return;
                 }
 
@@ -157,317 +201,348 @@ namespace FileViewerApp.ViewModels
                     AllowMultiple = false,
                     FileTypeFilter = new[]
                     {
+                        new FilePickerFileType("File di programma")
+                        {
+                            Patterns = new[] { "*.dat", "*.bin", "*.txt" }
+                        },
+                        new FilePickerFileType("File di configurazione")
+                        {
+                            Patterns = new[] { "*.xml", "*.cfg" }
+                        },
                         FilePickerFileTypes.All
                     }
                 };
+
+                IsProcessing = true;
+                UpdateStatus("Seleziona un file...");
 
                 var files = await _currentWindow.StorageProvider.OpenFilePickerAsync(options);
 
                 if (files != null && files.Count > 0)
                 {
                     var file = files[0];
+                    var filePath = file.Path.LocalPath;
 
-                    if (file == null)
-                    {
-                        Console.WriteLine("File selezionato non valido");
-                        return;
-                    }
+                    UpdateStatus($"Elaborazione file: {Path.GetFileName(filePath)}...");
 
-                    await using var stream = await file.OpenReadAsync();
+                    // USA L'ORCHESTRATOR PER PROCESSARE IL FILE
+                    _currentProcessedFile = await _orchestrator.ProcessFileAsync(filePath);
 
-                    // Leggi i bytes per analisi hex e decoder
-                    using var memoryStream = new MemoryStream();
-                    await stream.CopyToAsync(memoryStream);
-                    _currentFileBytes = memoryStream.ToArray();
+                    // Aggiorna l'UI con i dati processati
+                    await UpdateUIFromProcessedFile(_currentProcessedFile);
 
-                    // Prova a leggere come testo per l'editor
-                    try
-                    {
-                        stream.Position = 0;
-                        using var reader = new StreamReader(stream);
-                        var text = await reader.ReadToEndAsync();
-                        EditorText = text;
-
-                        // Aggiorna le proprietà del file
-                        LineCount = text.Split('\n').Length;
-                        CharCount = text.Length;
-                    }
-                    catch
-                    {
-                        // Se non è testo, mostra hex
-                        EditorText = "File binario - vedere la vista Hex";
-                        LineCount = 0;
-                        CharCount = 0;
-                    }
-
-                    FileName = file.Name;
-
-                    // Calcola dimensione file
-                    if (_currentFileBytes.Length < 1024)
-                        FileSize = $"{_currentFileBytes.Length} bytes";
-                    else if (_currentFileBytes.Length < 1024 * 1024)
-                        FileSize = $"{_currentFileBytes.Length / 1024.0:F1} KB";
-                    else
-                        FileSize = $"{_currentFileBytes.Length / (1024.0 * 1024.0):F1} MB";
-
-                    // Genera la vista hex
-                    HexView = GenerateHexView(_currentFileBytes);
-
-                    // Genera automaticamente il decoder
-                    await UpdateDecoderAsync();
+                    UpdateStatus($"File caricato: {_currentProcessedFile.FileType} - {_currentProcessedFile.Instructions.Count} istruzioni");
+                }
+                else
+                {
+                    UpdateStatus("Nessun file selezionato");
                 }
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Errore durante l'apertura del file: {ex.Message}");
-                Console.WriteLine($"Stack trace: {ex.StackTrace}");
+                var errorMsg = $"Errore durante l'apertura del file: {ex.Message}";
+                UpdateStatus(errorMsg);
+                DecodedData = errorMsg;
+                Console.WriteLine($"ERRORE: {ex.Message}\n{ex.StackTrace}");
+            }
+            finally
+            {
+                IsProcessing = false;
             }
         }
 
         private async Task CloseFileAsync()
         {
-            // Resetta tutte le proprietà
-            EditorText = string.Empty;
-            HexView = string.Empty;
-            DecodedData = string.Empty;
-            InstructionView = string.Empty;
-            FileName = "Nessun file aperto";
-            FileSize = "0 bytes";
-            LineCount = 0;
-            CharCount = 0;
-            FileEncoding = "UTF-8";
-            StartOffset = 0x32; // 50 decimale - CORRETTO
-            RecordCount = 100;
-            _currentFileBytes = null;
-            InstructionTree.Clear();
-            SelectedNode = null;
-
-            await Task.CompletedTask;
-        }
-
-        private string GenerateHexView(byte[] bytes)
-        {
-            var hexBuilder = new StringBuilder();
-
-            for (int i = 0; i < bytes.Length; i += 16)
-            {
-                // Offset
-                hexBuilder.Append($"{i:X8}  ");
-
-                // Hex bytes
-                for (int j = 0; j < 16; j++)
-                {
-                    if (i + j < bytes.Length)
-                    {
-                        hexBuilder.Append($"{bytes[i + j]:X2} ");
-                        if (j == 7) hexBuilder.Append(" ");
-                    }
-                    else
-                    {
-                        hexBuilder.Append("   ");
-                        if (j == 7) hexBuilder.Append(" ");
-                    }
-                }
-
-                // ASCII representation
-                hexBuilder.Append(" |");
-                for (int j = 0; j < 16 && i + j < bytes.Length; j++)
-                {
-                    byte b = bytes[i + j];
-                    hexBuilder.Append(b >= 32 && b < 127 ? (char)b : '.');
-                }
-                hexBuilder.AppendLine("|");
-            }
-
-            return hexBuilder.ToString();
-        }
-
-        private async Task UpdateDecoderAsync()
-        {
-            if (_currentFileBytes == null || _currentFileBytes.Length == 0)
-            {
-                DecodedData = "Nessun file caricato";
-                InstructionView = "Nessun file caricato";
-                InstructionTree.Clear();
-                return;
-            }
-
             try
             {
-                // Carica le definizioni degli OpCode usando il servizio
-                var opCodeInfos = await _opCodeService.LoadOpCodeDefinitionsAsync();
+                // Reset all properties
+                _currentProcessedFile = null;
 
-                // Clear existing tree
+                EditorText = string.Empty;
+                HexView = string.Empty;
+                DecodedData = string.Empty;
+                InstructionView = string.Empty;
+                FileName = "Nessun file aperto";
+                FileSize = "0 bytes";
+                LineCount = 0;
+                CharCount = 0;
+                FileEncoding = "UTF-8";
+                StartOffset = 0x32;
+                RecordCount = 100;
+                CurrentFileType = "Nessuno";
+
                 InstructionTree.Clear();
+                SelectedNode = null;
 
-                // Genera vista tecnica (decoder)
-                var decodedBuilder = new StringBuilder();
-                decodedBuilder.AppendLine("DECODER CODICE PROGRAMMA");
-                decodedBuilder.AppendLine("=" + new string('=', 80));
+                UpdateStatus("File chiuso - Pronto per un nuovo file");
 
-                // Analizza header
-                string headerText = "";
-                if (_currentFileBytes.Length >= 8)
-                {
-                    headerText = Encoding.ASCII.GetString(_currentFileBytes, 0, 8);
-                    decodedBuilder.AppendLine($"Header: '{headerText.Trim()}'");
-                    decodedBuilder.AppendLine($"Start Offset: 0x{StartOffset:X8} ({StartOffset})");
-                    decodedBuilder.AppendLine();
-                }
-
-                decodedBuilder.AppendLine("ISTRUZIONI DECODIFICATE (Vista tecnica):");
-                decodedBuilder.AppendLine("-" + new string('-', 80));
-                decodedBuilder.AppendLine("Num | Offset | OpCode/Nome         | Parametri | IndentMode");
-                decodedBuilder.AppendLine("-" + new string('-', 80));
-
-                // Genera vista istruzioni semplificata
-                var instructionBuilder = new StringBuilder();
-                instructionBuilder.AppendLine("// PROGRAMMA DECODIFICATO");
-                instructionBuilder.AppendLine("// " + new string('=', 60));
-                instructionBuilder.AppendLine($"// File: {headerText.Trim()}");
-                instructionBuilder.AppendLine();
-
-                // Stack per gestire la gerarchia della TreeView
-                var nodeStack = new Stack<InstructionNode>();
-                var rootNode = new InstructionNode
-                {
-                    Name = $"PROGRAMMA: {headerText.Trim()}",
-                    Details = $"File binario - {_currentFileBytes.Length} bytes",
-                    IsExpanded = true
-                };
-                InstructionTree.Add(rootNode);
-                nodeStack.Push(rootNode);
-
-                // Usa StartOffset corretto
-                int offset = StartOffset;
-                int instructionNumber = 1;
-                int maxInstructions = RecordCount;
-                int indentLevel = 0;
-
-                while (offset + 36 <= _currentFileBytes.Length && instructionNumber <= maxInstructions)
-                {
-                    // Leggi OpCode
-                    var opCodeBytes = new byte[4];
-                    Array.Copy(_currentFileBytes, offset, opCodeBytes, 0, 4);
-                    int opCode = BitConverter.ToInt32(opCodeBytes, 0);
-
-                    if (opCode == 0)
-                    {
-                        offset += 36;
-                        continue;
-                    }
-
-                    // Trova informazioni sull'OpCode usando il servizio
-                    var opCodeInfo = _opCodeService.GetOpCodeInfo(opCode);
-                    string opName = opCodeInfo?.Name ?? $"UNKNOWN_{opCode}";
-                    int expectedParams = opCodeInfo?.ParamCount ?? 8;
-                    var indentMode = opCodeInfo?.IndentMode ?? IndentMode.None;
-
-                    // Leggi i parametri
-                    var parameters = new List<int>();
-                    for (int i = 1; i <= 8 && offset + (i * 4) + 3 < _currentFileBytes.Length; i++)
-                    {
-                        var paramBytes = new byte[4];
-                        Array.Copy(_currentFileBytes, offset + (i * 4), paramBytes, 0, 4);
-                        parameters.Add(BitConverter.ToInt32(paramBytes, 0));
-                    }
-
-                    var significantParams = parameters.Take(expectedParams).ToArray();
-                    string paramString = significantParams.Length > 0 ?
-                        string.Join(", ", significantParams) : "(nessun parametro)";
-
-                    // *** GESTIONE INDENTAZIONE BASATA SU XML ***
-                    // Gestisci la chiusura di blocchi PRIMA di processare il comando corrente
-                    if (indentMode == IndentMode.RemoveIndent || indentMode == IndentMode.RemoveAndAddIndent)
-                    {
-                        if (nodeStack.Count > 1) // Non rimuovere il root
-                        {
-                            nodeStack.Pop();
-                        }
-                        indentLevel = Math.Max(0, indentLevel - 1);
-                    }
-
-                    // Calcola indentazione per la vista testo
-                    string indent = new string(' ', indentLevel * 4); // 4 spazi per livello
-
-                    // Vista tecnica con IndentMode
-                    decodedBuilder.Append($"{instructionNumber,3:D} | 0x{offset:X6} | ");
-                    decodedBuilder.Append($"{opCode,3} {opName,-15} ");
-                    decodedBuilder.AppendLine($"| {paramString,-20} | {indentMode}");
-
-                    // Vista istruzioni con indentazione
-                    instructionBuilder.AppendLine($"{indent}{opName}");
-
-                    // Crea il nodo per questa istruzione
-                    var currentNode = new InstructionNode
-                    {
-                        Name = opName,
-                        InstructionNumber = instructionNumber,
-                        Offset = offset,
-                        OpCode = opCode,
-                        Parameters = paramString,
-                        Details = $"Offset: 0x{offset:X6} | OpCode: {opCode} | IndentMode: {indentMode} | {opCodeInfo?.Category ?? "Unknown"}",
-                        IsExpanded = true
-                    };
-
-                    // Aggiungi al nodo parent corrente
-                    var parentNode = nodeStack.Peek();
-                    parentNode.Children.Add(currentNode);
-
-                    // Gestisci l'apertura di nuovi blocchi DOPO aver processato il comando
-                    if (indentMode == IndentMode.AddIndent || indentMode == IndentMode.RemoveAndAddIndent)
-                    {
-                        nodeStack.Push(currentNode); // Questo diventa il nuovo parent
-                        indentLevel++;
-                    }
-
-                    offset += 36;
-                    instructionNumber++;
-                }
-
-                if (instructionNumber == 1)
-                {
-                    decodedBuilder.AppendLine("Nessuna istruzione trovata all'offset specificato");
-                    instructionBuilder.AppendLine($"// Nessuna istruzione trovata all'offset 0x{StartOffset:X}");
-
-                    var emptyNode = new InstructionNode
-                    {
-                        Name = "Nessuna istruzione trovata",
-                        Details = $"Offset: 0x{StartOffset:X}",
-                        IsExpanded = true
-                    };
-                    rootNode.Children.Add(emptyNode);
-                }
-                else
-                {
-                    decodedBuilder.AppendLine();
-                    decodedBuilder.AppendLine($"Processate {instructionNumber - 1} istruzioni.");
-                    instructionBuilder.AppendLine($"// Totale istruzioni: {instructionNumber - 1}");
-
-                    rootNode.Details = $"File binario - {instructionNumber - 1} istruzioni";
-                }
-
-                DecodedData = decodedBuilder.ToString();
-                InstructionView = instructionBuilder.ToString();
-
-                // Espandi tutti i nodi della TreeView
-                ExpandAllNodes(InstructionTree);
+                await Task.CompletedTask;
             }
             catch (Exception ex)
             {
-                var errorMsg = $"Errore nel decoder: {ex.Message}\n{ex.StackTrace}";
-                DecodedData = errorMsg;
-                InstructionView = errorMsg;
-                InstructionTree.Clear();
-                Console.WriteLine($"ERRORE: {ex.Message}");
+                UpdateStatus($"Errore durante la chiusura: {ex.Message}");
             }
-
-            await Task.CompletedTask;
         }
 
-        /// <summary>
-        /// Espande ricorsivamente tutti i nodi della TreeView
-        /// </summary>
+        private async Task SaveFileAsync()
+        {
+            try
+            {
+                if (_currentProcessedFile == null)
+                {
+                    UpdateStatus("Nessun file da salvare");
+                    return;
+                }
+
+                if (_currentWindow?.StorageProvider == null)
+                {
+                    UpdateStatus("Errore: StorageProvider non disponibile");
+                    return;
+                }
+
+                var options = new FilePickerSaveOptions
+                {
+                    Title = "Salva file",
+                    FileTypeChoices = new[]
+                    {
+                        new FilePickerFileType("File binario (.dat)")
+                        {
+                            Patterns = new[] { "*.dat" }
+                        },
+                        new FilePickerFileType("File di testo (.txt)")
+                        {
+                            Patterns = new[] { "*.txt" }
+                        },
+                        new FilePickerFileType("File binario (.bin)")
+                        {
+                            Patterns = new[] { "*.bin" }
+                        }
+                    },
+                    SuggestedFileName = Path.GetFileNameWithoutExtension(_currentProcessedFile.FileName)
+                };
+
+                IsProcessing = true;
+                UpdateStatus("Salvataggio in corso...");
+
+                var file = await _currentWindow.StorageProvider.SaveFilePickerAsync(options);
+
+                if (file != null)
+                {
+                    var outputPath = file.Path.LocalPath;
+
+                    // USA L'ORCHESTRATOR PER SALVARE IL FILE
+                    var savedData = await _orchestrator.SaveFileAsync(_currentProcessedFile, outputPath);
+
+                    UpdateStatus($"File salvato: {Path.GetFileName(outputPath)} ({FormatFileSize(savedData.Length)})");
+                }
+                else
+                {
+                    UpdateStatus("Salvataggio annullato");
+                }
+            }
+            catch (Exception ex)
+            {
+                var errorMsg = $"Errore durante il salvataggio: {ex.Message}";
+                UpdateStatus(errorMsg);
+                Console.WriteLine($"ERRORE SALVATAGGIO: {ex.Message}");
+            }
+            finally
+            {
+                IsProcessing = false;
+            }
+        }
+
+        private async Task ConvertFileAsync()
+        {
+            try
+            {
+                if (_currentProcessedFile == null)
+                {
+                    UpdateStatus("Nessun file da convertire");
+                    return;
+                }
+
+                if (_currentWindow?.StorageProvider == null)
+                {
+                    UpdateStatus("Errore: StorageProvider non disponibile");
+                    return;
+                }
+
+                // Determina il formato di destinazione opposto al corrente
+                var targetType = _currentProcessedFile.FileType == FileType.BinaryProgram
+                    ? FileType.TextProgram
+                    : FileType.BinaryProgram;
+
+                var extension = targetType == FileType.BinaryProgram ? ".dat" : ".txt";
+                var description = targetType == FileType.BinaryProgram ? "File binario" : "File di testo";
+
+                var options = new FilePickerSaveOptions
+                {
+                    Title = $"Converti in {description}",
+                    FileTypeChoices = new[]
+                    {
+                        new FilePickerFileType($"{description} ({extension})")
+                        {
+                            Patterns = new[] { $"*{extension}" }
+                        }
+                    },
+                    SuggestedFileName = Path.GetFileNameWithoutExtension(_currentProcessedFile.FileName) + extension
+                };
+
+                IsProcessing = true;
+                UpdateStatus("Conversione in corso...");
+
+                var file = await _currentWindow.StorageProvider.SaveFilePickerAsync(options);
+
+                if (file != null)
+                {
+                    var outputPath = file.Path.LocalPath;
+
+                    // USA L'ORCHESTRATOR PER CONVERTIRE IL FILE
+                    var convertedData = await _orchestrator.ConvertAsync(_currentProcessedFile, targetType, outputPath);
+
+                    UpdateStatus($"File convertito: {Path.GetFileName(outputPath)} ({FormatFileSize(convertedData.Length)})");
+
+                    // Mostra risultato conversione
+                    DecodedData += $"\n\n=== CONVERSIONE COMPLETATA ===\n";
+                    DecodedData += $"File convertito in: {outputPath}\n";
+                    DecodedData += $"Dimensione: {FormatFileSize(convertedData.Length)}\n";
+                    DecodedData += $"Formato: {targetType}\n";
+                }
+                else
+                {
+                    UpdateStatus("Conversione annullata");
+                }
+            }
+            catch (Exception ex)
+            {
+                var errorMsg = $"Errore durante la conversione: {ex.Message}";
+                UpdateStatus(errorMsg);
+                DecodedData += $"\n\nERRORE CONVERSIONE: {errorMsg}";
+                Console.WriteLine($"ERRORE CONVERSIONE: {ex.Message}");
+            }
+            finally
+            {
+                IsProcessing = false;
+            }
+        }
+
+        private async Task RefreshAsync()
+        {
+            try
+            {
+                if (_currentProcessedFile == null)
+                {
+                    UpdateStatus("Nessun file da aggiornare");
+                    return;
+                }
+
+                IsProcessing = true;
+                UpdateStatus("Aggiornamento in corso...");
+
+                // Riprocessa il file corrente
+                _currentProcessedFile = await _orchestrator.ProcessFileAsync(_currentProcessedFile.FilePath, useCache: false);
+
+                // Aggiorna l'UI
+                await UpdateUIFromProcessedFile(_currentProcessedFile);
+
+                UpdateStatus($"File aggiornato: {_currentProcessedFile.Instructions.Count} istruzioni");
+            }
+            catch (Exception ex)
+            {
+                var errorMsg = $"Errore durante l'aggiornamento: {ex.Message}";
+                UpdateStatus(errorMsg);
+                Console.WriteLine($"ERRORE REFRESH: {ex.Message}");
+            }
+            finally
+            {
+                IsProcessing = false;
+            }
+        }
+
+        #endregion
+
+        #region Helper Methods
+
+        private async Task UpdateUIFromProcessedFile(ProcessedFile processedFile)
+        {
+            try
+            {
+                // Basic file info
+                FileName = processedFile.FileName;
+                FileSize = FormatFileSize(processedFile.FileSize);
+                CurrentFileType = processedFile.FileType.ToString();
+
+                // Content views
+                HexView = processedFile.HexView;
+                InstructionView = processedFile.TextualView;
+
+                // Try to show raw content as text for editor
+                try
+                {
+                    EditorText = System.Text.Encoding.UTF8.GetString(processedFile.RawContent);
+                    LineCount = EditorText.Split('\n').Length;
+                    CharCount = EditorText.Length;
+                }
+                catch
+                {
+                    EditorText = $"File binario - vedere la vista Hex\n\nTipo: {processedFile.FileType}\nDimensione: {FormatFileSize(processedFile.FileSize)}";
+                    LineCount = 0;
+                    CharCount = 0;
+                }
+
+                // Instruction tree
+                InstructionTree.Clear();
+                foreach (var node in processedFile.InstructionTree)
+                {
+                    InstructionTree.Add(node);
+                }
+
+                // Expand tree
+                ExpandAllNodes(InstructionTree);
+
+                // Messages and decoded data
+                var messages = string.Join("\n", processedFile.Messages);
+                DecodedData = $"=== INFORMAZIONI FILE ===\n";
+                DecodedData += $"Nome: {processedFile.FileName}\n";
+                DecodedData += $"Tipo: {processedFile.FileType}\n";
+                DecodedData += $"Dimensione: {FormatFileSize(processedFile.FileSize)}\n";
+                DecodedData += $"Header: {processedFile.Header}\n";
+                DecodedData += $"Istruzioni: {processedFile.Instructions.Count}\n\n";
+                DecodedData += $"=== MESSAGGI PROCESSING ===\n{messages}\n\n";
+
+                if (processedFile.Instructions.Count > 0)
+                {
+                    DecodedData += $"=== LISTA ISTRUZIONI ===\n";
+                    DecodedData += "Num | OpCode | Nome             | Parametri\n";
+                    DecodedData += new string('-', 60) + "\n";
+
+                    foreach (var instruction in processedFile.Instructions.Take(20)) // Prime 20
+                    {
+                        var paramCount = 3; // Default per visualizzazione
+                        var significantParams = instruction.Parameters.Take(paramCount).ToArray();
+                        var paramString = significantParams.Length > 0
+                            ? string.Join(", ", significantParams)
+                            : "(nessuno)";
+
+                        DecodedData += $"{instruction.Number,3} | {instruction.OpCode,6} | {instruction.Name,-15} | {paramString}\n";
+                    }
+
+                    if (processedFile.Instructions.Count > 20)
+                    {
+                        DecodedData += $"... e altre {processedFile.Instructions.Count - 20} istruzioni\n";
+                    }
+                }
+
+                await Task.CompletedTask;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Errore aggiornamento UI: {ex.Message}");
+                throw;
+            }
+        }
+
         private void ExpandAllNodes(ObservableCollection<InstructionNode> nodes)
         {
             foreach (var node in nodes)
@@ -479,5 +554,23 @@ namespace FileViewerApp.ViewModels
                 }
             }
         }
+
+        private string FormatFileSize(long bytes)
+        {
+            if (bytes < 1024)
+                return $"{bytes} bytes";
+            else if (bytes < 1024 * 1024)
+                return $"{bytes / 1024.0:F1} KB";
+            else
+                return $"{bytes / (1024.0 * 1024.0):F1} MB";
+        }
+
+        private void UpdateStatus(string message)
+        {
+            StatusText = $"{DateTime.Now:HH:mm:ss} - {message}";
+            Console.WriteLine($"STATUS: {message}");
+        }
+
+        #endregion
     }
 }

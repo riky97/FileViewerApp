@@ -142,5 +142,22 @@ namespace FileViewerApp.Services
         {
             return _loaders.Select(l => l.LoaderName).ToList();
         }
+
+        /// <summary>
+        /// Trova un OpCode per nome
+        /// </summary>
+        public OpCodeInfo? GetOpCodeByName(string name)
+        {
+            return _opCodeInfos.Values.FirstOrDefault(info =>
+                string.Equals(info.Name, name, StringComparison.OrdinalIgnoreCase));
+        }
+
+        /// <summary>
+        /// Ottiene tutti i nomi degli OpCodes disponibili
+        /// </summary>
+        public List<string> GetAllOpCodeNames()
+        {
+            return _opCodeInfos.Values.Select(info => info.Name).OrderBy(name => name).ToList();
+        }
     }
 }
