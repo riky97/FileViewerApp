@@ -2,291 +2,373 @@
     x:Class="FileViewerApp.Views.MainWindow"
     xmlns="https://github.com/avaloniaui"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-    xmlns:avaloniaEdit="https://github.com/avaloniaui/avaloniaedit"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-    xmlns:models="using:FileViewerApp.Models"
     xmlns:vm="using:FileViewerApp.ViewModels"
-    Title="File Viewer App"
-    Width="1200"
-    Height="800"
+    Title="FileViewer Pro - Visualizzatore e Convertitore File Programma"
+    MinWidth="900"
+    MinHeight="600"
     d:DesignHeight="800"
     d:DesignWidth="1200"
     x:DataType="vm:MainWindowViewModel"
     mc:Ignorable="d">
+    <!--  Icon="/Assets/avalonia-logo.ico"  -->
 
-    <Design.DataContext>
-        <vm:MainWindowViewModel />
-    </Design.DataContext>
+    <Window.Styles>
+        <!--  Modern Styles  -->
+        <Style Selector="Button">
+            <Setter Property="Padding" Value="12,8" />
+            <Setter Property="Margin" Value="4" />
+            <Setter Property="CornerRadius" Value="4" />
+            <Setter Property="Background" Value="#2196F3" />
+            <Setter Property="Foreground" Value="White" />
+            <Setter Property="FontWeight" Value="Medium" />
+        </Style>
 
-    <Grid RowDefinitions="Auto,*">
-        <!--  Toolbar  -->
+        <Style Selector="Button:pointerover">
+            <Setter Property="Background" Value="#1976D2" />
+        </Style>
+
+        <Style Selector="Button:disabled">
+            <Setter Property="Background" Value="#CCCCCC" />
+            <Setter Property="Foreground" Value="#666666" />
+        </Style>
+
+        <Style Selector="TabItem">
+            <Setter Property="FontSize" Value="14" />
+            <Setter Property="Padding" Value="16,8" />
+        </Style>
+
+        <Style Selector="TextBox">
+            <Setter Property="Background" Value="#F8F9FA" />
+            <Setter Property="BorderBrush" Value="#DEE2E6" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="CornerRadius" Value="4" />
+            <Setter Property="Padding" Value="8" />
+        </Style>
+
+        <!--  TreeView Styling  -->
+        <Style Selector="TreeViewItem">
+            <Setter Property="Padding" Value="4" />
+        </Style>
+
+        <Style Selector="TreeViewItem:selected /template/ ContentPresenter">
+            <Setter Property="Background" Value="#E3F2FD" />
+        </Style>
+    </Window.Styles>
+
+    <DockPanel>
+
+        <!--  📁 TOOLBAR SUPERIORE  -->
         <Border
-            Grid.Row="0"
-            Background="#F5F5F5"
+            Padding="8"
+            Background="#FFFFFF"
             BorderBrush="#E0E0E0"
-            BorderThickness="0,0,0,1">
-            <StackPanel Margin="10,5" Orientation="Horizontal">
+            BorderThickness="0,0,0,1"
+            DockPanel.Dock="Top">
+            <StackPanel Orientation="Horizontal">
+
+                <!--  File Operations  -->
                 <Button
-                    Margin="5,0"
-                    Padding="15,8"
-                    Background="#2563EB"
+                    Name="OpenButton"
                     Command="{Binding OpenFileCommand}"
-                    Content="📁 Apri File"
-                    Foreground="White" />
+                    IsEnabled="{Binding !IsProcessing}"
+                    ToolTip.Tip="Apri file (Ctrl+O)">
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock
+                            Margin="0,0,8,0"
+                            FontSize="16"
+                            Text="📁" />
+                        <TextBlock Text="Apri File" />
+                    </StackPanel>
+                </Button>
+
                 <Button
-                    Margin="5,0"
-                    Padding="15,8"
-                    Background="#DC2626"
+                    Name="SaveButton"
+                    Command="{Binding SaveFileCommand}"
+                    IsEnabled="{Binding !IsProcessing}"
+                    ToolTip.Tip="Salva file (Ctrl+S)">
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock
+                            Margin="0,0,8,0"
+                            FontSize="16"
+                            Text="💾" />
+                        <TextBlock Text="Salva" />
+                    </StackPanel>
+                </Button>
+
+                <Separator
+                    Width="1"
+                    Height="24"
+                    Margin="8,4"
+                    Background="#E0E0E0" />
+
+                <!--  Convert Operations  -->
+                <Button
+                    Name="ConvertButton"
+                    Background="#4CAF50"
+                    Command="{Binding ConvertFileCommand}"
+                    IsEnabled="{Binding !IsProcessing}"
+                    ToolTip.Tip="Converti formato file">
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock
+                            Margin="0,0,8,0"
+                            FontSize="16"
+                            Text="🔄" />
+                        <TextBlock Text="Converti" />
+                    </StackPanel>
+                </Button>
+
+                <Button
+                    Name="RefreshButton"
+                    Background="#FF9800"
+                    Command="{Binding RefreshCommand}"
+                    IsEnabled="{Binding !IsProcessing}"
+                    ToolTip.Tip="Aggiorna file (F5)">
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock
+                            Margin="0,0,8,0"
+                            FontSize="16"
+                            Text="🔄" />
+                        <TextBlock Text="Aggiorna" />
+                    </StackPanel>
+                </Button>
+
+                <Separator
+                    Width="1"
+                    Height="24"
+                    Margin="8,4"
+                    Background="#E0E0E0" />
+
+                <!--  Close  -->
+                <Button
+                    Name="CloseButton"
+                    Background="#F44336"
                     Command="{Binding CloseFileCommand}"
-                    Content="❌ Chiudi"
-                    Foreground="White" />
+                    ToolTip.Tip="Chiudi file">
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock
+                            Margin="0,0,8,0"
+                            FontSize="16"
+                            Text="❌" />
+                        <TextBlock Text="Chiudi" />
+                    </StackPanel>
+                </Button>
+
+                <!--  Progress Indicator  -->
+                <StackPanel
+                    Margin="20,0,0,0"
+                    IsVisible="{Binding IsProcessing}"
+                    Orientation="Horizontal">
+                    <TextBlock
+                        Margin="0,0,8,0"
+                        FontSize="16"
+                        Text="⏳" />
+                    <TextBlock
+                        FontStyle="Italic"
+                        Foreground="#666666"
+                        Text="Elaborazione in corso..." />
+                </StackPanel>
+
             </StackPanel>
         </Border>
 
-        <!--  Main Content Area con TabControl  -->
-        <TabControl
-            Grid.Row="1"
-            Background="White"
-            TabStripPlacement="Top">
+        <!--  📊 STATUS BAR INFERIORE  -->
+        <Border
+            Padding="8"
+            Background="#F8F9FA"
+            BorderBrush="#E0E0E0"
+            BorderThickness="0,1,0,0"
+            DockPanel.Dock="Bottom">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
 
-            <!--  Tab Editor  -->
-            <TabItem Header="📝 Editor">
-                <Border Background="White">
-                    <TextBox
-                        Margin="10"
-                        Background="White"
-                        BorderThickness="0"
-                        FontFamily="Cascadia Code, Consolas, 'Courier New'"
-                        FontSize="12"
-                        Foreground="#1F2937"
-                        IsReadOnly="True"
-                        Text="{Binding EditorText}"
-                        TextWrapping="Wrap" />
-                </Border>
-            </TabItem>
+                <!--  Status Message  -->
+                <TextBlock
+                    Grid.Column="0"
+                    VerticalAlignment="Center"
+                    FontSize="12"
+                    Text="{Binding StatusText}" />
 
-            <!--  Tab Hex View  -->
-            <TabItem Header="🔢 Hex View">
-                <Border Background="White">
-                    <ScrollViewer>
-                        <TextBox
-                            Margin="10"
-                            Background="White"
-                            BorderThickness="0"
-                            FontFamily="Cascadia Code, Consolas, 'Courier New'"
-                            FontSize="12"
-                            Foreground="#1F2937"
-                            IsReadOnly="True"
-                            Text="{Binding HexView}"
-                            TextWrapping="Wrap" />
-                    </ScrollViewer>
-                </Border>
-            </TabItem>
+                <!--  File Info  -->
+                <StackPanel
+                    Grid.Column="1"
+                    Margin="8,0"
+                    Orientation="Horizontal">
+                    <TextBlock Margin="0,0,4,0" Text="📄" />
+                    <TextBlock FontWeight="Medium" Text="{Binding FileName}" />
+                    <TextBlock Foreground="#666666" Text=" | " />
+                    <TextBlock Text="{Binding FileSize}" />
+                    <TextBlock Foreground="#666666" Text=" | " />
+                    <TextBlock Text="{Binding CurrentFileType}" />
+                </StackPanel>
 
-            <!--  Tab Decoder  -->
-            <TabItem Header="🔧 Decoder">
-                <Border Background="White">
-                    <ScrollViewer>
-                        <TextBox
-                            Margin="10"
-                            Background="White"
-                            BorderThickness="0"
-                            FontFamily="Cascadia Code, Consolas, 'Courier New'"
-                            FontSize="12"
-                            Foreground="#1F2937"
-                            IsReadOnly="True"
-                            Text="{Binding DecodedData}"
-                            TextWrapping="Wrap" />
-                    </ScrollViewer>
-                </Border>
-            </TabItem>
+                <!--  Editor Info  -->
+                <StackPanel
+                    Grid.Column="2"
+                    Margin="8,0"
+                    Orientation="Horizontal">
+                    <TextBlock Margin="0,0,4,0" Text="📝" />
+                    <TextBlock Text="{Binding LineCount}" />
+                    <TextBlock Foreground="#666666" Text=" linee | " />
+                    <TextBlock Text="{Binding CharCount}" />
+                    <TextBlock Foreground="#666666" Text=" caratteri" />
+                </StackPanel>
 
-            <!--  Tab Istruzioni  -->
-            <TabItem Header="📋 Istruzioni">
-                <Grid>
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="*" />
-                        <RowDefinition Height="5" />
-                        <RowDefinition Height="200" />
-                    </Grid.RowDefinitions>
+                <!--  Encoding  -->
+                <StackPanel
+                    Grid.Column="3"
+                    Margin="8,0"
+                    Orientation="Horizontal">
+                    <TextBlock Margin="0,0,4,0" Text="🔤" />
+                    <TextBlock Text="{Binding FileEncoding}" />
+                </StackPanel>
 
-                    <!--  TreeView delle istruzioni  -->
-                    <TreeView
-                        Grid.Row="0"
-                        Margin="10"
-                        ItemsSource="{Binding InstructionTree}"
-                        SelectedItem="{Binding SelectedNode}">
-                        <TreeView.DataTemplates>
-                            <TreeDataTemplate DataType="models:InstructionNode" ItemsSource="{Binding Children}">
-                                <StackPanel Orientation="Horizontal">
-                                    <TextBlock
-                                        FontFamily="Consolas"
-                                        FontSize="12"
-                                        Text="{Binding DisplayText}" />
-                                    <TextBlock
-                                        Margin="5,0"
-                                        Foreground="Gray"
-                                        Text=" - " />
-                                    <TextBlock
-                                        FontSize="11"
-                                        Foreground="DarkGray"
-                                        Text="{Binding Details}" />
-                                </StackPanel>
-                            </TreeDataTemplate>
-                        </TreeView.DataTemplates>
-                        <TreeView.Styles>
-                            <Style x:DataType="models:InstructionNode" Selector="TreeViewItem">
-                                <Setter Property="IsExpanded" Value="{Binding IsExpanded}" />
-                            </Style>
-                        </TreeView.Styles>
-                    </TreeView>
+            </Grid>
+        </Border>
 
-                    <!--  Splitter  -->
-                    <GridSplitter
-                        Grid.Row="1"
-                        Height="5"
-                        HorizontalAlignment="Stretch"
-                        VerticalAlignment="Center"
-                        Background="LightGray" />
+        <!--  🏠 MAIN CONTENT AREA  -->
+        <Grid>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="300" MinWidth="200" />
+                <ColumnDefinition Width="4" />
+                <ColumnDefinition Width="*" MinWidth="400" />
+            </Grid.ColumnDefinitions>
 
-                    <!--  Dettagli del nodo selezionato  -->
+            <!--  🌳 LEFT PANEL: TreeView  -->
+            <Border
+                Grid.Column="0"
+                Background="#FFFFFF"
+                BorderBrush="#E0E0E0"
+                BorderThickness="0,0,1,0">
+
+                <DockPanel>
+                    <!--  TreeView Header  -->
                     <Border
-                        Grid.Row="2"
-                        Margin="10,0,10,10"
-                        Padding="10"
-                        Background="LightGray">
-                        <StackPanel>
-                            <TextBlock
-                                Margin="0,0,0,5"
-                                FontWeight="Bold"
-                                Text="Dettagli Istruzione Selezionata:" />
-                            <TextBlock FontFamily="Consolas">
-                                <TextBlock.Text>
-                                    <MultiBinding StringFormat="Nome: {0}">
-                                        <Binding FallbackValue="(nessuna selezione)" Path="SelectedNode.Name" />
-                                    </MultiBinding>
-                                </TextBlock.Text>
-                            </TextBlock>
-                            <TextBlock FontFamily="Consolas">
-                                <TextBlock.Text>
-                                    <MultiBinding StringFormat="Numero: {0}">
-                                        <Binding FallbackValue="N/A" Path="SelectedNode.InstructionNumber" />
-                                    </MultiBinding>
-                                </TextBlock.Text>
-                            </TextBlock>
-                            <TextBlock FontFamily="Consolas">
-                                <TextBlock.Text>
-                                    <MultiBinding StringFormat="Offset: 0x{0:X6}">
-                                        <Binding FallbackValue="0" Path="SelectedNode.Offset" />
-                                    </MultiBinding>
-                                </TextBlock.Text>
-                            </TextBlock>
-                            <TextBlock FontFamily="Consolas">
-                                <TextBlock.Text>
-                                    <MultiBinding StringFormat="OpCode: {0}">
-                                        <Binding FallbackValue="0" Path="SelectedNode.OpCode" />
-                                    </MultiBinding>
-                                </TextBlock.Text>
-                            </TextBlock>
-                            <TextBlock FontFamily="Consolas" TextWrapping="Wrap">
-                                <TextBlock.Text>
-                                    <MultiBinding StringFormat="Parametri: {0}">
-                                        <Binding FallbackValue="(nessun parametro)" Path="SelectedNode.Parameters" />
-                                    </MultiBinding>
-                                </TextBlock.Text>
-                            </TextBlock>
-                        </StackPanel>
+                        Padding="12,8"
+                        Background="#F1F3F4"
+                        DockPanel.Dock="Top">
+                        <TextBlock
+                            FontSize="14"
+                            FontWeight="Medium"
+                            Text="🌳 Struttura Istruzioni" />
                     </Border>
-                </Grid>
-            </TabItem>
 
-            <!--  Tab Properties  -->
-            <TabItem Header="📋 Proprietà">
-                <Border Background="White">
+                    <!--  TreeView Content  -->
                     <ScrollViewer>
-                        <StackPanel Margin="20">
-                            <TextBlock
-                                Margin="0,0,0,10"
-                                FontSize="16"
-                                FontWeight="Bold"
-                                Foreground="#1F2937"
-                                Text="Informazioni File" />
+                        <TreeView
+                            Name="InstructionTreeView"
+                            Padding="8"
+                            ItemsSource="{Binding InstructionTree}"
+                            SelectedItem="{Binding SelectedNode}">
 
-                            <Grid
-                                Margin="0,10"
-                                ColumnDefinitions="150,*"
-                                RowDefinitions="Auto,Auto,Auto,Auto,Auto">
+                            <TreeView.ItemTemplate>
+                                <TreeDataTemplate ItemsSource="{Binding Children}">
+                                    <StackPanel Orientation="Horizontal">
+                                        <TextBlock
+                                            Margin="0,0,8,0"
+                                            FontWeight="Medium"
+                                            Text="{Binding Name}" />
+                                        <TextBlock
+                                            FontSize="12"
+                                            Foreground="#666666"
+                                            Text="{Binding Parameters}" />
+                                    </StackPanel>
+                                </TreeDataTemplate>
+                            </TreeView.ItemTemplate>
 
-                                <TextBlock
-                                    Grid.Row="0"
-                                    Grid.Column="0"
-                                    Margin="0,5"
-                                    Foreground="#6B7280"
-                                    Text="Nome file:" />
-                                <TextBlock
-                                    Grid.Row="0"
-                                    Grid.Column="1"
-                                    Margin="10,5,0,5"
-                                    Foreground="#1F2937"
-                                    Text="{Binding FileName}" />
-
-                                <TextBlock
-                                    Grid.Row="1"
-                                    Grid.Column="0"
-                                    Margin="0,5"
-                                    Foreground="#6B7280"
-                                    Text="Dimensione:" />
-                                <TextBlock
-                                    Grid.Row="1"
-                                    Grid.Column="1"
-                                    Margin="10,5,0,5"
-                                    Foreground="#1F2937"
-                                    Text="{Binding FileSize}" />
-
-                                <TextBlock
-                                    Grid.Row="2"
-                                    Grid.Column="0"
-                                    Margin="0,5"
-                                    Foreground="#6B7280"
-                                    Text="Linee:" />
-                                <TextBlock
-                                    Grid.Row="2"
-                                    Grid.Column="1"
-                                    Margin="10,5,0,5"
-                                    Foreground="#1F2937"
-                                    Text="{Binding LineCount}" />
-
-                                <TextBlock
-                                    Grid.Row="3"
-                                    Grid.Column="0"
-                                    Margin="0,5"
-                                    Foreground="#6B7280"
-                                    Text="Caratteri:" />
-                                <TextBlock
-                                    Grid.Row="3"
-                                    Grid.Column="1"
-                                    Margin="10,5,0,5"
-                                    Foreground="#1F2937"
-                                    Text="{Binding CharCount}" />
-
-                                <TextBlock
-                                    Grid.Row="4"
-                                    Grid.Column="0"
-                                    Margin="0,5"
-                                    Foreground="#6B7280"
-                                    Text="Encoding:" />
-                                <TextBlock
-                                    Grid.Row="4"
-                                    Grid.Column="1"
-                                    Margin="10,5,0,5"
-                                    Foreground="#1F2937"
-                                    Text="{Binding FileEncoding}" />
-                            </Grid>
-                        </StackPanel>
+                        </TreeView>
                     </ScrollViewer>
-                </Border>
-            </TabItem>
-        </TabControl>
-    </Grid>
+                </DockPanel>
+            </Border>
+
+            <!--  SPLITTER  -->
+            <GridSplitter
+                Grid.Column="1"
+                Background="#E0E0E0"
+                ResizeDirection="Columns" />
+
+            <!--  📝 RIGHT PANEL: Content Tabs  -->
+            <TabControl
+                Grid.Column="2"
+                Padding="0"
+                Background="#FFFFFF">
+
+                <!--  EDITOR TAB  -->
+                <TabItem Header="📝 Editor">
+                    <Border Padding="8">
+                        <TextBox
+                            Name="EditorTextBox"
+                            AcceptsReturn="True"
+                            Background="#FAFAFA"
+                            FontFamily="Consolas, Monaco, monospace"
+                            FontSize="12"
+                            IsReadOnly="True"
+                            ScrollViewer.HorizontalScrollBarVisibility="Auto"
+                            ScrollViewer.VerticalScrollBarVisibility="Auto"
+                            Text="{Binding EditorText}"
+                            TextWrapping="Wrap" />
+                    </Border>
+                </TabItem>
+
+                <!--  HEX VIEW TAB  -->
+                <TabItem Header="🔍 Hex View">
+                    <Border Padding="8">
+                        <TextBox
+                            Name="HexViewTextBox"
+                            AcceptsReturn="True"
+                            Background="#F8F9FA"
+                            FontFamily="Consolas, Monaco, monospace"
+                            FontSize="11"
+                            IsReadOnly="True"
+                            ScrollViewer.HorizontalScrollBarVisibility="Auto"
+                            ScrollViewer.VerticalScrollBarVisibility="Auto"
+                            Text="{Binding HexView}" />
+                    </Border>
+                </TabItem>
+
+                <!--  INSTRUCTION VIEW TAB  -->
+                <TabItem Header="⚙️ Istruzioni">
+                    <Border Padding="8">
+                        <TextBox
+                            Name="InstructionTextBox"
+                            AcceptsReturn="True"
+                            Background="#F0F8FF"
+                            FontFamily="Consolas, Monaco, monospace"
+                            FontSize="12"
+                            IsReadOnly="True"
+                            ScrollViewer.HorizontalScrollBarVisibility="Auto"
+                            ScrollViewer.VerticalScrollBarVisibility="Auto"
+                            Text="{Binding InstructionView}" />
+                    </Border>
+                </TabItem>
+
+                <!--  DECODED DATA TAB  -->
+                <TabItem Header="📊 Informazioni">
+                    <Border Padding="8">
+                        <ScrollViewer>
+                            <TextBox
+                                Name="DecodedDataTextBox"
+                                AcceptsReturn="True"
+                                Background="#F5F5F5"
+                                FontFamily="Consolas, Monaco, monospace"
+                                FontSize="12"
+                                IsReadOnly="True"
+                                Text="{Binding DecodedData}"
+                                TextWrapping="Wrap" />
+                        </ScrollViewer>
+                    </Border>
+                </TabItem>
+
+            </TabControl>
+
+        </Grid>
+
+    </DockPanel>
+
 </Window>
