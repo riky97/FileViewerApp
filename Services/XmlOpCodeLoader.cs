@@ -9,15 +9,16 @@ using FileViewerApp.Models;
 namespace FileViewerApp.Services
 {
     /// <summary>
-    /// Loader per file XML OpCodes (formato futuro)
+    /// Loader per file XML OpCodes (INFO.XML)
     /// </summary>
     public class XmlOpCodeLoader : IOpCodeLoader
     {
-        public string LoaderName => "XML File Loader";
+        public string LoaderName => "XML OpCode Loader";
 
         public bool CanHandle(string filePath)
         {
-            return Path.GetExtension(filePath).ToLower() == ".xml";
+            return Path.GetExtension(filePath).ToLower() == ".xml" ||
+                   Path.GetFileName(filePath).ToUpper().Contains("INFO");
         }
 
         public async Task<Dictionary<int, OpCodeInfo>> LoadAsync(string filePath)
@@ -29,48 +30,42 @@ namespace FileViewerApp.Services
                 var content = await File.ReadAllTextAsync(filePath);
                 var doc = XDocument.Parse(content);
 
-                // Esempio di struttura XML prevista:
-                // <OpCodes>
-                //   <OpCode id="105" name="IF_NUM" paramCount="3" category="Control Flow">
-                //     <Description>Conditional statement with numeric comparison</Description>
-                //     <Parameters>
-                //       <Parameter name="value" type="int"/>
-                //       <Parameter name="comparison" type="int"/>
-                //       <Parameter name="target" type="int"/>
-                //     </Parameters>
-                //   </OpCode>
-                // </OpCodes>
-
-                foreach (var opElement in doc.Descendants("OpCode"))
+                foreach (var cmdElement in doc.Descendants("CMD"))
                 {
-                    var idAttr = opElement.Attribute("id");
-                    var nameAttr = opElement.Attribute("name");
+                    var nameAttr = cmdElement.Attribute("Name");
+                    var idAttr = cmdElement.Attribute("ID");
+                    var indentModeAttr = cmdElement.Attribute("IndentMode");
+                    var activeAttr = cmdElement.Attribute("Active");
+                    var versAttr = cmdElement.Attribute("Vers");
+                    var descrAttr = cmdElement.Attribute("Descr");
+                    var imgNameAttr = cmdElement.Attribute("ImgName");
 
-                    if (idAttr != null && nameAttr != null &&
-                        int.TryParse(idAttr.Value, out int opCode))
+                    if (nameAttr != null && idAttr != null &&
+                        int.TryParse(idAttr.Value, out int opCodeId))
                     {
-                        var paramCountAttr = opElement.Attribute("paramCount");
-                        var categoryAttr = opElement.Attribute("category");
-                        var descriptionElement = opElement.Element("Description");
+                        // Parse IndentMode
+                        var indentMode = ParseIndentMode(indentModeAttr?.Value ?? "NONE");
 
-                        var paramTypes = new List<string>();
-                        var parametersElement = opElement.Element("Parameters");
-                        if (parametersElement != null)
+                        // Parse parameters
+                        var parameters = new List<ParameterInfo>();
+                        foreach (var parElement in cmdElement.Elements("PAR"))
                         {
-                            foreach (var paramElement in parametersElement.Elements("Parameter"))
-                            {
-                                var typeAttr = paramElement.Attribute("type");
-                                paramTypes.Add(typeAttr?.Value ?? "unknown");
-                            }
+                            var param = ParseParameter(parElement);
+                            parameters.Add(param);
                         }
 
-                        opCodes[opCode] = new OpCodeInfo
+                        opCodes[opCodeId] = new OpCodeInfo
                         {
                             Name = nameAttr.Value,
-                            ParamCount = paramCountAttr != null && int.TryParse(paramCountAttr.Value, out int pc) ? pc : 0,
-                            Category = categoryAttr?.Value ?? "General",
-                            Description = descriptionElement?.Value ?? "",
-                            ParamTypes = paramTypes
+                            Id = opCodeId,
+                            ParamCount = parameters.Count,
+                            IndentMode = indentMode,
+                            Category = DetermineCategory(nameAttr.Value),
+                            Description = descrAttr?.Value ?? "",
+                            Version = int.TryParse(versAttr?.Value, out int v) ? v : 1,
+                            Active = bool.TryParse(activeAttr?.Value, out bool a) ? a : true,
+                            ImageName = imgNameAttr?.Value ?? "",
+                            Parameters = parameters
                         };
                     }
                 }
@@ -82,6 +77,63 @@ namespace FileViewerApp.Services
             }
 
             return opCodes;
+        }
+
+        private IndentMode ParseIndentMode(string indentModeStr)
+        {
+            return indentModeStr.ToUpper() switch
+            {
+                "ADD_INDENT" => IndentMode.AddIndent,
+                "REMOVE_INDENT" => IndentMode.RemoveIndent,
+                "REMOVE_AND_ADD_INDENT" => IndentMode.RemoveAndAddIndent,
+                _ => IndentMode.None
+            };
+        }
+
+        private ParameterInfo ParseParameter(XElement parElement)
+        {
+            var nameAttr = parElement.Attribute("Name");
+            var typeAttr = parElement.Attribute("Type");
+            var descrAttr = parElement.Attribute("Descr");
+            var valueAttr = parElement.Attribute("Value");
+            var minAttr = parElement.Attribute("Min");
+            var maxAttr = parElement.Attribute("Max");
+
+            var resourceGroups = new List<string>();
+            foreach (var resGroupElement in parElement.Elements("RESGROUP"))
+            {
+                var resNameAttr = resGroupElement.Attribute("Name");
+                if (resNameAttr != null)
+                {
+                    resourceGroups.Add(resNameAttr.Value);
+                }
+            }
+
+            return new ParameterInfo
+            {
+                Name = nameAttr?.Value ?? "",
+                Type = typeAttr?.Value ?? "INT",
+                Description = descrAttr?.Value ?? "",
+                DefaultValue = double.TryParse(valueAttr?.Value, out double def) ? def : 0,
+                MinValue = double.TryParse(minAttr?.Value, out double min) ? min : 0,
+                MaxValue = double.TryParse(maxAttr?.Value, out double max) ? max : 0,
+                ResourceGroups = resourceGroups
+            };
+        }
+
+        private string DetermineCategory(string name)
+        {
+            return name.ToUpper() switch
+            {
+                var n when n.Contains("IF") || n.Contains("ELSE") || n.Contains("END") || n.Contains("CALL") || n.Contains("LABEL") => "Control Flow",
+                var n when n.Contains("MEM") || n.Contains("AZZERA") || n.Contains("COPIA") => "Memory",
+                var n when n.Contains("MUOVI") || n.Contains("VELOCITA") || n.Contains("ACCEL") => "Movement",
+                var n when n.Contains("ASPETTA") || n.Contains("PAUSA") => "Timing",
+                var n when n.Contains("FORZA") || n.Contains("AZIONA") || n.Contains("PRESA") || n.Contains("IMPULSO") => "IO",
+                var n when n.Contains("ERRORE") => "Error Handling",
+                var n when n.Contains("PROCESSO") || n.Contains("JOB") || n.Contains("ATM") || n.Contains("MAGAZZINO") => "System",
+                _ => "General"
+            };
         }
     }
 }

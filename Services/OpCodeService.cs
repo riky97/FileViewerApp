@@ -86,7 +86,7 @@ namespace FileViewerApp.Services
 
             var configFiles = new[]
             {
-                "opcodes.xml",      // Priorità 1: XML futuro
+                "INFO.XML",      // Priorità 1: XML futuro
                 "INFO.CFG",         // Priorità 2: CFG attuale
                 "opcodes.cfg"       // Priorità 3: CFG alternativo
             };

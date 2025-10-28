@@ -317,7 +317,7 @@ namespace FileViewerApp.ViewModels
 
                 decodedBuilder.AppendLine("ISTRUZIONI DECODIFICATE (Vista tecnica):");
                 decodedBuilder.AppendLine("-" + new string('-', 80));
-                decodedBuilder.AppendLine("Num | Offset | OpCode/Nome         | Parametri");
+                decodedBuilder.AppendLine("Num | Offset | OpCode/Nome         | Parametri | IndentMode");
                 decodedBuilder.AppendLine("-" + new string('-', 80));
 
                 // Genera vista istruzioni semplificata
@@ -333,7 +333,7 @@ namespace FileViewerApp.ViewModels
                 {
                     Name = $"PROGRAMMA: {headerText.Trim()}",
                     Details = $"File binario - {_currentFileBytes.Length} bytes",
-                    IsExpanded = true // Espanso di default
+                    IsExpanded = true
                 };
                 InstructionTree.Add(rootNode);
                 nodeStack.Push(rootNode);
@@ -361,6 +361,7 @@ namespace FileViewerApp.ViewModels
                     var opCodeInfo = _opCodeService.GetOpCodeInfo(opCode);
                     string opName = opCodeInfo?.Name ?? $"UNKNOWN_{opCode}";
                     int expectedParams = opCodeInfo?.ParamCount ?? 8;
+                    var indentMode = opCodeInfo?.IndentMode ?? IndentMode.None;
 
                     // Leggi i parametri
                     var parameters = new List<int>();
@@ -375,31 +376,27 @@ namespace FileViewerApp.ViewModels
                     string paramString = significantParams.Length > 0 ?
                         string.Join(", ", significantParams) : "(nessun parametro)";
 
-                    // Vista tecnica
-                    decodedBuilder.Append($"{instructionNumber,3:D} | 0x{offset:X6} | ");
-                    decodedBuilder.Append($"{opCode,3} {opName,-15} ");
-                    decodedBuilder.AppendLine($"| {paramString}");
-
-                    // *** GESTIONE GERARCHIA TREEVIEW ***
-                    // Gestisci la chiusura di blocchi per la TreeView
-                    if (opName == "END IF" || opName == "ENDCALL")
+                    // *** GESTIONE INDENTAZIONE BASATA SU XML ***
+                    // Gestisci la chiusura di blocchi PRIMA di processare il comando corrente
+                    if (indentMode == IndentMode.RemoveIndent || indentMode == IndentMode.RemoveAndAddIndent)
                     {
-                        // Pop dal stack per tornare al livello precedente
                         if (nodeStack.Count > 1) // Non rimuovere il root
                         {
                             nodeStack.Pop();
                         }
                         indentLevel = Math.Max(0, indentLevel - 1);
                     }
-                    else if (opName == "ELSE")
-                    {
-                        // ELSE: chiude IF e apre nuovo blocco allo stesso livello
-                        if (nodeStack.Count > 1 && indentLevel > 0)
-                        {
-                            nodeStack.Pop(); // Chiudi il blocco IF
-                            indentLevel = Math.Max(0, indentLevel - 1);
-                        }
-                    }
+
+                    // Calcola indentazione per la vista testo
+                    string indent = new string(' ', indentLevel * 4); // 4 spazi per livello
+
+                    // Vista tecnica con IndentMode
+                    decodedBuilder.Append($"{instructionNumber,3:D} | 0x{offset:X6} | ");
+                    decodedBuilder.Append($"{opCode,3} {opName,-15} ");
+                    decodedBuilder.AppendLine($"| {paramString,-20} | {indentMode}");
+
+                    // Vista istruzioni con indentazione
+                    instructionBuilder.AppendLine($"{indent}{opName}");
 
                     // Crea il nodo per questa istruzione
                     var currentNode = new InstructionNode
@@ -409,36 +406,18 @@ namespace FileViewerApp.ViewModels
                         Offset = offset,
                         OpCode = opCode,
                         Parameters = paramString,
-                        Details = $"Offset: 0x{offset:X6} | OpCode: {opCode} | {opCodeInfo?.Category ?? "Unknown"}",
-                        IsExpanded = true // Espanso di default
+                        Details = $"Offset: 0x{offset:X6} | OpCode: {opCode} | IndentMode: {indentMode} | {opCodeInfo?.Category ?? "Unknown"}",
+                        IsExpanded = true
                     };
 
                     // Aggiungi al nodo parent corrente
                     var parentNode = nodeStack.Peek();
                     parentNode.Children.Add(currentNode);
 
-                    // Calcola indentazione per la vista testo
-                    string indent;
-                    switch (indentLevel)
-                    {
-                        case 0: indent = ""; break;
-                        case 1: indent = "     "; break;
-                        case 2: indent = "        "; break;
-                        default: indent = new string(' ', 5 + (indentLevel - 1) * 3); break;
-                    }
-
-                    instructionBuilder.AppendLine($"{indent}{opName}");
-
-                    // Gestisci l'apertura di nuovi blocchi
-                    if (opName == "IF" || opName == "IF_MEM" || opName == "IF_NUM" ||
-                        opName == "CALL" || opName == "LABEL")
+                    // Gestisci l'apertura di nuovi blocchi DOPO aver processato il comando
+                    if (indentMode == IndentMode.AddIndent || indentMode == IndentMode.RemoveAndAddIndent)
                     {
                         nodeStack.Push(currentNode); // Questo diventa il nuovo parent
-                        indentLevel++;
-                    }
-                    else if (opName == "ELSE")
-                    {
-                        nodeStack.Push(currentNode); // ELSE apre un nuovo blocco
                         indentLevel++;
                     }
 
