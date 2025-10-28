@@ -10,6 +10,7 @@ using System.Collections.Generic;
 using System.Linq;
 using CommunityToolkit.Mvvm.Input;
 using FileViewerApp.Models;
+using FileViewerApp.Services;
 using System.Collections.ObjectModel;
 
 namespace FileViewerApp.ViewModels
@@ -30,7 +31,12 @@ namespace FileViewerApp.ViewModels
         private int _recordCount = 100;
         private byte[]? _currentFileBytes;
 
-        private Dictionary<int, OpCodeInfo> _opCodeInfos = new Dictionary<int, OpCodeInfo>();
+        // Servizio per gestire gli OpCodes
+        private readonly OpCodeService _opCodeService = new();
+
+        // TreeView properties
+        private ObservableCollection<InstructionNode> _instructionTree = new();
+        private InstructionNode? _selectedNode;
 
         public MainWindowViewModel()
         {
@@ -111,9 +117,7 @@ namespace FileViewerApp.ViewModels
             set => this.RaiseAndSetIfChanged(ref _recordCount, value);
         }
 
-        private ObservableCollection<InstructionNode> _instructionTree = new();
-        private InstructionNode? _selectedNode;
-
+        // TreeView Properties
         public ObservableCollection<InstructionNode> InstructionTree
         {
             get => _instructionTree;
@@ -265,7 +269,7 @@ namespace FileViewerApp.ViewModels
                     }
                 }
 
-                // ASCII rappresentation
+                // ASCII representation
                 hexBuilder.Append(" |");
                 for (int j = 0; j < 16 && i + j < bytes.Length; j++)
                 {
@@ -290,11 +294,8 @@ namespace FileViewerApp.ViewModels
 
             try
             {
-                // Carica le definizioni degli OpCode se non già fatto
-                if (_opCodeInfos.Count == 0)
-                {
-                    await LoadOpCodeDefinitions();
-                }
+                // Carica le definizioni degli OpCode usando il servizio
+                var opCodeInfos = await _opCodeService.LoadOpCodeDefinitionsAsync();
 
                 // Clear existing tree
                 InstructionTree.Clear();
@@ -331,7 +332,8 @@ namespace FileViewerApp.ViewModels
                 var rootNode = new InstructionNode
                 {
                     Name = $"PROGRAMMA: {headerText.Trim()}",
-                    Details = $"File binario - {_currentFileBytes.Length} bytes"
+                    Details = $"File binario - {_currentFileBytes.Length} bytes",
+                    IsExpanded = true // Espanso di default
                 };
                 InstructionTree.Add(rootNode);
                 nodeStack.Push(rootNode);
@@ -355,9 +357,10 @@ namespace FileViewerApp.ViewModels
                         continue;
                     }
 
-                    // Trova informazioni sull'OpCode
-                    string opName = _opCodeInfos.ContainsKey(opCode) ? _opCodeInfos[opCode].Name : $"UNKNOWN_{opCode}";
-                    int expectedParams = _opCodeInfos.ContainsKey(opCode) ? _opCodeInfos[opCode].ParamCount : 8;
+                    // Trova informazioni sull'OpCode usando il servizio
+                    var opCodeInfo = _opCodeService.GetOpCodeInfo(opCode);
+                    string opName = opCodeInfo?.Name ?? $"UNKNOWN_{opCode}";
+                    int expectedParams = opCodeInfo?.ParamCount ?? 8;
 
                     // Leggi i parametri
                     var parameters = new List<int>();
@@ -406,7 +409,8 @@ namespace FileViewerApp.ViewModels
                         Offset = offset,
                         OpCode = opCode,
                         Parameters = paramString,
-                        Details = $"Offset: 0x{offset:X6} | OpCode: {opCode}"
+                        Details = $"Offset: 0x{offset:X6} | OpCode: {opCode} | {opCodeInfo?.Category ?? "Unknown"}",
+                        IsExpanded = true // Espanso di default
                     };
 
                     // Aggiungi al nodo parent corrente
@@ -450,7 +454,8 @@ namespace FileViewerApp.ViewModels
                     var emptyNode = new InstructionNode
                     {
                         Name = "Nessuna istruzione trovata",
-                        Details = $"Offset: 0x{StartOffset:X}"
+                        Details = $"Offset: 0x{StartOffset:X}",
+                        IsExpanded = true
                     };
                     rootNode.Children.Add(emptyNode);
                 }
@@ -466,8 +471,8 @@ namespace FileViewerApp.ViewModels
                 DecodedData = decodedBuilder.ToString();
                 InstructionView = instructionBuilder.ToString();
 
-                // Espandi il root node
-                rootNode.IsExpanded = true;
+                // Espandi tutti i nodi della TreeView
+                ExpandAllNodes(InstructionTree);
             }
             catch (Exception ex)
             {
@@ -480,131 +485,20 @@ namespace FileViewerApp.ViewModels
 
             await Task.CompletedTask;
         }
-        private async Task LoadOpCodeDefinitions()
+
+        /// <summary>
+        /// Espande ricorsivamente tutti i nodi della TreeView
+        /// </summary>
+        private void ExpandAllNodes(ObservableCollection<InstructionNode> nodes)
         {
-            try
+            foreach (var node in nodes)
             {
-                // Cerca il file INFO.CFG nelle cartelle standard
-                var infoCfgPaths = new[]
+                node.IsExpanded = true;
+                if (node.Children.Count > 0)
                 {
-                    Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Data", "INFO.CFG"),
-                    Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Resources", "INFO.CFG"),
-                    Path.Combine(Directory.GetCurrentDirectory(), "Data", "INFO.CFG"),
-                    Path.Combine(Directory.GetCurrentDirectory(), "Resources", "INFO.CFG"),
-                    Path.Combine(Directory.GetCurrentDirectory(), "INFO.CFG"),
-                };
-
-                string? infoCfgPath = null;
-                foreach (var path in infoCfgPaths)
-                {
-                    if (File.Exists(path))
-                    {
-                        infoCfgPath = path;
-                        Console.WriteLine($"Trovato INFO.CFG in: {path}");
-                        break;
-                    }
-                }
-
-                if (infoCfgPath != null)
-                {
-                    var lines = await File.ReadAllLinesAsync(infoCfgPath);
-
-                    foreach (var line in lines)
-                    {
-                        if (line.StartsWith(",") && line.Contains(","))
-                        {
-                            var parts = line.Split(',');
-                            if (parts.Length >= 3)
-                            {
-                                var name = parts[1].Trim();
-                                if (int.TryParse(parts[2].Trim(), out int opCode))
-                                {
-                                    var paramCount = parts.Length >= 4 && int.TryParse(parts[3].Trim(), out int pc) ? pc : 0;
-
-                                    _opCodeInfos[opCode] = new OpCodeInfo
-                                    {
-                                        Name = name,
-                                        ParamCount = paramCount
-                                    };
-                                }
-                            }
-                        }
-                    }
-
-                    Console.WriteLine($"Caricati {_opCodeInfos.Count} OpCodes da {infoCfgPath}");
-                }
-                else
-                {
-                    Console.WriteLine("INFO.CFG non trovato, usando definizioni di fallback");
-                    LoadFallbackOpCodes();
+                    ExpandAllNodes(node.Children);
                 }
             }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Errore caricamento INFO.CFG: {ex.Message}");
-                LoadFallbackOpCodes();
-            }
-
-            await Task.CompletedTask;
         }
-
-        private void LoadFallbackOpCodes()
-        {
-            _opCodeInfos = new Dictionary<int, OpCodeInfo>
-            {
-                [0] = new OpCodeInfo { Name = "FINE", ParamCount = 0 },
-                [1] = new OpCodeInfo { Name = "NULLA", ParamCount = 0 },
-                [3] = new OpCodeInfo { Name = "AMUOVI", ParamCount = 3 },
-                [4] = new OpCodeInfo { Name = "RMUOVI", ParamCount = 3 },
-                [5] = new OpCodeInfo { Name = "INIZ MEM", ParamCount = 2 },
-                [7] = new OpCodeInfo { Name = "LOGICA", ParamCount = 8 },
-                [9] = new OpCodeInfo { Name = "AMUOVI MEM", ParamCount = 3 },
-                [10] = new OpCodeInfo { Name = "VELOCITA", ParamCount = 2 },
-                [12] = new OpCodeInfo { Name = "AZZERA", ParamCount = 1 },
-                [13] = new OpCodeInfo { Name = "IF", ParamCount = 1 },
-                [14] = new OpCodeInfo { Name = "ELSE", ParamCount = 0 },
-                [15] = new OpCodeInfo { Name = "END IF", ParamCount = 0 },
-                [16] = new OpCodeInfo { Name = "FORZA", ParamCount = 2 },
-                [17] = new OpCodeInfo { Name = "ASPETTA", ParamCount = 4 },
-                [19] = new OpCodeInfo { Name = "PIU", ParamCount = 0 },
-                [20] = new OpCodeInfo { Name = "PAUSA", ParamCount = 1 },
-                [21] = new OpCodeInfo { Name = "ACCEL", ParamCount = 2 },
-                [36] = new OpCodeInfo { Name = "AZIONA", ParamCount = 6 },
-                [37] = new OpCodeInfo { Name = "LABEL", ParamCount = 1 },
-                [38] = new OpCodeInfo { Name = "CALL", ParamCount = 3 },
-                [39] = new OpCodeInfo { Name = "ENDCALL", ParamCount = 0 },
-                [40] = new OpCodeInfo { Name = "STOP", ParamCount = 0 },
-                [49] = new OpCodeInfo { Name = "IMPULSO", ParamCount = 2 },
-                [54] = new OpCodeInfo { Name = "SET PRESA", ParamCount = 8 },
-                [57] = new OpCodeInfo { Name = "RIL. PEZZO", ParamCount = 0 },
-                [92] = new OpCodeInfo { Name = "WR_EVENT", ParamCount = 8 },
-                [94] = new OpCodeInfo { Name = "G_MISSIONE", ParamCount = 0 },
-                [95] = new OpCodeInfo { Name = "JOB", ParamCount = 1 },
-                [96] = new OpCodeInfo { Name = "ERRORE", ParamCount = 1 },
-                [97] = new OpCodeInfo { Name = "PROCESSO", ParamCount = 2 },
-                [104] = new OpCodeInfo { Name = "IF_MEM", ParamCount = 4 },
-                [105] = new OpCodeInfo { Name = "IF_NUM", ParamCount = 3 },
-                [106] = new OpCodeInfo { Name = "SET TERNA", ParamCount = 0 },
-                [107] = new OpCodeInfo { Name = "OK PRESA", ParamCount = 0 },
-                [113] = new OpCodeInfo { Name = "CLIENT", ParamCount = 1 },
-                [114] = new OpCodeInfo { Name = "ATM", ParamCount = 0 },
-                [115] = new OpCodeInfo { Name = "MAGAZZINO", ParamCount = 0 },
-                [116] = new OpCodeInfo { Name = "VERIF NCP", ParamCount = 0 },
-                [117] = new OpCodeInfo { Name = "COPIA ZONA", ParamCount = 2 },
-                [119] = new OpCodeInfo { Name = "GET EDGE", ParamCount = 7 },
-                [120] = new OpCodeInfo { Name = "CHECKRUN ASPS", ParamCount = 0 },
-                [121] = new OpCodeInfo { Name = "RESET MAGAZ", ParamCount = 0 },
-                [122] = new OpCodeInfo { Name = "CASS ASPS", ParamCount = 0 }
-            };
-        }
-    }
-
-
-    // Classe helper per le informazioni degli OpCode
-    public class OpCodeInfo
-    {
-        public string Name { get; set; } = "";
-        public int ParamCount { get; set; }
-        public List<string> ParamTypes { get; set; } = new List<string>();
     }
 }
