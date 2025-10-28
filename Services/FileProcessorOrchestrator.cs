@@ -29,6 +29,14 @@ namespace FileViewerApp.Services
             _detectionService = new FileTypeDetectionService();
         }
 
+        /// <summary>
+        /// Espone il servizio OpCode per uso esterno
+        /// </summary>
+        public OpCodeService GetOpCodeService()
+        {
+            return _opCodeService;
+        }
+
         #region FILE PROCESSING
 
         /// <summary>
@@ -122,13 +130,15 @@ namespace FileViewerApp.Services
             file.Messages.Add($"File binario processato: {file.Instructions.Count} istruzioni");
         }
 
+        // Modifica il metodo ProcessTextFile
+
         private async Task ProcessTextFile(ProcessedFile file)
         {
             var textContent = Encoding.UTF8.GetString(file.RawContent);
 
             // Extract header from text
             var lines = textContent.Split('\n');
-            var headerLine = lines.FirstOrDefault(l => l.Contains(";"));
+            var headerLine = lines.FirstOrDefault(l => l.Contains(";") && !l.Trim().StartsWith("//"));
             if (headerLine != null)
             {
                 var parts = headerLine.Split(';');
@@ -137,19 +147,33 @@ namespace FileViewerApp.Services
                     file.Header = parts[1].Trim();
                 }
             }
+            else
+            {
+                // Se non c'è header nel file, usa il nome del file
+                file.Header = Path.GetFileNameWithoutExtension(file.FileName);
+            }
 
-            // Extract instructions
-            file.Instructions = _conversionService.ExtractInstructionsFromBinary(
-                await _conversionService.ConvertTextToBinaryAsync(textContent, file.Header), out _);
-
-            // Generate binary equivalent for hex view
+            // PASSO CRUCIALE: Converti TXT in binario per ottenere le istruzioni
             var binaryData = await _conversionService.ConvertTextToBinaryAsync(textContent, file.Header);
 
+            // Extract instructions dal binario generato (non dal testo)
+            file.Instructions = _conversionService.ExtractInstructionsFromBinary(binaryData, out _);
+
+            // IMPORTANTE: La Hex View deve mostrare il file BINARIO equivalente
             file.HexView = GenerateHexView(binaryData);
+
+            // La vista testuale mostra il testo formattato con indentazione
             file.TextualView = GenerateInstructionTextView(file.Instructions, file.Header);
+
+            // TreeView gerarchico
             file.InstructionTree = GenerateInstructionTree(file.Instructions, file.Header);
 
             file.Messages.Add($"File testo processato: {file.Instructions.Count} istruzioni");
+            file.Messages.Add($"Generato file binario equivalente: {binaryData.Length} bytes");
+
+            // Aggiungi info sulla conversione
+            file.Messages.Add($"Header estratto: '{file.Header}'");
+            file.Messages.Add($"Offset istruzioni: 0x32 (50 decimale)");
         }
 
         private async Task ProcessOpCodeDefinitionFile(ProcessedFile file)

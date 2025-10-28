@@ -464,6 +464,9 @@ namespace FileViewerApp.ViewModels
 
         #region Helper Methods
 
+
+        // Nel metodo UpdateUIFromProcessedFile, aggiungi info di debug:
+
         private async Task UpdateUIFromProcessedFile(ProcessedFile processedFile)
         {
             try
@@ -477,18 +480,28 @@ namespace FileViewerApp.ViewModels
                 HexView = processedFile.HexView;
                 InstructionView = processedFile.TextualView;
 
-                // Try to show raw content as text for editor
-                try
+                // Per file TXT, mostra il contenuto testuale originale nell'Editor
+                if (processedFile.FileType == FileType.TextProgram)
                 {
                     EditorText = System.Text.Encoding.UTF8.GetString(processedFile.RawContent);
                     LineCount = EditorText.Split('\n').Length;
                     CharCount = EditorText.Length;
                 }
-                catch
+                else
                 {
-                    EditorText = $"File binario - vedere la vista Hex\n\nTipo: {processedFile.FileType}\nDimensione: {FormatFileSize(processedFile.FileSize)}";
-                    LineCount = 0;
-                    CharCount = 0;
+                    // Per file binari, mostra info del file
+                    try
+                    {
+                        EditorText = System.Text.Encoding.UTF8.GetString(processedFile.RawContent);
+                        LineCount = EditorText.Split('\n').Length;
+                        CharCount = EditorText.Length;
+                    }
+                    catch
+                    {
+                        EditorText = $"File binario - vedere la vista Hex\n\nTipo: {processedFile.FileType}\nDimensione: {FormatFileSize(processedFile.FileSize)}";
+                        LineCount = 0;
+                        CharCount = 0;
+                    }
                 }
 
                 // Instruction tree
@@ -501,25 +514,36 @@ namespace FileViewerApp.ViewModels
                 // Expand tree
                 ExpandAllNodes(InstructionTree);
 
-                // Messages and decoded data
+                // Messages dettagliati
                 var messages = string.Join("\n", processedFile.Messages);
                 DecodedData = $"=== INFORMAZIONI FILE ===\n";
                 DecodedData += $"Nome: {processedFile.FileName}\n";
                 DecodedData += $"Tipo: {processedFile.FileType}\n";
-                DecodedData += $"Dimensione: {FormatFileSize(processedFile.FileSize)}\n";
+                DecodedData += $"Dimensione originale: {FormatFileSize(processedFile.FileSize)}\n";
                 DecodedData += $"Header: {processedFile.Header}\n";
-                DecodedData += $"Istruzioni: {processedFile.Instructions.Count}\n\n";
-                DecodedData += $"=== MESSAGGI PROCESSING ===\n{messages}\n\n";
+                DecodedData += $"Istruzioni trovate: {processedFile.Instructions.Count}\n";
+
+                // Per file TXT, mostra info sulla conversione binaria
+                if (processedFile.FileType == FileType.TextProgram && !string.IsNullOrEmpty(processedFile.HexView))
+                {
+                    // Calcola dimensione del binario generato dalle righe hex
+                    var hexLines = processedFile.HexView.Split('\n').Where(l => l.Contains("  ")).Count();
+                    var estimatedBinarySize = hexLines * 16;
+                    DecodedData += $"File binario generato: ~{estimatedBinarySize} bytes\n";
+                }
+
+                DecodedData += "\n=== MESSAGGI PROCESSING ===\n" + messages + "\n\n";
 
                 if (processedFile.Instructions.Count > 0)
                 {
-                    DecodedData += $"=== LISTA ISTRUZIONI ===\n";
-                    DecodedData += "Num | OpCode | Nome             | Parametri\n";
-                    DecodedData += new string('-', 60) + "\n";
+                    DecodedData += $"=== PRIMA 20 ISTRUZIONI ===\n";
+                    DecodedData += "Num | OpCode | Nome             | Parametri principali\n";
+                    DecodedData += new string('-', 65) + "\n";
 
-                    foreach (var instruction in processedFile.Instructions.Take(20)) // Prime 20
+                    foreach (var instruction in processedFile.Instructions.Take(20))
                     {
-                        var paramCount = 3; // Default per visualizzazione
+                        var opCodeInfo = _orchestrator.GetOpCodeService().GetOpCodeInfo(instruction.OpCode);
+                        var paramCount = opCodeInfo?.ParamCount ?? 3;
                         var significantParams = instruction.Parameters.Take(paramCount).ToArray();
                         var paramString = significantParams.Length > 0
                             ? string.Join(", ", significantParams)
@@ -533,16 +557,23 @@ namespace FileViewerApp.ViewModels
                         DecodedData += $"... e altre {processedFile.Instructions.Count - 20} istruzioni\n";
                     }
                 }
+                else
+                {
+                    DecodedData += "=== NESSUNA ISTRUZIONE TROVATA ===\n";
+                    DecodedData += "Possibili cause:\n";
+                    DecodedData += "- Formato file non riconosciuto\n";
+                    DecodedData += "- OpCodes non presenti nel dizionario\n";
+                    DecodedData += "- Errore di parsing\n";
+                }
 
                 await Task.CompletedTask;
             }
             catch (Exception ex)
             {
                 Console.WriteLine($"Errore aggiornamento UI: {ex.Message}");
-                throw;
+                DecodedData = $"ERRORE AGGIORNAMENTO UI: {ex.Message}\n\n{ex.StackTrace}";
             }
         }
-
         private void ExpandAllNodes(ObservableCollection<InstructionNode> nodes)
         {
             foreach (var node in nodes)
