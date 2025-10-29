@@ -2,8 +2,10 @@
     x:Class="FileViewerApp.Views.MainWindow"
     xmlns="https://github.com/avaloniaui"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:controls="using:FileViewerApp.Views.Controls"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:model="using:AvaloniaControls.Models"
     xmlns:vm="using:FileViewerApp.ViewModels"
     Title="FileViewer Pro - Visualizzatore e Convertitore File Programma"
     MinWidth="900"
@@ -12,10 +14,9 @@
     d:DesignWidth="1200"
     x:DataType="vm:MainWindowViewModel"
     mc:Ignorable="d">
-    <!--  Icon="/Assets/avalonia-logo.ico"  -->
 
     <Window.Styles>
-        <!--  Modern Styles  -->
+        <!--  Modern Styles (mantieni gli stili esistenti)  -->
         <Style Selector="Button">
             <Setter Property="Padding" Value="12,8" />
             <Setter Property="Margin" Value="4" />
@@ -47,7 +48,6 @@
             <Setter Property="Padding" Value="8" />
         </Style>
 
-        <!--  TreeView Styling  -->
         <Style Selector="TreeViewItem">
             <Setter Property="Padding" Value="4" />
         </Style>
@@ -60,177 +60,10 @@
     <DockPanel>
 
         <!--  📁 TOOLBAR SUPERIORE  -->
-        <Border
-            Padding="8"
-            Background="#FFFFFF"
-            BorderBrush="#E0E0E0"
-            BorderThickness="0,0,0,1"
-            DockPanel.Dock="Top">
-            <StackPanel Orientation="Horizontal">
-
-                <!--  File Operations  -->
-                <Button
-                    Name="OpenButton"
-                    Command="{Binding OpenFileCommand}"
-                    IsEnabled="{Binding !IsProcessing}"
-                    ToolTip.Tip="Apri file (Ctrl+O)">
-                    <StackPanel Orientation="Horizontal">
-                        <TextBlock
-                            Margin="0,0,8,0"
-                            FontSize="16"
-                            Text="📁" />
-                        <TextBlock Text="Apri File" />
-                    </StackPanel>
-                </Button>
-
-                <Button
-                    Name="SaveButton"
-                    Command="{Binding SaveFileCommand}"
-                    IsEnabled="{Binding !IsProcessing}"
-                    ToolTip.Tip="Salva file (Ctrl+S)">
-                    <StackPanel Orientation="Horizontal">
-                        <TextBlock
-                            Margin="0,0,8,0"
-                            FontSize="16"
-                            Text="💾" />
-                        <TextBlock Text="Salva" />
-                    </StackPanel>
-                </Button>
-
-                <Separator
-                    Width="1"
-                    Height="24"
-                    Margin="8,4"
-                    Background="#E0E0E0" />
-
-                <!--  Convert Operations  -->
-                <Button
-                    Name="ConvertButton"
-                    Background="#4CAF50"
-                    Command="{Binding ConvertFileCommand}"
-                    IsEnabled="{Binding !IsProcessing}"
-                    ToolTip.Tip="Converti formato file">
-                    <StackPanel Orientation="Horizontal">
-                        <TextBlock
-                            Margin="0,0,8,0"
-                            FontSize="16"
-                            Text="🔄" />
-                        <TextBlock Text="Converti" />
-                    </StackPanel>
-                </Button>
-
-                <Button
-                    Name="RefreshButton"
-                    Background="#FF9800"
-                    Command="{Binding RefreshCommand}"
-                    IsEnabled="{Binding !IsProcessing}"
-                    ToolTip.Tip="Aggiorna file (F5)">
-                    <StackPanel Orientation="Horizontal">
-                        <TextBlock
-                            Margin="0,0,8,0"
-                            FontSize="16"
-                            Text="🔄" />
-                        <TextBlock Text="Aggiorna" />
-                    </StackPanel>
-                </Button>
-
-                <Separator
-                    Width="1"
-                    Height="24"
-                    Margin="8,4"
-                    Background="#E0E0E0" />
-
-                <!--  Close  -->
-                <Button
-                    Name="CloseButton"
-                    Background="#F44336"
-                    Command="{Binding CloseFileCommand}"
-                    ToolTip.Tip="Chiudi file">
-                    <StackPanel Orientation="Horizontal">
-                        <TextBlock
-                            Margin="0,0,8,0"
-                            FontSize="16"
-                            Text="❌" />
-                        <TextBlock Text="Chiudi" />
-                    </StackPanel>
-                </Button>
-
-                <!--  Progress Indicator  -->
-                <StackPanel
-                    Margin="20,0,0,0"
-                    IsVisible="{Binding IsProcessing}"
-                    Orientation="Horizontal">
-                    <TextBlock
-                        Margin="0,0,8,0"
-                        FontSize="16"
-                        Text="⏳" />
-                    <TextBlock
-                        FontStyle="Italic"
-                        Foreground="#666666"
-                        Text="Elaborazione in corso..." />
-                </StackPanel>
-
-            </StackPanel>
-        </Border>
+        <controls:ToolbarControl DataContext="{Binding}" DockPanel.Dock="Top" />
 
         <!--  📊 STATUS BAR INFERIORE  -->
-        <Border
-            Padding="8"
-            Background="#F8F9FA"
-            BorderBrush="#E0E0E0"
-            BorderThickness="0,1,0,0"
-            DockPanel.Dock="Bottom">
-            <Grid>
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*" />
-                    <ColumnDefinition Width="Auto" />
-                    <ColumnDefinition Width="Auto" />
-                    <ColumnDefinition Width="Auto" />
-                </Grid.ColumnDefinitions>
-
-                <!--  Status Message  -->
-                <TextBlock
-                    Grid.Column="0"
-                    VerticalAlignment="Center"
-                    FontSize="12"
-                    Text="{Binding StatusText}" />
-
-                <!--  File Info  -->
-                <StackPanel
-                    Grid.Column="1"
-                    Margin="8,0"
-                    Orientation="Horizontal">
-                    <TextBlock Margin="0,0,4,0" Text="📄" />
-                    <TextBlock FontWeight="Medium" Text="{Binding FileName}" />
-                    <TextBlock Foreground="#666666" Text=" | " />
-                    <TextBlock Text="{Binding FileSize}" />
-                    <TextBlock Foreground="#666666" Text=" | " />
-                    <TextBlock Text="{Binding CurrentFileType}" />
-                </StackPanel>
-
-                <!--  Editor Info  -->
-                <StackPanel
-                    Grid.Column="2"
-                    Margin="8,0"
-                    Orientation="Horizontal">
-                    <TextBlock Margin="0,0,4,0" Text="📝" />
-                    <TextBlock Text="{Binding LineCount}" />
-                    <TextBlock Foreground="#666666" Text=" linee | " />
-                    <TextBlock Text="{Binding CharCount}" />
-                    <TextBlock Foreground="#666666" Text=" caratteri" />
-                </StackPanel>
-
-                <!--  Encoding  -->
-                <StackPanel
-                    Grid.Column="3"
-                    Margin="8,0"
-                    Orientation="Horizontal">
-                    <TextBlock Margin="0,0,4,0" Text="🔤" />
-                    <TextBlock Text="{Binding FileEncoding}" />
-                </StackPanel>
-
-            </Grid>
-        </Border>
+        <controls:StatusBarControl DataContext="{Binding}" DockPanel.Dock="Bottom" />
 
         <!--  🏠 MAIN CONTENT AREA  -->
         <Grid>
@@ -241,51 +74,7 @@
             </Grid.ColumnDefinitions>
 
             <!--  🌳 LEFT PANEL: TreeView  -->
-            <Border
-                Grid.Column="0"
-                Background="#FFFFFF"
-                BorderBrush="#E0E0E0"
-                BorderThickness="0,0,1,0">
-
-                <DockPanel>
-                    <!--  TreeView Header  -->
-                    <Border
-                        Padding="12,8"
-                        Background="#F1F3F4"
-                        DockPanel.Dock="Top">
-                        <TextBlock
-                            FontSize="14"
-                            FontWeight="Medium"
-                            Text="🌳 Struttura Istruzioni" />
-                    </Border>
-
-                    <!--  TreeView Content  -->
-                    <ScrollViewer>
-                        <TreeView
-                            Name="InstructionTreeView"
-                            Padding="8"
-                            ItemsSource="{Binding InstructionTree}"
-                            SelectedItem="{Binding SelectedNode}">
-
-                            <TreeView.ItemTemplate>
-                                <TreeDataTemplate ItemsSource="{Binding Children}">
-                                    <StackPanel Orientation="Horizontal">
-                                        <TextBlock
-                                            Margin="0,0,8,0"
-                                            FontWeight="Medium"
-                                            Text="{Binding Name}" />
-                                        <TextBlock
-                                            FontSize="12"
-                                            Foreground="#666666"
-                                            Text="{Binding Parameters}" />
-                                    </StackPanel>
-                                </TreeDataTemplate>
-                            </TreeView.ItemTemplate>
-
-                        </TreeView>
-                    </ScrollViewer>
-                </DockPanel>
-            </Border>
+            <controls:InstructionTreeControl Grid.Column="0" DataContext="{Binding}" />
 
             <!--  SPLITTER  -->
             <GridSplitter
@@ -294,78 +83,9 @@
                 ResizeDirection="Columns" />
 
             <!--  📝 RIGHT PANEL: Content Tabs  -->
-            <TabControl
-                Grid.Column="2"
-                Padding="0"
-                Background="#FFFFFF">
+            <controls:ContentTabsControl Grid.Column="2" DataContext="{Binding}" />
 
-                <!--  EDITOR TAB  -->
-                <TabItem Header="📝 Editor">
-                    <Border Padding="8">
-                        <TextBox
-                            Name="EditorTextBox"
-                            AcceptsReturn="True"
-                            Background="#FAFAFA"
-                            FontFamily="Consolas, Monaco, monospace"
-                            FontSize="12"
-                            IsReadOnly="True"
-                            ScrollViewer.HorizontalScrollBarVisibility="Auto"
-                            ScrollViewer.VerticalScrollBarVisibility="Auto"
-                            Text="{Binding EditorText}"
-                            TextWrapping="Wrap" />
-                    </Border>
-                </TabItem>
 
-                <!--  HEX VIEW TAB  -->
-                <TabItem Header="🔍 Hex View">
-                    <Border Padding="8">
-                        <TextBox
-                            Name="HexViewTextBox"
-                            AcceptsReturn="True"
-                            Background="#F8F9FA"
-                            FontFamily="Consolas, Monaco, monospace"
-                            FontSize="11"
-                            IsReadOnly="True"
-                            ScrollViewer.HorizontalScrollBarVisibility="Auto"
-                            ScrollViewer.VerticalScrollBarVisibility="Auto"
-                            Text="{Binding HexView}" />
-                    </Border>
-                </TabItem>
-
-                <!--  INSTRUCTION VIEW TAB  -->
-                <TabItem Header="⚙️ Istruzioni">
-                    <Border Padding="8">
-                        <TextBox
-                            Name="InstructionTextBox"
-                            AcceptsReturn="True"
-                            Background="#F0F8FF"
-                            FontFamily="Consolas, Monaco, monospace"
-                            FontSize="12"
-                            IsReadOnly="True"
-                            ScrollViewer.HorizontalScrollBarVisibility="Auto"
-                            ScrollViewer.VerticalScrollBarVisibility="Auto"
-                            Text="{Binding InstructionView}" />
-                    </Border>
-                </TabItem>
-
-                <!--  DECODED DATA TAB  -->
-                <TabItem Header="📊 Informazioni">
-                    <Border Padding="8">
-                        <ScrollViewer>
-                            <TextBox
-                                Name="DecodedDataTextBox"
-                                AcceptsReturn="True"
-                                Background="#F5F5F5"
-                                FontFamily="Consolas, Monaco, monospace"
-                                FontSize="12"
-                                IsReadOnly="True"
-                                Text="{Binding DecodedData}"
-                                TextWrapping="Wrap" />
-                        </ScrollViewer>
-                    </Border>
-                </TabItem>
-
-            </TabControl>
 
         </Grid>
 

@@ -1,0 +1,70 @@
+<UserControl
+  x:Class="FileViewerApp.Views.Controls.StatusBarControl"
+  xmlns="https://github.com/avaloniaui"
+  xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+  xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+  xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+  xmlns:vm="using:FileViewerApp.ViewModels"
+  d:DesignHeight="40"
+  d:DesignWidth="800"
+  x:DataType="vm:MainWindowViewModel"
+  mc:Ignorable="d">
+
+  <Border
+    Padding="8"
+    Background="#F8F9FA"
+    BorderBrush="#E0E0E0"
+    BorderThickness="0,1,0,0">
+
+    <Grid>
+      <Grid.ColumnDefinitions>
+        <ColumnDefinition Width="*" />
+        <ColumnDefinition Width="Auto" />
+        <ColumnDefinition Width="Auto" />
+        <ColumnDefinition Width="Auto" />
+      </Grid.ColumnDefinitions>
+
+      <!--  Status Message  -->
+      <TextBlock
+        Grid.Column="0"
+        VerticalAlignment="Center"
+        FontSize="12"
+        Text="{Binding StatusText}" />
+
+      <!--  File Info  -->
+      <StackPanel
+        Grid.Column="1"
+        Margin="8,0"
+        Orientation="Horizontal">
+        <TextBlock Margin="0,0,4,0" Text="📄" />
+        <TextBlock FontWeight="Medium" Text="{Binding FileName}" />
+        <TextBlock Foreground="#666666" Text=" | " />
+        <TextBlock Text="{Binding FileSize}" />
+        <TextBlock Foreground="#666666" Text=" | " />
+        <TextBlock Text="{Binding CurrentFileType}" />
+      </StackPanel>
+
+      <!--  Editor Info  -->
+      <StackPanel
+        Grid.Column="2"
+        Margin="8,0"
+        Orientation="Horizontal">
+        <TextBlock Margin="0,0,4,0" Text="📝" />
+        <TextBlock Text="{Binding LineCount}" />
+        <TextBlock Foreground="#666666" Text=" linee | " />
+        <TextBlock Text="{Binding CharCount}" />
+        <TextBlock Foreground="#666666" Text=" caratteri" />
+      </StackPanel>
+
+      <!--  Encoding  -->
+      <StackPanel
+        Grid.Column="3"
+        Margin="8,0"
+        Orientation="Horizontal">
+        <TextBlock Margin="0,0,4,0" Text="🔤" />
+        <TextBlock Text="{Binding FileEncoding}" />
+      </StackPanel>
+
+    </Grid>
+  </Border>
+</UserControl>

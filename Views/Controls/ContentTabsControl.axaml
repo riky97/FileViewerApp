@@ -1,0 +1,305 @@
+<UserControl
+  x:Class="FileViewerApp.Views.Controls.ContentTabsControl"
+  xmlns="https://github.com/avaloniaui"
+  xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+  xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+  xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+  xmlns:vm="using:FileViewerApp.ViewModels"
+  d:DesignHeight="600"
+  d:DesignWidth="800"
+  x:DataType="vm:MainWindowViewModel"
+  mc:Ignorable="d">
+
+  <TabControl>
+
+    <!--  📝 TAB EDITOR TESTO  -->
+    <TabItem Header="📝 Editor Testo">
+      <DockPanel>
+        <!--  Editor Info Bar  -->
+        <Border
+          Padding="8"
+          Background="#F1F3F4"
+          BorderBrush="#E0E0E0"
+          BorderThickness="0,0,0,1"
+          DockPanel.Dock="Top">
+          <StackPanel Orientation="Horizontal">
+            <TextBlock Margin="0,0,16,0" Text="📄 Contenuto testuale del file" />
+            <TextBlock Text="{Binding LineCount}" />
+            <TextBlock Foreground="#666666" Text=" linee | " />
+            <TextBlock Text="{Binding CharCount}" />
+            <TextBlock Foreground="#666666" Text=" caratteri" />
+          </StackPanel>
+        </Border>
+
+        <!--  Text Editor  -->
+        <ScrollViewer>
+          <TextBox
+            Name="EditorTextBox"
+            AcceptsReturn="True"
+            AcceptsTab="True"
+            Background="#FFFFFF"
+            BorderThickness="0"
+            FontFamily="Consolas, Monaco, 'Courier New', monospace"
+            FontSize="13"
+            IsReadOnly="True"
+            Text="{Binding EditorText}"
+            TextWrapping="NoWrap" />
+        </ScrollViewer>
+      </DockPanel>
+    </TabItem>
+
+    <!--  🔍 TAB HEX VIEWER  -->
+    <TabItem Header="🔍 Hex Viewer">
+      <DockPanel>
+        <!--  Hex Info Bar  -->
+        <Border
+          Padding="8"
+          Background="#F1F3F4"
+          BorderBrush="#E0E0E0"
+          BorderThickness="0,0,0,1"
+          DockPanel.Dock="Top">
+          <StackPanel Orientation="Horizontal">
+            <TextBlock Margin="0,0,16,0" Text="🔍 Vista esadecimale del file" />
+            <TextBlock Text="{Binding FileSize}" />
+          </StackPanel>
+        </Border>
+
+        <!--  Hex Content  -->
+        <ScrollViewer>
+          <TextBox
+            Name="HexTextBox"
+            Background="#FFFFFF"
+            BorderThickness="0"
+            FontFamily="Consolas, Monaco, 'Courier New', monospace"
+            FontSize="12"
+            IsReadOnly="True"
+            Text="{Binding HexView}"
+            TextWrapping="NoWrap" />
+        </ScrollViewer>
+      </DockPanel>
+    </TabItem>
+
+    <!--  📋 TAB ISTRUZIONI  -->
+    <TabItem Header="📋 Vista Istruzioni">
+      <DockPanel>
+        <!--  Instructions Info Bar  -->
+        <Border
+          Padding="8"
+          Background="#F1F3F4"
+          BorderBrush="#E0E0E0"
+          BorderThickness="0,0,0,1"
+          DockPanel.Dock="Top">
+          <StackPanel Orientation="Horizontal">
+            <TextBlock Margin="0,0,16,0" Text="📋 Lista delle istruzioni decodificate" />
+          </StackPanel>
+        </Border>
+
+        <!--  Instructions Content  -->
+        <ScrollViewer>
+          <TextBox
+            Name="InstructionTextBox"
+            Background="#FFFFFF"
+            BorderThickness="0"
+            FontFamily="Consolas, Monaco, 'Courier New', monospace"
+            FontSize="13"
+            IsReadOnly="True"
+            Text="{Binding InstructionView}"
+            TextWrapping="NoWrap" />
+        </ScrollViewer>
+      </DockPanel>
+    </TabItem>
+
+    <!--  📋 TAB ISTRUZIONI  -->
+
+    <TabItem Header="✏️ Editor Istruzioni" IsEnabled="{Binding IsEditMode}">
+      <DockPanel Margin="10">
+
+        <!--  Toolbar  -->
+        <Border
+          Margin="0,0,0,10"
+          Padding="8"
+          Background="#F0F0F0"
+          DockPanel.Dock="Top">
+          <StackPanel Orientation="Horizontal" Spacing="8">
+            <Button Command="{Binding AddInstructionCommand}" Content="➕ Aggiungi" />
+            <Button
+              Command="{Binding RemoveInstructionCommand}"
+              Content="➖ Rimuovi"
+              IsEnabled="{Binding CanRemoveInstruction}" />
+            <Button
+              Command="{Binding MoveUpCommand}"
+              Content="⬆️ Su"
+              IsEnabled="{Binding CanMoveUp}" />
+            <Button
+              Command="{Binding MoveDownCommand}"
+              Content="⬇️ Giù"
+              IsEnabled="{Binding CanMoveDown}" />
+            <Separator />
+            <Button
+              Command="{Binding SaveChangesCommand}"
+              Content="💾 Salva"
+              IsEnabled="{Binding HasUnsavedChanges}" />
+            <Button
+              Command="{Binding DiscardChangesCommand}"
+              Content="🔄 Annulla"
+              IsEnabled="{Binding HasUnsavedChanges}" />
+          </StackPanel>
+        </Border>
+
+        <!--  Header  -->
+        <Border
+          Margin="0,0,0,2"
+          Background="#E8E8E8"
+          BorderBrush="#CCC"
+          BorderThickness="1"
+          DockPanel.Dock="Top">
+          <Grid Height="30" ColumnDefinitions="60,80,120,200,60,80">
+            <TextBlock
+              Grid.Column="0"
+              HorizontalAlignment="Center"
+              VerticalAlignment="Center"
+              FontWeight="Bold"
+              Text="#" />
+            <TextBlock
+              Grid.Column="1"
+              HorizontalAlignment="Center"
+              VerticalAlignment="Center"
+              FontWeight="Bold"
+              Text="OpCode" />
+            <TextBlock
+              Grid.Column="2"
+              Margin="5,0"
+              VerticalAlignment="Center"
+              FontWeight="Bold"
+              Text="Nome" />
+            <TextBlock
+              Grid.Column="3"
+              Margin="5,0"
+              VerticalAlignment="Center"
+              FontWeight="Bold"
+              Text="Istruzione" />
+            <TextBlock
+              Grid.Column="4"
+              HorizontalAlignment="Center"
+              VerticalAlignment="Center"
+              FontWeight="Bold"
+              Text="OK" />
+            <TextBlock
+              Grid.Column="5"
+              HorizontalAlignment="Center"
+              VerticalAlignment="Center"
+              FontWeight="Bold"
+              Text="Mod" />
+          </Grid>
+        </Border>
+
+        <!--  Lista Editabile  -->
+        <ListBox
+          Background="White"
+          BorderBrush="#CCC"
+          BorderThickness="1"
+          ItemsSource="{Binding EditableInstructions}"
+          SelectedItem="{Binding SelectedInstruction}">
+
+          <ListBox.ItemTemplate>
+            <DataTemplate>
+              <Border
+                Padding="2"
+                BorderBrush="#EEE"
+                BorderThickness="0,0,0,1">
+                <Grid MinHeight="35" ColumnDefinitions="60,80,120,200,60,80">
+
+                  <!--  Numero (non editabile)  -->
+                  <TextBlock
+                    Grid.Column="0"
+                    HorizontalAlignment="Center"
+                    VerticalAlignment="Center"
+                    Text="{Binding Number}" />
+
+                  <!--  OpCode (editabile)  -->
+                  <TextBox
+                    Grid.Column="1"
+                    Margin="2"
+                    HorizontalAlignment="Stretch"
+                    VerticalAlignment="Center"
+                    BorderThickness="1"
+                    Text="{Binding OpCode}"
+                    TextAlignment="Center" />
+
+                  <!--  Nome (auto-aggiornato)  -->
+                  <TextBlock
+                    Grid.Column="2"
+                    Margin="5,0"
+                    VerticalAlignment="Center"
+                    Text="{Binding Name}" />
+
+                  <!--  Istruzione Completa (editabile) - QUESTA È LA PRINCIPALE  -->
+                  <TextBox
+                    Grid.Column="3"
+                    Margin="2"
+                    HorizontalAlignment="Stretch"
+                    VerticalAlignment="Center"
+                    BorderThickness="1"
+                    FontFamily="Consolas"
+                    Text="{Binding InstructionText}" />
+
+                  <!--  Valida  -->
+                  <CheckBox
+                    Grid.Column="4"
+                    HorizontalAlignment="Center"
+                    VerticalAlignment="Center"
+                    IsChecked="{Binding IsValid}"
+                    IsEnabled="False" />
+
+                  <!--  Modificata  -->
+                  <CheckBox
+                    Grid.Column="5"
+                    HorizontalAlignment="Center"
+                    VerticalAlignment="Center"
+                    IsChecked="{Binding IsModified}"
+                    IsEnabled="False" />
+
+                </Grid>
+              </Border>
+            </DataTemplate>
+          </ListBox.ItemTemplate>
+
+        </ListBox>
+
+      </DockPanel>
+    </TabItem>
+
+
+    <!--  📊 TAB INFO DETTAGLIATE  -->
+    <TabItem Header="📊 Info Dettagliate">
+      <DockPanel>
+        <!--  Info Bar  -->
+        <Border
+          Padding="8"
+          Background="#F1F3F4"
+          BorderBrush="#E0E0E0"
+          BorderThickness="0,0,0,1"
+          DockPanel.Dock="Top">
+          <StackPanel Orientation="Horizontal">
+            <TextBlock Margin="0,0,16,0" Text="📊 Informazioni dettagliate sul file e il processing" />
+          </StackPanel>
+        </Border>
+
+        <!--  Detailed Content  -->
+        <ScrollViewer>
+          <TextBox
+            Name="DecodedDataTextBox"
+            Background="#FFFFFF"
+            BorderThickness="0"
+            FontFamily="Consolas, Monaco, 'Courier New', monospace"
+            FontSize="13"
+            IsReadOnly="True"
+            Text="{Binding DecodedData}"
+            TextWrapping="Wrap" />
+        </ScrollViewer>
+      </DockPanel>
+    </TabItem>
+
+  </TabControl>
+
+</UserControl>

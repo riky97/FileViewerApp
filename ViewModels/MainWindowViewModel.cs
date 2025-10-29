@@ -12,6 +12,8 @@ using FileViewerApp.Models;
 using FileViewerApp.Services;
 using System.Collections.ObjectModel;
 using FileViewerApp.Enums;
+using System.ComponentModel;
+using System.Text;
 
 namespace FileViewerApp.ViewModels
 {
@@ -22,6 +24,7 @@ namespace FileViewerApp.ViewModels
 
         // Current processed file
         private ProcessedFile? _currentProcessedFile;
+        private byte[]? _currentFileBytes;
 
         // UI Properties
         private string _editorText = string.Empty;
@@ -45,6 +48,12 @@ namespace FileViewerApp.ViewModels
         private bool _isProcessing = false;
         private string _currentFileType = "Nessuno";
 
+        // Editor properties
+        private bool _isEditMode = false;
+        private bool _hasUnsavedChanges = false;
+        private bool _canEdit = false;
+        private EditableInstruction? _selectedInstruction;
+
         public MainWindowViewModel()
         {
             // CREAZIONE DIRETTA SENZA SERVICE LOCATOR
@@ -58,8 +67,20 @@ namespace FileViewerApp.ViewModels
             ConvertFileCommand = new AsyncRelayCommand(ConvertFileAsync);
             RefreshCommand = new AsyncRelayCommand(RefreshAsync);
 
+            // Editor commands
+            AddInstructionCommand = new AsyncRelayCommand(AddInstructionAsync);
+            RemoveInstructionCommand = new AsyncRelayCommand(RemoveInstructionAsync);
+            MoveUpCommand = new AsyncRelayCommand(MoveUpAsync);
+            MoveDownCommand = new AsyncRelayCommand(MoveDownAsync);
+            SaveChangesCommand = new AsyncRelayCommand(SaveChangesAsync);
+            DiscardChangesCommand = new AsyncRelayCommand(DiscardChangesAsync);
+            DeleteInstructionCommand = new AsyncRelayCommand(DeleteSelectedInstructionAsync);
+
             // Set initial status
             UpdateStatus("Pronto - Seleziona un file per iniziare");
+
+            // Subscribe to instruction changes
+            EditableInstructions.CollectionChanged += OnInstructionsCollectionChanged;
         }
 
         public void SetWindow(Window window)
@@ -165,6 +186,49 @@ namespace FileViewerApp.ViewModels
             set => this.RaiseAndSetIfChanged(ref _currentFileType, value);
         }
 
+        // Editor properties
+        public bool IsEditMode
+        {
+            get => _isEditMode;
+            set
+            {
+                this.RaiseAndSetIfChanged(ref _isEditMode, value);
+                UpdateCanEditState();
+            }
+        }
+
+        public bool HasUnsavedChanges
+        {
+            get => _hasUnsavedChanges;
+            set => this.RaiseAndSetIfChanged(ref _hasUnsavedChanges, value);
+        }
+
+        public bool CanEdit
+        {
+            get => _canEdit;
+            set => this.RaiseAndSetIfChanged(ref _canEdit, value);
+        }
+
+        // CORREZIONE PRINCIPALE: Solo getter come nella documentazione Avalonia
+        public ObservableCollection<EditableInstruction> EditableInstructions { get; } = new();
+
+        public EditableInstruction? SelectedInstruction
+        {
+            get => _selectedInstruction;
+            set
+            {
+                this.RaiseAndSetIfChanged(ref _selectedInstruction, value);
+                UpdateMoveButtonsState();
+            }
+        }
+
+        // Computed properties for buttons
+        public bool CanRemoveInstruction => SelectedInstruction != null && CanEdit;
+        public bool CanMoveUp => SelectedInstruction != null && CanEdit &&
+            EditableInstructions.IndexOf(SelectedInstruction) > 0;
+        public bool CanMoveDown => SelectedInstruction != null && CanEdit &&
+            EditableInstructions.IndexOf(SelectedInstruction) < EditableInstructions.Count - 1;
+
         #endregion
 
         #region Commands
@@ -174,6 +238,15 @@ namespace FileViewerApp.ViewModels
         public ICommand SaveFileCommand { get; }
         public ICommand ConvertFileCommand { get; }
         public ICommand RefreshCommand { get; }
+
+        // Editor commands
+        public ICommand AddInstructionCommand { get; }
+        public ICommand RemoveInstructionCommand { get; }
+        public ICommand MoveUpCommand { get; }
+        public ICommand MoveDownCommand { get; }
+        public ICommand SaveChangesCommand { get; }
+        public ICommand DiscardChangesCommand { get; }
+        public ICommand DeleteInstructionCommand { get; }
 
         #endregion
 
@@ -225,11 +298,17 @@ namespace FileViewerApp.ViewModels
 
                     UpdateStatus($"Elaborazione file: {Path.GetFileName(filePath)}...");
 
+                    // Carica i bytes del file per l'editing
+                    _currentFileBytes = await File.ReadAllBytesAsync(filePath);
+
                     // USA L'ORCHESTRATOR PER PROCESSARE IL FILE
                     _currentProcessedFile = await _orchestrator.ProcessFileAsync(filePath);
 
                     // Aggiorna l'UI con i dati processati
                     await UpdateUIFromProcessedFile(_currentProcessedFile);
+
+                    // Popola le istruzioni editabili
+                    await PopulateEditableInstructions(_currentProcessedFile);
 
                     UpdateStatus($"File caricato: {_currentProcessedFile.FileType} - {_currentProcessedFile.Instructions.Count} istruzioni");
                 }
@@ -255,8 +334,16 @@ namespace FileViewerApp.ViewModels
         {
             try
             {
+                // Check for unsaved changes
+                if (HasUnsavedChanges)
+                {
+                    // TODO: Show confirmation dialog
+                    UpdateStatus("Attenzione: ci sono modifiche non salvate");
+                }
+
                 // Reset all properties
                 _currentProcessedFile = null;
+                _currentFileBytes = null;
 
                 EditorText = string.Empty;
                 HexView = string.Empty;
@@ -273,6 +360,12 @@ namespace FileViewerApp.ViewModels
 
                 InstructionTree.Clear();
                 SelectedNode = null;
+
+                // Clear editor
+                EditableInstructions.Clear();
+                SelectedInstruction = null;
+                IsEditMode = false;
+                HasUnsavedChanges = false;
 
                 UpdateStatus("File chiuso - Pronto per un nuovo file");
 
@@ -329,6 +422,12 @@ namespace FileViewerApp.ViewModels
                 if (file != null)
                 {
                     var outputPath = file.Path.LocalPath;
+
+                    // Se ci sono modifiche, applica le modifiche prima di salvare
+                    if (HasUnsavedChanges)
+                    {
+                        await ApplyChangesToFile();
+                    }
 
                     // USA L'ORCHESTRATOR PER SALVARE IL FILE
                     var savedData = await _orchestrator.SaveFileAsync(_currentProcessedFile, outputPath);
@@ -398,6 +497,12 @@ namespace FileViewerApp.ViewModels
                 {
                     var outputPath = file.Path.LocalPath;
 
+                    // Se ci sono modifiche, applica le modifiche prima di convertire
+                    if (HasUnsavedChanges)
+                    {
+                        await ApplyChangesToFile();
+                    }
+
                     // USA L'ORCHESTRATOR PER CONVERTIRE IL FILE
                     var convertedData = await _orchestrator.ConvertAsync(_currentProcessedFile, targetType, outputPath);
 
@@ -446,6 +551,9 @@ namespace FileViewerApp.ViewModels
                 // Aggiorna l'UI
                 await UpdateUIFromProcessedFile(_currentProcessedFile);
 
+                // Ripopola le istruzioni editabili
+                await PopulateEditableInstructions(_currentProcessedFile);
+
                 UpdateStatus($"File aggiornato: {_currentProcessedFile.Instructions.Count} istruzioni");
             }
             catch (Exception ex)
@@ -462,10 +570,153 @@ namespace FileViewerApp.ViewModels
 
         #endregion
 
+        // Sostituisci i metodi Editor Command Implementations con questa versione corretta:
+
+        #region Editor Command Implementations
+
+        private async Task AddInstructionAsync()
+        {
+            if (!CanEdit) return;
+
+            var newInstruction = new EditableInstruction
+            {
+                Number = EditableInstructions.Count + 1,
+                OpCode = 1,
+                Name = "NULLA"
+            };
+
+            EditableInstructions.Add(newInstruction);
+            HasUnsavedChanges = true;
+            UpdateCanEditState();
+
+            // AGGIUNTO: Aggiorna TreeView immediatamente
+            await UpdateTreeViewFromInstructions();
+
+            StatusText = $"Istruzione aggiunta - Totale: {EditableInstructions.Count}";
+        }
+
+        private async Task RemoveInstructionAsync()
+        {
+            if (SelectedInstruction == null || !CanEdit) return;
+
+            EditableInstructions.Remove(SelectedInstruction);
+            HasUnsavedChanges = true;
+
+            // Rinumera le istruzioni
+            RenumberInstructions();
+            UpdateCanEditState();
+
+            // AGGIUNTO: Aggiorna TreeView immediatamente
+            await UpdateTreeViewFromInstructions();
+
+            StatusText = $"Istruzione rimossa - Totale: {EditableInstructions.Count}";
+        }
+
+        private async Task DeleteSelectedInstructionAsync()
+        {
+            if (SelectedInstruction != null && CanEdit)
+            {
+                await RemoveInstructionAsync();
+            }
+        }
+
+        private async Task MoveUpAsync()
+        {
+            if (SelectedInstruction == null || !CanMoveUp) return;
+
+            var index = EditableInstructions.IndexOf(SelectedInstruction);
+            EditableInstructions.Move(index, index - 1);
+            HasUnsavedChanges = true;
+
+            RenumberInstructions();
+            UpdateMoveButtonsState();
+
+            // AGGIUNTO: Aggiorna TreeView immediatamente
+            await UpdateTreeViewFromInstructions();
+
+            StatusText = "Istruzione spostata verso l'alto";
+        }
+
+        private async Task MoveDownAsync()
+        {
+            if (SelectedInstruction == null || !CanMoveDown) return;
+
+            var index = EditableInstructions.IndexOf(SelectedInstruction);
+            EditableInstructions.Move(index, index + 1);
+            HasUnsavedChanges = true;
+
+            RenumberInstructions();
+            UpdateMoveButtonsState();
+
+            // AGGIUNTO: Aggiorna TreeView immediatamente
+            await UpdateTreeViewFromInstructions();
+
+            StatusText = "Istruzione spostata verso il basso";
+        }
+
+        private async Task SaveChangesAsync()
+        {
+            if (!HasUnsavedChanges || _currentFileBytes == null) return;
+
+            try
+            {
+                IsProcessing = true;
+                StatusText = "Salvataggio modifiche...";
+
+                await ApplyChangesToFile();
+
+                // Resetta i flag di modifica
+                foreach (var instruction in EditableInstructions)
+                {
+                    instruction.ResetModifications();
+                }
+
+                HasUnsavedChanges = false;
+                IsProcessing = false;
+                StatusText = "Modifiche salvate con successo";
+
+                // Aggiorna le altre viste
+                await UpdateHexViewAsync();
+                await RefreshViews();
+
+                // AGGIUNTO: Aggiorna TreeView per rimuovere i flag [MOD]
+                await UpdateTreeViewFromInstructions();
+            }
+            catch (Exception ex)
+            {
+                IsProcessing = false;
+                StatusText = $"Errore durante il salvataggio: {ex.Message}";
+            }
+        }
+
+        private async Task DiscardChangesAsync()
+        {
+            if (!HasUnsavedChanges) return;
+
+            try
+            {
+                StatusText = "Ripristino modifiche originali...";
+
+                // Ripopola le istruzioni dal file originale
+                if (_currentProcessedFile != null)
+                {
+                    await PopulateEditableInstructions(_currentProcessedFile);
+                }
+
+                HasUnsavedChanges = false;
+                StatusText = "Modifiche scartate";
+
+                // AGGIUNTO: Il TreeView verrà aggiornato da PopulateEditableInstructions
+            }
+            catch (Exception ex)
+            {
+                StatusText = $"Errore durante il ripristino: {ex.Message}";
+            }
+        }
+
+        #endregion
+
         #region Helper Methods
-
-
-        // Nel metodo UpdateUIFromProcessedFile, aggiungi info di debug:
 
         private async Task UpdateUIFromProcessedFile(ProcessedFile processedFile)
         {
@@ -574,6 +825,194 @@ namespace FileViewerApp.ViewModels
                 DecodedData = $"ERRORE AGGIORNAMENTO UI: {ex.Message}\n\n{ex.StackTrace}";
             }
         }
+
+        private async Task PopulateEditableInstructions(ProcessedFile processedFile)
+        {
+            EditableInstructions.Clear();
+
+            foreach (var instruction in processedFile.Instructions)
+            {
+                var editableInstruction = new EditableInstruction
+                {
+                    Number = instruction.Number,
+                    OpCode = instruction.OpCode,
+                    Name = instruction.Name
+                };
+
+                // Imposta i parametri
+                var parameters = instruction.Parameters.ToArray();
+                editableInstruction.SetParameters(parameters);
+
+                EditableInstructions.Add(editableInstruction);
+            }
+
+            // Abilita edit mode se ci sono istruzioni
+            IsEditMode = EditableInstructions.Count > 0;
+            HasUnsavedChanges = false;
+
+            // Aggiorna TreeView
+            await UpdateTreeViewFromInstructions();
+        }
+
+
+        private async Task UpdateTreeViewFromInstructions()
+        {
+            try
+            {
+                // Se non ci sono istruzioni editabili, non aggiornare l'albero
+                if (EditableInstructions.Count == 0)
+                {
+                    return;
+                }
+
+                // Se l'albero è vuoto, non possiamo aggiornare (probabilmente non è ancora stato caricato un file)
+                if (InstructionTree.Count == 0)
+                {
+                    return;
+                }
+
+                Console.WriteLine($"[DEBUG] Aggiornamento TreeView - Istruzioni: {EditableInstructions.Count}, Nodi albero: {InstructionTree.Count}");
+
+                // Cerca e aggiorna solo i nodi delle istruzioni nell'albero esistente
+                await UpdateInstructionNodesRecursively(InstructionTree);
+
+                await Task.CompletedTask;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Errore aggiornamento TreeView: {ex.Message}");
+            }
+        }
+
+        // Aggiungi questo nuovo metodo helper:
+        private async Task UpdateInstructionNodesRecursively(ObservableCollection<InstructionNode> nodes)
+        {
+            foreach (var node in nodes)
+            {
+                // Se questo nodo rappresenta un'istruzione, aggiornalo con i dati modificati
+                if (TryGetInstructionFromNodeName(node.Name, out int instructionNumber))
+                {
+                    var editableInstruction = EditableInstructions.FirstOrDefault(i => i.Number == instructionNumber);
+                    if (editableInstruction != null)
+                    {
+                        // Aggiorna solo il nome del nodo con i dati correnti
+                        var modifiedFlag = editableInstruction.IsModified ? " [MOD]" : "";
+                        var validFlag = editableInstruction.IsValid ? "" : " [ERR]";
+
+                        // Mantieni il formato originale ma aggiorna i dati
+                        node.Name = $"{editableInstruction.Number:D3}: {editableInstruction.Name} ({editableInstruction.OpCode}){modifiedFlag}{validFlag}";
+                    }
+                }
+
+                // Ricorsivamente aggiorna i nodi figli
+                if (node.Children.Count > 0)
+                {
+                    await UpdateInstructionNodesRecursively(node.Children);
+                }
+            }
+        }
+
+        // Aggiungi questo metodo helper per estrarre il numero istruzione dal nome del nodo:
+        private bool TryGetInstructionFromNodeName(string nodeName, out int instructionNumber)
+        {
+            instructionNumber = 0;
+
+            if (string.IsNullOrEmpty(nodeName)) return false;
+
+            // Cerca pattern come "001: NOME_ISTRUZIONE" o "123: ALTRA_ISTRUZIONE"
+            var match = System.Text.RegularExpressions.Regex.Match(nodeName, @"^(\d{1,3}):\s");
+            if (match.Success && int.TryParse(match.Groups[1].Value, out instructionNumber))
+            {
+                return true;
+            }
+
+            return false;
+        }
+
+        private async Task ApplyChangesToFile()
+        {
+            if (_currentFileBytes == null || _currentProcessedFile == null) return;
+
+            // Crea una copia del file bytes per le modifiche
+            var modifiedBytes = new byte[_currentFileBytes.Length];
+            Array.Copy(_currentFileBytes, modifiedBytes, _currentFileBytes.Length);
+
+            // Applica le modifiche delle istruzioni al file
+            foreach (var instruction in EditableInstructions.Where(i => i.IsModified))
+            {
+                int offset = _startOffset + ((instruction.Number - 1) * 9);
+
+                if (offset + 8 < modifiedBytes.Length)
+                {
+                    // Scrivi OpCode
+                    modifiedBytes[offset] = (byte)instruction.OpCode;
+
+                    // Scrivi parametri
+                    var parameters = instruction.GetParameters();
+                    for (int i = 0; i < parameters.Length && offset + i + 1 < modifiedBytes.Length; i++)
+                    {
+                        modifiedBytes[offset + i + 1] = (byte)parameters[i];
+                    }
+                }
+            }
+
+            // Aggiorna il file corrente con le modifiche
+            _currentFileBytes = modifiedBytes;
+
+            // Aggiorna anche il ProcessedFile per mantenere consistenza
+            _currentProcessedFile.RawContent = modifiedBytes;
+
+            await Task.CompletedTask;
+        }
+
+        private async Task UpdateHexViewAsync()
+        {
+            if (_currentFileBytes == null) return;
+
+            var hexBuilder = new StringBuilder();
+            var maxBytes = Math.Min(_currentFileBytes.Length, 1024); // Limita a 1KB per performance
+
+            for (int i = 0; i < maxBytes; i += 16)
+            {
+                // Address
+                hexBuilder.Append($"{i:X8}: ");
+
+                // Hex values
+                for (int j = 0; j < 16; j++)
+                {
+                    if (i + j < maxBytes)
+                    {
+                        hexBuilder.Append($"{_currentFileBytes[i + j]:X2} ");
+                    }
+                    else
+                    {
+                        hexBuilder.Append("   ");
+                    }
+
+                    if (j == 7) hexBuilder.Append(" ");
+                }
+
+                hexBuilder.Append(" |");
+
+                // ASCII representation
+                for (int j = 0; j < 16 && i + j < maxBytes; j++)
+                {
+                    byte b = _currentFileBytes[i + j];
+                    hexBuilder.Append(b >= 32 && b <= 126 ? (char)b : '.');
+                }
+
+                hexBuilder.AppendLine("|");
+            }
+
+            if (_currentFileBytes.Length > maxBytes)
+            {
+                hexBuilder.AppendLine($"\n... (mostrando solo i primi {maxBytes} bytes di {_currentFileBytes.Length})");
+            }
+
+            HexView = hexBuilder.ToString();
+            await Task.CompletedTask;
+        }
+
         private void ExpandAllNodes(ObservableCollection<InstructionNode> nodes)
         {
             foreach (var node in nodes)
@@ -601,6 +1040,103 @@ namespace FileViewerApp.ViewModels
             StatusText = $"{DateTime.Now:HH:mm:ss} - {message}";
             Console.WriteLine($"STATUS: {message}");
         }
+
+        #region Editor Support Methods
+
+
+        private void OnInstructionsCollectionChanged(object? sender, System.Collections.Specialized.NotifyCollectionChangedEventArgs e)
+        {
+            // Quando vengono aggiunte nuove istruzioni
+            if (e.NewItems != null)
+            {
+                foreach (EditableInstruction item in e.NewItems)
+                {
+                    item.InstructionChanged += OnInstructionChanged;
+                }
+            }
+
+            // Quando vengono rimosse istruzioni
+            if (e.OldItems != null)
+            {
+                foreach (EditableInstruction item in e.OldItems)
+                {
+                    item.InstructionChanged -= OnInstructionChanged;
+                }
+            }
+
+            UpdateCanEditState();
+
+            // AGGIUNTO: Aggiorna TreeView quando cambia la collezione (add/remove)
+            Task.Run(async () => await UpdateTreeViewFromInstructions());
+        }
+
+        private void OnInstructionChanged(object? sender, PropertyChangedEventArgs e)
+        {
+            HasUnsavedChanges = EditableInstructions.Any(i => i.IsModified);
+            UpdateMoveButtonsState();
+
+            // Aggiorna anche le viste di sola lettura E il TreeView
+            Task.Run(async () =>
+            {
+                await RefreshViews();
+                await UpdateTreeViewFromInstructions();
+            });
+        }
+
+        private async Task RefreshViews()
+        {
+            await Task.Delay(100); // Piccolo delay per evitare troppi aggiornamenti
+
+            // Aggiorna la vista istruzioni
+            var instructionBuilder = new StringBuilder();
+            instructionBuilder.AppendLine("ISTRUZIONI DECODIFICATE (MODIFICATE)");
+            instructionBuilder.AppendLine("====================================");
+            instructionBuilder.AppendLine();
+
+            foreach (var instruction in EditableInstructions.OrderBy(i => i.Number))
+            {
+                var modifiedFlag = instruction.IsModified ? " [MODIFICATA]" : "";
+                var validFlag = instruction.IsValid ? "" : " [ERRORE]";
+
+                var paramList = string.Join(", ", instruction.GetParameters());
+                instructionBuilder.AppendLine($"{instruction.Number:D3}: {instruction.Name} ({instruction.OpCode}) [{paramList}]{modifiedFlag}{validFlag}");
+
+                if (!instruction.IsValid)
+                {
+                    instructionBuilder.AppendLine($"     -> {instruction.ValidationSummary}");
+                }
+            }
+
+            instructionBuilder.AppendLine();
+            instructionBuilder.AppendLine($"Totale istruzioni: {EditableInstructions.Count}");
+            instructionBuilder.AppendLine($"Istruzioni modificate: {EditableInstructions.Count(i => i.IsModified)}");
+            instructionBuilder.AppendLine($"Istruzioni valide: {EditableInstructions.Count(i => i.IsValid)}");
+
+            InstructionView = instructionBuilder.ToString();
+        }
+
+        private void RenumberInstructions()
+        {
+            for (int i = 0; i < EditableInstructions.Count; i++)
+            {
+                EditableInstructions[i].Number = i + 1;
+            }
+        }
+
+        private void UpdateCanEditState()
+        {
+            CanEdit = IsEditMode && EditableInstructions.Count > 0;
+            this.RaisePropertyChanged(nameof(CanRemoveInstruction));
+            UpdateMoveButtonsState();
+        }
+
+        private void UpdateMoveButtonsState()
+        {
+            this.RaisePropertyChanged(nameof(CanMoveUp));
+            this.RaisePropertyChanged(nameof(CanMoveDown));
+        }
+
+        #endregion
 
         #endregion
     }
