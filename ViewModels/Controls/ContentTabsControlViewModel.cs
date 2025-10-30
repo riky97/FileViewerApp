@@ -27,6 +27,9 @@ namespace FileViewerApp.ViewModels.Controls
             this.RaisePropertyChanged(e?.PropertyName);
         }
 
+        // Expose parent for code-behind usage
+        public MainWindowViewModel Parent => _parent;
+
         // Forwarded simple properties
         public string EditorText { get => _parent.EditorText; set => _parent.EditorText = value; }
         public string HexView { get => _parent.HexView; set => _parent.HexView = value; }
