@@ -17,6 +17,9 @@ namespace FileViewerApp.Services
         private Dictionary<int, OpCodeInfo> _opCodeInfos = new();
         private readonly List<IOpCodeLoader> _loaders;
 
+        // Evento notificatore quando le definizioni sono state caricate
+        public event EventHandler? DefinitionsLoaded;
+
         public OpCodeService()
         {
             // Registra i loader in ordine di priorità
@@ -50,6 +53,7 @@ namespace FileViewerApp.Services
                         Console.WriteLine($"Caricamento OpCodes con {loader.LoaderName}: {configFile}");
                         _opCodeInfos = await loader.LoadAsync(configFile);
                         Console.WriteLine($"Caricati {_opCodeInfos.Count} OpCodes da {configFile}");
+                        DefinitionsLoaded?.Invoke(this, EventArgs.Empty);
                         return _opCodeInfos;
                     }
                 }
@@ -58,12 +62,14 @@ namespace FileViewerApp.Services
                 Console.WriteLine("Nessun file di configurazione trovato, usando definizioni di fallback");
                 var fallbackLoader = _loaders.OfType<FallbackOpCodeLoader>().First();
                 _opCodeInfos = await fallbackLoader.LoadAsync("");
+                DefinitionsLoaded?.Invoke(this, EventArgs.Empty);
             }
             catch (Exception ex)
             {
                 Console.WriteLine($"Errore caricamento OpCodes: {ex.Message}");
                 var fallbackLoader = _loaders.OfType<FallbackOpCodeLoader>().First();
                 _opCodeInfos = await fallbackLoader.LoadAsync("");
+                DefinitionsLoaded?.Invoke(this, EventArgs.Empty);
             }
 
             return _opCodeInfos;
@@ -118,6 +124,7 @@ namespace FileViewerApp.Services
                 Console.WriteLine($"Caricamento manuale con {loader.LoaderName}: {filePath}");
                 _opCodeInfos = await loader.LoadAsync(filePath);
                 Console.WriteLine($"Caricati {_opCodeInfos.Count} OpCodes");
+                DefinitionsLoaded?.Invoke(this, EventArgs.Empty);
             }
             else
             {

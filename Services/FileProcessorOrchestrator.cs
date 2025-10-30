@@ -80,8 +80,9 @@ namespace FileViewerApp.Services
 
             try
             {
-                // Carica OpCode definitions
-                await _opCodeService.LoadOpCodeDefinitionsAsync();
+                // IMPORTANT: do NOT automatically load opcode definitions here.
+                // The application requires the user to explicitly load the INFO.XML
+                // so we avoid calling: await _opCodeService.LoadOpCodeDefinitionsAsync();
 
                 switch (fileType)
                 {

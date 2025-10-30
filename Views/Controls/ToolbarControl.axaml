@@ -16,19 +16,26 @@
     BorderBrush="#E0E0E0"
     BorderThickness="0,0,0,1">
 
-    <StackPanel Orientation="Horizontal">
+    <StackPanel Orientation="Horizontal" Spacing="6">
+
+      <!--  Load Definitions (XML) - always enabled -->
+      <Button
+        Name="LoadDefsButton"
+        Command="{Binding LoadDefinitionsCommand}"
+        ToolTip.Tip="Carica definizioni (.xml)">
+        <StackPanel Orientation="Horizontal">
+          <TextBlock Margin="0,0,8,0" FontSize="16" Text="📥" />
+          <TextBlock Text="Carica definizioni (.xml)" />
+        </StackPanel>
+      </Button>
 
       <!--  File Operations  -->
       <Button
         Name="OpenButton"
         Command="{Binding OpenFileCommand}"
-        IsEnabled="{Binding !IsProcessing}"
         ToolTip.Tip="Apri file (Ctrl+O)">
         <StackPanel Orientation="Horizontal">
-          <TextBlock
-            Margin="0,0,8,0"
-            FontSize="16"
-            Text="📁" />
+          <TextBlock Margin="0,0,8,0" FontSize="16" Text="📁" />
           <TextBlock Text="Apri File" />
         </StackPanel>
       </Button>
@@ -36,35 +43,23 @@
       <Button
         Name="SaveButton"
         Command="{Binding SaveFileCommand}"
-        IsEnabled="{Binding !IsProcessing}"
         ToolTip.Tip="Salva file (Ctrl+S)">
         <StackPanel Orientation="Horizontal">
-          <TextBlock
-            Margin="0,0,8,0"
-            FontSize="16"
-            Text="💾" />
+          <TextBlock Margin="0,0,8,0" FontSize="16" Text="💾" />
           <TextBlock Text="Salva" />
         </StackPanel>
       </Button>
 
-      <Separator
-        Width="1"
-        Height="24"
-        Margin="8,4"
-        Background="#E0E0E0" />
+      <Separator Width="1" Height="24" Margin="8,4" Background="#E0E0E0" />
 
-      <!--  Convert Operations  -->
+      <!--  Convert / Refresh  -->
       <Button
         Name="ConvertButton"
         Background="#4CAF50"
         Command="{Binding ConvertFileCommand}"
-        IsEnabled="{Binding !IsProcessing}"
         ToolTip.Tip="Converti formato file">
         <StackPanel Orientation="Horizontal">
-          <TextBlock
-            Margin="0,0,8,0"
-            FontSize="16"
-            Text="🔄" />
+          <TextBlock Margin="0,0,8,0" FontSize="16" Text="🔄" />
           <TextBlock Text="Converti" />
         </StackPanel>
       </Button>
@@ -73,22 +68,14 @@
         Name="RefreshButton"
         Background="#FF9800"
         Command="{Binding RefreshCommand}"
-        IsEnabled="{Binding !IsProcessing}"
         ToolTip.Tip="Aggiorna file (F5)">
         <StackPanel Orientation="Horizontal">
-          <TextBlock
-            Margin="0,0,8,0"
-            FontSize="16"
-            Text="🔄" />
+          <TextBlock Margin="0,0,8,0" FontSize="16" Text="🔁" />
           <TextBlock Text="Aggiorna" />
         </StackPanel>
       </Button>
 
-      <Separator
-        Width="1"
-        Height="24"
-        Margin="8,4"
-        Background="#E0E0E0" />
+      <Separator Width="1" Height="24" Margin="8,4" Background="#E0E0E0" />
 
       <!--  Close  -->
       <Button
@@ -97,27 +84,27 @@
         Command="{Binding CloseFileCommand}"
         ToolTip.Tip="Chiudi file">
         <StackPanel Orientation="Horizontal">
-          <TextBlock
-            Margin="0,0,8,0"
-            FontSize="16"
-            Text="❌" />
+          <TextBlock Margin="0,0,8,0" FontSize="16" Text="❌" />
           <TextBlock Text="Chiudi" />
         </StackPanel>
       </Button>
 
-      <!--  Progress Indicator  -->
-      <StackPanel
-        Margin="20,0,0,0"
-        IsVisible="{Binding IsProcessing}"
-        Orientation="Horizontal">
-        <TextBlock
-          Margin="0,0,8,0"
-          FontSize="16"
-          Text="⏳" />
-        <TextBlock
-          FontStyle="Italic"
-          Foreground="#666666"
-          Text="Elaborazione in corso..." />
+      <!--  Processing / Definitions state  -->
+      <StackPanel Margin="20,0,0,0" Orientation="Horizontal" VerticalAlignment="Center" Spacing="8">
+        <StackPanel IsVisible="{Binding IsProcessing}" Orientation="Horizontal">
+          <TextBlock Margin="0,0,8,0" FontSize="16" Text="⏳" />
+          <TextBlock FontStyle="Italic" Foreground="#666666" Text="Elaborazione in corso..." />
+        </StackPanel>
+
+        <StackPanel IsVisible="{Binding IsDefinitionsLoaded, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneWay}">
+          <!-- Visible when definitions loaded -->
+          <TextBlock FontStyle="Italic" Foreground="#2E7D32" Text="Definizioni caricate" />
+        </StackPanel>
+
+        <StackPanel IsVisible="{Binding IsDefinitionsLoaded, Converter={StaticResource InverseBooleanToVisibilityConverter}, Mode=OneWay}">
+          <!-- Visible when definitions NOT loaded -->
+          <TextBlock FontStyle="Italic" Foreground="#D32F2F" Text="Definizioni non caricate" />
+        </StackPanel>
       </StackPanel>
 
     </StackPanel>

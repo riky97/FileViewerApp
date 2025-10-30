@@ -32,7 +32,7 @@ namespace FileViewerApp.ViewModels
         private string _instructionView = string.Empty;
         private string _fileName = "Nessun file aperto";
         private string _fileSize = "0 bytes";
-        private int _lineCount;
+        private int _line_count;
         private int _charCount;
         private string _fileEncoding = "UTF-8";
         private int _startOffset = 0x32;
@@ -44,32 +44,123 @@ namespace FileViewerApp.ViewModels
         private bool _hasUnsavedChanges;
         private bool _canEdit;
         private EditableInstruction? _selectedInstruction;
+        private bool _isDefinitionsLoaded;
 
         public ObservableCollection<string> AvailableInstructions { get; } = new();
         public ObservableCollection<InstructionNode> InstructionTree { get; private set; } = new();
         public ObservableCollection<EditableInstruction> EditableInstructions { get; } = new();
+
+        // Commands typed as IAsyncRelayCommand so we can call NotifyCanExecuteChanged()
+        public IAsyncRelayCommand OpenFileCommand { get; }
+        public IAsyncRelayCommand CloseFileCommand { get; }
+        public IAsyncRelayCommand SaveFileCommand { get; }
+        public IAsyncRelayCommand ConvertFileCommand { get; }
+        public IAsyncRelayCommand RefreshCommand { get; }
+        public IAsyncRelayCommand AddInstructionCommand { get; }
+        public IAsyncRelayCommand RemoveInstructionCommand { get; }
+        public IAsyncRelayCommand MoveUpCommand { get; }
+        public IAsyncRelayCommand MoveDownCommand { get; }
+        public IAsyncRelayCommand SaveChangesCommand { get; }
+        public IAsyncRelayCommand DiscardChangesCommand { get; }
+
+        // Command to explicitly load XML definitions
+        public IAsyncRelayCommand LoadDefinitionsCommand { get; }
 
         public MainWindowViewModel()
         {
             var opCodeService = new OpCodeService();
             _orchestrator = new FileProcessorOrchestrator(opCodeService);
 
-            OpenFileCommand = new AsyncRelayCommand(OpenFileAsync);
-            CloseFileCommand = new AsyncRelayCommand(CloseFileAsync);
-            SaveFileCommand = new AsyncRelayCommand(SaveFileAsync);
-            ConvertFileCommand = new AsyncRelayCommand(ConvertFileAsync);
-            RefreshCommand = new AsyncRelayCommand(RefreshAsync);
+            // Initialize commands with canExecute predicates that depend on IsDefinitionsLoaded (+ specific conditions)
+            OpenFileCommand = new AsyncRelayCommand(OpenFileAsync, () => IsDefinitionsLoaded);
+            CloseFileCommand = new AsyncRelayCommand(CloseFileAsync, () => IsDefinitionsLoaded);
+            SaveFileCommand = new AsyncRelayCommand(SaveFileAsync, () => IsDefinitionsLoaded);
+            ConvertFileCommand = new AsyncRelayCommand(ConvertFileAsync, () => IsDefinitionsLoaded);
+            RefreshCommand = new AsyncRelayCommand(RefreshAsync, () => IsDefinitionsLoaded);
 
-            AddInstructionCommand = new AsyncRelayCommand(AddInstructionAsync);
-            RemoveInstructionCommand = new AsyncRelayCommand(RemoveInstructionAsync);
-            MoveUpCommand = new AsyncRelayCommand(MoveUpAsync);
-            MoveDownCommand = new AsyncRelayCommand(MoveDownAsync);
-            SaveChangesCommand = new AsyncRelayCommand(SaveChangesAsync);
-            DiscardChangesCommand = new AsyncRelayCommand(DiscardChangesAsync);
+            AddInstructionCommand = new AsyncRelayCommand(AddInstructionAsync, () => IsDefinitionsLoaded && IsEditMode);
+            RemoveInstructionCommand = new AsyncRelayCommand(RemoveInstructionAsync, () => IsDefinitionsLoaded && CanRemoveInstruction);
+            MoveUpCommand = new AsyncRelayCommand(MoveUpAsync, () => IsDefinitionsLoaded && CanMoveUp);
+            MoveDownCommand = new AsyncRelayCommand(MoveDownAsync, () => IsDefinitionsLoaded && CanMoveDown);
+            SaveChangesCommand = new AsyncRelayCommand(SaveChangesAsync, () => IsDefinitionsLoaded && HasUnsavedChanges);
+            DiscardChangesCommand = new AsyncRelayCommand(DiscardChangesAsync, () => IsDefinitionsLoaded && HasUnsavedChanges);
 
-            UpdateStatus("Pronto - Seleziona un file");
+            LoadDefinitionsCommand = new AsyncRelayCommand(LoadDefinitionsAsync); // always available
+
+            UpdateStatus("Pronto - Carica definizioni (.xml) prima di aprire file");
             EditableInstructions.CollectionChanged += OnInstructionsCollectionChanged;
-            LoadAvailableInstructions();
+
+            // Subscribe to DefinitionsLoaded event — when service loads definitions (ex: LoadFromFileAsync)
+            _orchestrator.GetOpCodeService().DefinitionsLoaded += OpCodeService_DefinitionsLoaded;
+
+            // Do NOT auto-load definitions or call LoadAvailableInstructions here.
+            // Everything starts disabled until user loads the XML via LoadDefinitionsCommand.
+        }
+
+        private void OpCodeService_DefinitionsLoaded(object? sender, EventArgs e)
+        {
+            // Mark loaded and update UI on UI thread
+            Avalonia.Threading.Dispatcher.UIThread.Post(() =>
+            {
+                IsDefinitionsLoaded = true;
+                LoadAvailableInstructions();
+            });
+        }
+
+        // Property that controls overall availability of app functionality
+        public bool IsDefinitionsLoaded
+        {
+            get => _isDefinitionsLoaded;
+            private set
+            {
+                this.RaiseAndSetIfChanged(ref _isDefinitionsLoaded, value);
+                NotifyAllCommands();
+            }
+        }
+
+        // Metodo per caricare manualmente un file di definizioni (es. INFO.XML)
+        private async Task LoadDefinitionsAsync()
+        {
+            try
+            {
+                if (_currentWindow?.StorageProvider == null || !_currentWindow.StorageProvider.CanOpen)
+                {
+                    UpdateStatus("StorageProvider non disponibile");
+                    return;
+                }
+
+                var files = await _currentWindow.StorageProvider.OpenFilePickerAsync(new FilePickerOpenOptions
+                {
+                    Title = "Seleziona file definizioni (INFO.XML)",
+                    AllowMultiple = false,
+                    FileTypeFilter = new[]
+                    {
+                        new FilePickerFileType("Definizioni XML"){ Patterns = new[]{"*.xml"} },
+                        FilePickerFileTypes.All
+                    }
+                });
+
+                if (files == null || files.Count == 0)
+                {
+                    UpdateStatus("Nessun file di definizioni selezionato");
+                    return;
+                }
+
+                var path = files[0].Path.LocalPath;
+
+                // Ask service to load definitions from chosen file. Service will raise DefinitionsLoaded event.
+                await _orchestrator.GetOpCodeService().LoadFromFileAsync(path);
+
+                // Ensure UI updated immediately as fallback
+                IsDefinitionsLoaded = true;
+                LoadAvailableInstructions();
+
+                UpdateStatus($"Definizioni caricate da: {Path.GetFileName(path)}");
+            }
+            catch (Exception ex)
+            {
+                UpdateStatus($"Errore caricamento definizioni: {ex.Message}");
+            }
         }
 
         public void SetWindow(Window window) => _currentWindow = window;
@@ -87,7 +178,7 @@ namespace FileViewerApp.ViewModels
         public string InstructionView { get => _instructionView; set => this.RaiseAndSetIfChanged(ref _instructionView, value); }
         public string FileName { get => _fileName; set => this.RaiseAndSetIfChanged(ref _fileName, value); }
         public string FileSize { get => _fileSize; set => this.RaiseAndSetIfChanged(ref _fileSize, value); }
-        public int LineCount { get => _lineCount; set => this.RaiseAndSetIfChanged(ref _lineCount, value); }
+        public int LineCount { get => _line_count; set => this.RaiseAndSetIfChanged(ref _line_count, value); }
         public int CharCount { get => _charCount; set => this.RaiseAndSetIfChanged(ref _charCount, value); }
         public string FileEncoding { get => _fileEncoding; set => this.RaiseAndSetIfChanged(ref _fileEncoding, value); }
         public int StartOffset { get => _startOffset; set => this.RaiseAndSetIfChanged(ref _startOffset, value); }
@@ -96,25 +187,13 @@ namespace FileViewerApp.ViewModels
         public bool IsProcessing { get => _isProcessing; set => this.RaiseAndSetIfChanged(ref _isProcessing, value); }
         public string CurrentFileType { get => _currentFileType; set => this.RaiseAndSetIfChanged(ref _currentFileType, value); }
         public bool IsEditMode { get => _isEditMode; set { this.RaiseAndSetIfChanged(ref _isEditMode, value); UpdateCanEditState(); } }
-        public bool HasUnsavedChanges { get => _hasUnsavedChanges; set => this.RaiseAndSetIfChanged(ref _hasUnsavedChanges, value); }
+        public bool HasUnsavedChanges { get => _hasUnsavedChanges; set { this.RaiseAndSetIfChanged(ref _hasUnsavedChanges, value); NotifyAllCommands(); } }
         public bool CanEdit { get => _canEdit; set => this.RaiseAndSetIfChanged(ref _canEdit, value); }
-        public EditableInstruction? SelectedInstruction { get => _selectedInstruction; set { this.RaiseAndSetIfChanged(ref _selectedInstruction, value); UpdateAllButtonStates(); } }
+        public EditableInstruction? SelectedInstruction { get => _selectedInstruction; set { this.RaiseAndSetIfChanged(ref _selectedInstruction, value); UpdateAllButtonStates(); NotifyAllCommands(); } }
 
         public bool CanRemoveInstruction => SelectedInstruction != null && IsEditMode;
         public bool CanMoveUp => SelectedInstruction != null && IsEditMode && EditableInstructions.IndexOf(SelectedInstruction) > 0;
         public bool CanMoveDown => SelectedInstruction != null && IsEditMode && EditableInstructions.IndexOf(SelectedInstruction) < EditableInstructions.Count - 1;
-
-        public ICommand OpenFileCommand { get; }
-        public ICommand CloseFileCommand { get; }
-        public ICommand SaveFileCommand { get; }
-        public ICommand ConvertFileCommand { get; }
-        public ICommand RefreshCommand { get; }
-        public ICommand AddInstructionCommand { get; }
-        public ICommand RemoveInstructionCommand { get; }
-        public ICommand MoveUpCommand { get; }
-        public ICommand MoveDownCommand { get; }
-        public ICommand SaveChangesCommand { get; }
-        public ICommand DiscardChangesCommand { get; }
 
         private void LoadAvailableInstructions()
         {
@@ -126,6 +205,7 @@ namespace FileViewerApp.ViewModels
                 foreach (var kv in dict.OrderBy(o => o.Value.Name))
                     AvailableInstructions.Add(kv.Value.Name);
                 UpdateStatus($"Caricate {AvailableInstructions.Count} istruzioni");
+                NotifyAllCommands();
             }
             catch (Exception ex) { UpdateStatus($"Errore lista istruzioni: {ex.Message}"); }
         }
@@ -184,7 +264,13 @@ namespace FileViewerApp.ViewModels
                 IsProcessing = true;
                 var path = files[0].Path.LocalPath;
                 _currentFileBytes = await File.ReadAllBytesAsync(path);
+
+                // Processa il file (qui LoadOpCodeDefinitionsAsync viene eseguito dentro ProcessFileAsync)
                 _currentProcessedFile = await _orchestrator.ProcessFileAsync(path);
+
+                // Ricarica la lista delle istruzioni ora che OpCodeService è popolato
+                LoadAvailableInstructions();
+
                 await UpdateUIFromProcessedFile(_currentProcessedFile);
                 await PopulateEditableInstructions(_currentProcessedFile);
                 RebuildInstructionViewSimple();
@@ -534,19 +620,15 @@ namespace FileViewerApp.ViewModels
         {
             HasUnsavedChanges = EditableInstructions.Any(i => i.IsModified);
             UpdateAllButtonStates();
+            NotifyAllCommands();
             // Nessun refresh immediato: solo dopo Salva
-        }
-
-        private void RenumberInstructions()
-        {
-            for (int i = 0; i < EditableInstructions.Count; i++)
-                EditableInstructions[i].Number = i + 1;
         }
 
         private void UpdateCanEditState()
         {
             CanEdit = IsEditMode && EditableInstructions.Count > 0;
             UpdateAllButtonStates();
+            NotifyAllCommands();
         }
 
         private void UpdateAllButtonStates()
@@ -556,6 +638,31 @@ namespace FileViewerApp.ViewModels
             this.RaisePropertyChanged(nameof(CanMoveDown));
         }
 
+        // Notify all AsyncRelayCommand instances to recompute CanExecute
+        private void NotifyAllCommands()
+        {
+            OpenFileCommand.NotifyCanExecuteChanged();
+            CloseFileCommand.NotifyCanExecuteChanged();
+            SaveFileCommand.NotifyCanExecuteChanged();
+            ConvertFileCommand.NotifyCanExecuteChanged();
+            RefreshCommand.NotifyCanExecuteChanged();
+
+            AddInstructionCommand.NotifyCanExecuteChanged();
+            RemoveInstructionCommand.NotifyCanExecuteChanged();
+            MoveUpCommand.NotifyCanExecuteChanged();
+            MoveDownCommand.NotifyCanExecuteChanged();
+            SaveChangesCommand.NotifyCanExecuteChanged();
+            DiscardChangesCommand.NotifyCanExecuteChanged();
+
+            LoadDefinitionsCommand.NotifyCanExecuteChanged();
+        }
+
+        private void UpdateStatus(string msg)
+        {
+            StatusText = $"{DateTime.Now:HH:mm:ss} - {msg}";
+        }
+
+        // Utility method added (was missing)
         private string FormatFileSize(long bytes)
         {
             if (bytes < 1024) return $"{bytes} bytes";
@@ -563,9 +670,11 @@ namespace FileViewerApp.ViewModels
             return $"{bytes / (1024.0 * 1024.0):F1} MB";
         }
 
-        private void UpdateStatus(string msg)
+        // Utility method added (was missing)
+        private void RenumberInstructions()
         {
-            StatusText = $"{DateTime.Now:HH:mm:ss} - {msg}";
+            for (int i = 0; i < EditableInstructions.Count; i++)
+                EditableInstructions[i].Number = i + 1;
         }
     }
 }
