@@ -60,7 +60,7 @@
     <DockPanel>
 
         <!--  📁 TOOLBAR SUPERIORE  -->
-        <controls:ToolbarControl DataContext="{Binding}" DockPanel.Dock="Top" />
+        <controls:ToolbarControl DataContext="{Binding ToolbarViewModel}" DockPanel.Dock="Top" />
 
         <!--  📊 STATUS BAR INFERIORE  -->
         <controls:StatusBarControl DataContext="{Binding}" DockPanel.Dock="Bottom" />
@@ -83,9 +83,7 @@
                 ResizeDirection="Columns" />
 
             <!--  📝 RIGHT PANEL: Content Tabs  -->
-            <controls:ContentTabsControl Grid.Column="2" DataContext="{Binding}" />
-
-
+            <controls:ContentTabsControl Grid.Column="2" DataContext="{Binding ContentTabsViewModel}" />
 
         </Grid>
 

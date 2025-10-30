@@ -15,6 +15,7 @@ using CommunityToolkit.Mvvm.Input;
 using FileViewerApp.Models;
 using FileViewerApp.Services;
 using FileViewerApp.Enums;
+using FileViewerApp.ViewModels.Controls; // aggiungi questo using in cima al file
 
 namespace FileViewerApp.ViewModels
 {
@@ -66,12 +67,18 @@ namespace FileViewerApp.ViewModels
         // Command to explicitly load XML definitions
         public IAsyncRelayCommand LoadDefinitionsCommand { get; }
 
+        // Esporre i sotto-ViewModel per i control
+        public ToolbarControlViewModel ToolbarViewModel { get; }
+        public ContentTabsControlViewModel ContentTabsViewModel { get; }
+
         public MainWindowViewModel()
         {
             var opCodeService = new OpCodeService();
             _orchestrator = new FileProcessorOrchestrator(opCodeService);
 
-            // Initialize commands with canExecute predicates that depend on IsDefinitionsLoaded (+ specific conditions)
+            // Initialize commands FIRST so control viewmodels see them when instantiated
+            LoadDefinitionsCommand = new AsyncRelayCommand(LoadDefinitionsAsync); // always available
+
             OpenFileCommand = new AsyncRelayCommand(OpenFileAsync, () => IsDefinitionsLoaded);
             CloseFileCommand = new AsyncRelayCommand(CloseFileAsync, () => IsDefinitionsLoaded);
             SaveFileCommand = new AsyncRelayCommand(SaveFileAsync, () => IsDefinitionsLoaded);
@@ -85,7 +92,9 @@ namespace FileViewerApp.ViewModels
             SaveChangesCommand = new AsyncRelayCommand(SaveChangesAsync, () => IsDefinitionsLoaded && HasUnsavedChanges);
             DiscardChangesCommand = new AsyncRelayCommand(DiscardChangesAsync, () => IsDefinitionsLoaded && HasUnsavedChanges);
 
-            LoadDefinitionsCommand = new AsyncRelayCommand(LoadDefinitionsAsync); // always available
+            // Now initialize the control viewmodels so their bindings see valid command instances
+            ToolbarViewModel = new ToolbarControlViewModel(this);
+            ContentTabsViewModel = new ContentTabsControlViewModel(this);
 
             UpdateStatus("Pronto - Carica definizioni (.xml) prima di aprire file");
             EditableInstructions.CollectionChanged += OnInstructionsCollectionChanged;

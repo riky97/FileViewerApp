@@ -2,10 +2,13 @@
   x:Class="FileViewerApp.Views.Controls.ContentTabsControl"
   xmlns="https://github.com/avaloniaui"
   xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+  xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+  xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
   xmlns:models="clr-namespace:FileViewerApp.Models"
-  xmlns:vm="clr-namespace:FileViewerApp.ViewModels"
-  x:DataType="vm:MainWindowViewModel"
-  x:Name="Root">
+  xmlns:vm="clr-namespace:FileViewerApp.ViewModels.Controls"
+  x:DataType="vm:ContentTabsControlViewModel"
+  x:Name="Root"
+  mc:Ignorable="d">
 
   <TabControl>
     <!--  TAB EDITOR TESTO  -->
@@ -164,7 +167,7 @@
 
         <!-- Debug: mostra quante opzioni sono caricate (rimuovere dopo il controllo) -->
         <TextBlock Margin="4,0,0,8" Foreground="Gray"
-                   Text="{Binding DataContext.AvailableInstructions.Count, ElementName=Root, StringFormat='Opzioni disponibili: {0}'}"/>
+                   Text="{Binding AvailableInstructions.Count, StringFormat='Opzioni disponibili: {0}'}"/>
 
 			  <ListBox ItemsSource="{Binding EditableInstructions}" SelectedItem="{Binding SelectedInstruction}">
 				  <ListBox.ItemTemplate>
