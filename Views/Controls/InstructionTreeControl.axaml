@@ -34,18 +34,15 @@
           Padding="8"
           ItemsSource="{Binding InstructionTree}"
           SelectedItem="{Binding SelectedNode}">
-
           <TreeView.ItemTemplate>
             <TreeDataTemplate ItemsSource="{Binding Children}">
               <StackPanel Orientation="Horizontal">
                 <TextBlock
                   Margin="0,0,8,0"
-                  FontWeight="Medium"
-                  Text="{Binding Name}" />
-                <TextBlock
                   FontSize="12"
                   Foreground="#666666"
-                  Text="{Binding Parameters}" />
+                  Text="{Binding InstructionNumber}" />
+                <TextBlock FontWeight="Medium" Text="{Binding Name}" />
               </StackPanel>
             </TreeDataTemplate>
           </TreeView.ItemTemplate>

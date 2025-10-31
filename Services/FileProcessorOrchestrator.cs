@@ -347,7 +347,7 @@ namespace FileViewerApp.Services
             return builder.ToString();
         }
 
-        private List<InstructionNode> GenerateInstructionTree(List<Instruction> instructions, string header)
+        public List<InstructionNode> GenerateInstructionTree(List<Instruction> instructions, string header)
         {
             var tree = new List<InstructionNode>();
             var nodeStack = new Stack<InstructionNode>();
@@ -356,12 +356,11 @@ namespace FileViewerApp.Services
             {
                 Name = $"PROGRAMMA: {header}",
                 Details = $"File - {instructions.Count} istruzioni",
-                IsExpanded = true
             };
             tree.Add(rootNode);
             nodeStack.Push(rootNode);
 
-            foreach (var instruction in instructions)
+            foreach (var (instruction, index) in instructions.Select((instruction, index) => (instruction, index)))
             {
                 var opCodeInfo = _opCodeService.GetOpCodeInfo(instruction.OpCode);
                 var indentMode = opCodeInfo?.IndentMode ?? IndentMode.None;
@@ -386,7 +385,6 @@ namespace FileViewerApp.Services
                     OpCode = instruction.OpCode,
                     Parameters = string.Join(", ", significantParams),
                     Details = $"Offset: 0x{instruction.Offset:X6} | OpCode: {instruction.OpCode} | {opCodeInfo?.Category ?? "Unknown"}",
-                    IsExpanded = true
                 };
 
                 var parentNode = nodeStack.Peek();

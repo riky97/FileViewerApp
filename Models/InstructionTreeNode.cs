@@ -12,7 +12,7 @@ namespace FileViewerApp.Models
         private string _name = "";
         private string _parameters = "";
         private ObservableCollection<InstructionTreeNode> _children = new();
-        private bool _isExpanded = true;
+        private bool _isExpanded = false;
 
         public string Name
         {

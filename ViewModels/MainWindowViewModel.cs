@@ -15,7 +15,8 @@ using CommunityToolkit.Mvvm.Input;
 using FileViewerApp.Models;
 using FileViewerApp.Services;
 using FileViewerApp.Enums;
-using FileViewerApp.ViewModels.Controls; // aggiungi questo using in cima al file
+using FileViewerApp.ViewModels.Controls;
+using FileViewerApp.Models.FileViewerApp.Models; // aggiungi questo using in cima al file
 
 namespace FileViewerApp.ViewModels
 {
@@ -499,24 +500,49 @@ namespace FileViewerApp.ViewModels
             }
         }
 
-        private void RebuildTreeViewSimple()
+        private async void RebuildTreeViewSimple()
         {
             InstructionTree.Clear();
             if (EditableInstructions.Count == 0) return;
-            var root = new InstructionNode
+
+            List<Instruction> instructions = new List<Instruction>();
+
+            foreach (var ei in EditableInstructions)
             {
-                Name = $"Programma ({EditableInstructions.Count} istruzioni)",
-                IsExpanded = true
-            };
-            foreach (var i in EditableInstructions.OrderBy(i => i.Number))
-            {
-                root.Children.Add(new InstructionNode
+                var instr = new Instruction
                 {
-                    Name = $"{i.Number:D3}: {i.Name} (OpCode: {i.OpCode})",
-                    IsExpanded = false
-                });
+                    Number = ei.Number,
+                    OpCode = ei.OpCode,
+                    Name = ei.Name,
+                    Parameters = ei.GetParameters()
+                };
+                instructions.Add(instr);
             }
-            InstructionTree.Add(root);
+
+            _currentProcessedFile!.InstructionTree = _orchestrator.GenerateInstructionTree(instructions, _currentProcessedFile!.Header);
+
+            RebuildTreeViewInitial();
+
+            // List<InstructionNode> rootNodes = _orchestrator.GenerateInstructionTree(instructions, _currentProcessedFile!.Header);
+            // foreach (var node in rootNodes)
+            // {
+            //     InstructionTree.Add(node);
+            // }
+
+            // var root = new InstructionNode
+            // {
+            //     Name = $"Programma ({EditableInstructions.Count} istruzioni)",
+            //     IsExpanded = true
+            // };
+            // foreach (var i in EditableInstructions.OrderBy(i => i.Number))
+            // {
+            //     root.Children.Add(new InstructionNode
+            //     {
+            //         Name = $"{i.Number:D3}: {i.Name} (OpCode: {i.OpCode})",
+            //         IsExpanded = false
+            //     });
+            // }
+            // InstructionTree.Add(root);
         }
 
         private async Task UpdateUIFromProcessedFile(ProcessedFile processedFile)

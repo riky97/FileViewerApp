@@ -6,7 +6,7 @@ namespace FileViewerApp.Models
     public class InstructionNode : ReactiveObject
     {
         private string _name = string.Empty;
-        private bool _isExpanded = true;
+        private bool _isExpanded = false;
         private bool _isSelected = false;
         private string _details = string.Empty;
         private int _instructionNumber;
