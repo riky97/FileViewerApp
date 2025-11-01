@@ -1,0 +1,42 @@
+<Styles
+  xmlns="https://github.com/avaloniaui"
+  xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+  <!-- Centralized application styles -->
+  <Style Selector="Button">
+    <Setter Property="Padding" Value="12,8" />
+    <Setter Property="Margin" Value="4" />
+    <Setter Property="CornerRadius" Value="4" />
+    <Setter Property="Background" Value="#2196F3" />
+    <Setter Property="Foreground" Value="White" />
+    <Setter Property="FontWeight" Value="Medium" />
+  </Style>
+
+  <Style Selector="Button:pointerover">
+    <Setter Property="Background" Value="#1976D2" />
+  </Style>
+
+  <Style Selector="Button:disabled">
+    <Setter Property="Background" Value="#CCCCCC" />
+    <Setter Property="Foreground" Value="#666666" />
+  </Style>
+
+  <Style Selector="TabItem">
+    <Setter Property="FontSize" Value="14" />
+    <Setter Property="Padding" Value="16,8" />
+  </Style>
+
+  <Style Selector="TextBox">
+    <Setter Property="Background" Value="#F8F9FA" />
+    <Setter Property="BorderBrush" Value="#DEE2E6" />
+    <Setter Property="BorderThickness" Value="1" />
+    <Setter Property="CornerRadius" Value="4" />
+    <Setter Property="Padding" Value="8" />
+  </Style>
+
+  <!-- TreeView item style: simple padding only; avoid complex bindings in styles to keep compatibility -->
+  <Style Selector="TreeViewItem">
+    <Setter Property="Padding" Value="4" />
+  </Style>
+
+</Styles>

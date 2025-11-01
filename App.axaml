@@ -12,5 +12,6 @@
 
   <Application.Styles>
     <FluentTheme />
+	  <StyleInclude Source="avares://FileViewerApp/Styles/ThemeStyles.axaml" />
   </Application.Styles>
 </Application>
