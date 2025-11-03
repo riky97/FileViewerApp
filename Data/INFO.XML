@@ -237,6 +237,16 @@
       <RESGROUP Name="DOUT" />
     </PAR>
   </CMD>
+  <CMD Name="WR_EVENT" ID="92" Vers="1" Active="True" IndentMode="NONE" Descr="" VersNote="Imported from INFO.CFG" ImgName="">
+    <PAR Name="event" Value="1" Min="1" Max="49" Type="INT" Descr="" />
+    <PAR Name="p1" Value="0" Min="0" Max="1024" Type="INT" Descr="" />
+    <PAR Name="p2" Value="0" Min="0" Max="1024" Type="INT" Descr="" />
+    <PAR Name="p3" Value="0" Min="0" Max="1024" Type="INT" Descr="" />
+    <PAR Name="p4" Value="0" Min="0" Max="1024" Type="INT" Descr="" />
+    <PAR Name="p5" Value="0" Min="0" Max="1024" Type="INT" Descr="" />
+    <PAR Name="p6" Value="0" Min="0" Max="1024" Type="INT" Descr="" />
+    <PAR Name="p7" Value="0" Min="0" Max="1024" Type="INT" Descr="" />
+  </CMD>
   <CMD Name="MUOVI ZONA" ID="74" Vers="1" Active="False" IndentMode="NONE" Descr="" VersNote="Imported 12/05/2011 from INFO.CFG" ImgName="">
     <PAR Name="" Value="0" Min="0" Max="5" Type="INT" Descr="" />
     <PAR Name="" Value="0" Min="-9999999" Max="9999999" Type="FLOAT" Descr="" />

@@ -174,7 +174,7 @@
 							  BorderBrush="#DDD"
 							  BorderThickness="1"
 							  CornerRadius="3">
-								<Grid MinHeight="30" ColumnDefinitions="60,220,140,Auto">
+								<Grid MinHeight="30" ColumnDefinitions="60,220,*,Auto">
 									<TextBlock
 									  Grid.Column="0"
 									  VerticalAlignment="Center"
@@ -195,15 +195,19 @@
 											</DataTemplate>
 										</ComboBox.ItemTemplate>
 									</ComboBox>
-									<StackPanel Grid.Column="2"
-										VerticalAlignment="Center"
-										Orientation="Horizontal"
-										Spacing="4">
-										<TextBox Width="46" TextAlignment="Center" Watermark="P0" Text="{Binding Param0, Mode=TwoWay}" />
-										<TextBox Width="46" TextAlignment="Center" Watermark="P1" Text="{Binding Param1, Mode=TwoWay}" />
-										<TextBox Width="46" TextAlignment="Center" Watermark="P2" Text="{Binding Param2, Mode=TwoWay}" />
-										<TextBox Width="46" TextAlignment="Center" Watermark="P3" Text="{Binding Param3, Mode=TwoWay}" />
-									</StackPanel>
+									<ItemsControl Grid.Column="2" ItemsSource="{Binding VisibleParameterEntries}">
+										<ItemsControl.ItemsPanel>
+											<ItemsPanelTemplate>
+												<StackPanel Orientation="Horizontal" Spacing="4" />
+											</ItemsPanelTemplate>
+										</ItemsControl.ItemsPanel>
+										<ItemsControl.ItemTemplate>
+											<DataTemplate x:DataType="models:InstructionParameter">
+												<TextBox Width="46" TextAlignment="Center" Watermark="{Binding Index, StringFormat='P{0}'}" Text="{Binding Value, Mode=TwoWay}" />
+											</DataTemplate>
+										</ItemsControl.ItemTemplate>
+									</ItemsControl>
+									<TextBlock Grid.Column="3" VerticalAlignment="Center" FontFamily="Consolas" FontSize="11" Foreground="{Binding IsValid, Converter={StaticResource BooleanToBrushConverter}}" Text="{Binding ValidationSummary}" />
 								</Grid>
 							</Border>
 						</DataTemplate>

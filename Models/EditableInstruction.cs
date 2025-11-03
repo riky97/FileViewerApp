@@ -1,10 +1,19 @@
 using System;
 using System.ComponentModel;
 using System.Linq;
+using System.Collections.ObjectModel;
 using ReactiveUI;
 
 namespace FileViewerApp.Models
 {
+    public class InstructionParameter : ReactiveObject
+    {
+        public int Index { get; }
+        private int _value;
+        public int Value { get => _value; set => this.RaiseAndSetIfChanged(ref _value, value); }
+        public InstructionParameter(int index, int value) { Index = index; _value = value; }
+    }
+
     public class EditableInstruction : ReactiveObject, INotifyPropertyChanged
     {
         private int _number;
@@ -13,17 +22,66 @@ namespace FileViewerApp.Models
         private int[] _parameters = new int[8];
         private bool _isValid = true;
         private bool _isModified = false;
-        private string _validationSummary = "OK";
+        private string _validationSummary = ""; // was "OK" -> now empty when valid
         private string _instructionText = "";
+        private int _paramCount = 8; // default until set by viewmodel
 
         // Evento per notificare quando una proprietà cambia
         public event EventHandler<PropertyChangedEventArgs>? InstructionChanged;
+
+        public ObservableCollection<InstructionParameter> ParameterEntries { get; } = new();
+        public ObservableCollection<InstructionParameter> VisibleParameterEntries { get; } = new();
+
+        public EditableInstruction()
+        {
+            // Initialize parameter entries
+            for (int i = 0; i < 8; i++)
+            {
+                var entry = new InstructionParameter(i, 0);
+                entry.PropertyChanged += OnParameterEntryChanged;
+                ParameterEntries.Add(entry);
+            }
+            UpdateVisibleParameters();
+        }
+
+        private void OnParameterEntryChanged(object? sender, PropertyChangedEventArgs e)
+        {
+            if (sender is InstructionParameter ip && e.PropertyName == nameof(InstructionParameter.Value))
+            {
+                _parameters[ip.Index] = ip.Value;
+                UpdateInstructionText();
+                MarkAsModified();
+                ValidateInstruction();
+            }
+        }
 
         public int Number { get => _number; set => this.RaiseAndSetIfChanged(ref _number, value); }
         public string Name { get => _name; set => this.RaiseAndSetIfChanged(ref _name, value); }
         public bool IsValid { get => _isValid; set => this.RaiseAndSetIfChanged(ref _isValid, value); }
         public bool IsModified { get => _isModified; set => this.RaiseAndSetIfChanged(ref _isModified, value); }
         public string ValidationSummary { get => _validationSummary; set => this.RaiseAndSetIfChanged(ref _validationSummary, value); }
+
+        public int ParamCount
+        {
+            get => _paramCount;
+            set
+            {
+                if (_paramCount != value)
+                {
+                    this.RaiseAndSetIfChanged(ref _paramCount, value);
+                    UpdateVisibleParameters();
+                    ValidateInstruction();
+                }
+            }
+        }
+
+        private void UpdateVisibleParameters()
+        {
+            VisibleParameterEntries.Clear();
+            foreach (var p in ParameterEntries.Take(Math.Clamp(ParamCount, 0, 8)))
+                VisibleParameterEntries.Add(p);
+            this.RaisePropertyChanged(nameof(VisibleParameterEntries));
+        }
 
         public int OpCode
         {
@@ -34,7 +92,6 @@ namespace FileViewerApp.Models
                 {
                     _opCode = value;
                     this.RaisePropertyChanged();
-                    Name = GetOpCodeName(value);
                     UpdateInstructionText();
                     MarkAsModified();
                     ValidateInstruction();
@@ -59,6 +116,7 @@ namespace FileViewerApp.Models
             }
         }
 
+        // Legacy direct param properties retained for any existing bindings
         public int Param0 { get => _parameters[0]; set => SetParam(0, value); }
         public int Param1 { get => _parameters[1]; set => SetParam(1, value); }
         public int Param2 { get => _parameters[2]; set => SetParam(2, value); }
@@ -67,11 +125,13 @@ namespace FileViewerApp.Models
         public int Param5 { get => _parameters[5]; set => SetParam(5, value); }
         public int Param6 { get => _parameters[6]; set => SetParam(6, value); }
         public int Param7 { get => _parameters[7]; set => SetParam(7, value); }
+
         private void SetParam(int index, int value)
         {
             if (index < 0 || index >= _parameters.Length) return;
             if (_parameters[index] == value) return;
             _parameters[index] = value;
+            ParameterEntries[index].Value = value; // sync entry
             this.RaisePropertyChanged($"Param{index}");
             UpdateInstructionText();
             MarkAsModified();
@@ -83,8 +143,7 @@ namespace FileViewerApp.Models
         {
             try
             {
-                if (string.IsNullOrWhiteSpace(instructionText))
-                    return;
+                if (string.IsNullOrWhiteSpace(instructionText)) return;
 
                 var parts = instructionText.Trim().Split(new char[] { ' ', '\t' }, StringSplitOptions.RemoveEmptyEntries);
 
@@ -127,9 +186,11 @@ namespace FileViewerApp.Models
                     }
                 }
 
+                // Sync entries
+                for (int i = 0; i < 8; i++) ParameterEntries[i].Value = _parameters[i];
+
                 // Notifica le proprietà cambiate
                 this.RaisePropertyChanged(nameof(OpCode));
-                this.RaisePropertyChanged(nameof(Name));
                 NotifyParametersChanged();
             }
             catch (Exception ex)
@@ -143,7 +204,7 @@ namespace FileViewerApp.Models
         {
             try
             {
-                var nonZeroParams = _parameters.Where(p => p != 0).ToArray();
+                var nonZeroParams = _parameters.Take(ParamCount).Where(p => p != 0).ToArray();
                 _instructionText = nonZeroParams.Length > 0 ? $"{OpCode} {string.Join(" ", nonZeroParams)}" : OpCode.ToString();
                 this.RaisePropertyChanged(nameof(InstructionText));
             }
@@ -172,47 +233,11 @@ namespace FileViewerApp.Models
                 switch (OpCode)
                 {
                     case 1: // NULLA
-                        if (_parameters.Any(p => p != 0))
-                        {
-                            ValidationSummary = "NULLA non dovrebbe avere parametri";
-                            IsValid = false;
-                        }
-                        else
-                        {
-                            ValidationSummary = "OK";
-                            IsValid = true;
-                        }
+                        if (_parameters.Any(p => p != 0)) { ValidationSummary = "NULLA non dovrebbe avere parametri"; IsValid = false; }
+                        else { ValidationSummary = ""; IsValid = true; }
                         break;
-
-                    case 105: // IF_NUM
-                        if (_parameters[0] == 0 && _parameters[1] == 0 && _parameters[2] == 0)
-                        {
-                            ValidationSummary = "IF_NUM richiede parametri validi";
-                            IsValid = false;
-                        }
-                        else
-                        {
-                            ValidationSummary = "OK";
-                            IsValid = true;
-                        }
-                        break;
-
-                    case 200: // GOTO
-                        if (_parameters[0] == 0 && _parameters[1] == 0)
-                        {
-                            ValidationSummary = "GOTO richiede un indirizzo";
-                            IsValid = false;
-                        }
-                        else
-                        {
-                            ValidationSummary = "OK";
-                            IsValid = true;
-                        }
-                        break;
-
                     default:
-                        ValidationSummary = "OK";
-                        IsValid = true;
+                        ValidationSummary = ""; IsValid = true;
                         break;
                 }
             }
@@ -221,6 +246,19 @@ namespace FileViewerApp.Models
                 ValidationSummary = $"Errore validazione: {ex.Message}";
                 IsValid = false;
             }
+        }
+
+        // Utility methods
+        public void ResetModifications() { IsModified = false; ValidationSummary = ""; IsValid = true; }
+        public int[] GetParameters() => (int[])_parameters.Clone();
+        public void SetParameters(int[] parameters)
+        {
+            Array.Clear(_parameters, 0, _parameters.Length);
+            Array.Copy(parameters, _parameters, Math.Min(parameters.Length, _parameters.Length));
+            for (int i = 0; i < 8; i++) ParameterEntries[i].Value = _parameters[i];
+            NotifyParametersChanged();
+            UpdateInstructionText();
+            ValidateInstruction();
         }
 
         private string GetOpCodeName(int opCode) => opCode switch
@@ -248,17 +286,5 @@ namespace FileViewerApp.Models
             "END" => 255,
             _ => -1
         };
-
-        // Metodi di utility
-        public void ResetModifications() { IsModified = false; ValidationSummary = "OK"; IsValid = true; }
-        public int[] GetParameters() => (int[])_parameters.Clone();
-        public void SetParameters(int[] parameters)
-        {
-            Array.Clear(_parameters, 0, _parameters.Length);
-            Array.Copy(parameters, _parameters, Math.Min(parameters.Length, _parameters.Length));
-            NotifyParametersChanged();
-            UpdateInstructionText();
-            ValidateInstruction();
-        }
     }
 }

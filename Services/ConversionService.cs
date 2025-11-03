@@ -9,309 +9,167 @@ using FileViewerApp.Models.FileViewerApp.Models;
 
 namespace FileViewerApp.Services
 {
-    /// <summary>
-    /// Servizio unificato per tutte le conversioni TXT ↔ DAT
-    /// </summary>
     public class ConversionService
     {
         private readonly OpCodeService _opCodeService;
+        public ConversionService(OpCodeService opCodeService) => _opCodeService = opCodeService;
 
-        public ConversionService(OpCodeService opCodeService)
-        {
-            _opCodeService = opCodeService;
-        }
-
-        #region TEXT TO BINARY CONVERSION
-
-        /// <summary>
-        /// Converte contenuto testuale in file binario
-        /// </summary>
+        #region TEXT → BINARY
         public async Task<byte[]> ConvertTextToBinaryAsync(string textContent, string programName = "MAIN")
         {
             var instructions = ParseTextInstructions(textContent, out string headerName);
             return GenerateBinaryFromInstructions(instructions, headerName ?? programName);
         }
-
-        /// <summary>
-        /// Converte file di testo in binario
-        /// </summary>
-        public async Task<byte[]> ConvertTextFileAsync(string textFilePath)
-        {
-            var textContent = await File.ReadAllTextAsync(textFilePath);
-            var programName = Path.GetFileNameWithoutExtension(textFilePath);
-            return await ConvertTextToBinaryAsync(textContent, programName);
-        }
-
-        // Migliora il metodo ParseTextInstructions per gestire meglio il formato del file 1.txt
+        public async Task<byte[]> ConvertTextFileAsync(string path) => await ConvertTextToBinaryAsync(await File.ReadAllTextAsync(path), Path.GetFileNameWithoutExtension(path));
 
         private List<Instruction> ParseTextInstructions(string textContent, out string headerName)
         {
-            var instructions = new List<Instruction>();
-            headerName = "MAIN"; // Default
-
-            var lines = textContent.Split('\n')
-                .Where(l => !string.IsNullOrWhiteSpace(l) && !l.Trim().StartsWith("//"))
-                .ToList();
-
-            // Cerca header nel formato "106;MAIN" o simili
-            var headerLine = lines.FirstOrDefault(l => l.Contains(";") &&
-                (l.Contains("106") || l.Split(';').Length == 2));
-
+            var list = new List<Instruction>();
+            headerName = "MAIN";
+            var lines = textContent.Split('\n').Where(l => !string.IsNullOrWhiteSpace(l) && !l.Trim().StartsWith("//")).ToList();
+            var headerLine = lines.FirstOrDefault(l => l.Contains(";") && (l.Contains("106") || l.Split(';').Length == 2));
             if (headerLine != null)
             {
-                var headerParts = headerLine.Split(';');
-                if (headerParts.Length >= 2)
-                {
-                    headerName = headerParts[1].Trim();
-                }
+                var parts = headerLine.Split(';');
+                if (parts.Length >= 2) headerName = parts[1].Trim();
                 lines.Remove(headerLine);
             }
-
-            // Parse istruzioni con formato migliorato
             foreach (var line in lines)
-            {
-                if (TryParseTextInstruction(line.Trim(), out var instruction))
-                {
-                    instructions.Add(instruction);
-                }
-            }
-
-            return instructions;
+                if (TryParseTextInstruction(line.Trim(), out var instr)) list.Add(instr);
+            return list;
         }
-
         private bool TryParseTextInstruction(string line, out Instruction instruction)
         {
             instruction = null;
-
             try
             {
-                // Rimuovi spazi extra e caratteri finali come ";"
                 line = line.TrimEnd(';', ' ', '\t');
-
-                // Parse format: "1 , IF_NUM      ,      565,        0,        0,        0"
-                var parts = line.Split(',')
-                    .Select(p => p.Trim())
-                    .Where(p => !string.IsNullOrEmpty(p))
-                    .ToArray();
-
-                if (parts.Length >= 2)
-                {
-                    // Primo campo: numero istruzione
-                    if (!int.TryParse(parts[0], out int instructionNumber))
-                        return false;
-
-                    // Secondo campo: nome comando (rimuovi spazi extra)
-                    var commandName = parts[1].Trim();
-                    var opCodeInfo = _opCodeService.GetOpCodeByName(commandName);
-
-                    if (opCodeInfo != null)
-                    {
-                        // Parametri (massimo 8, completa con zeri se mancanti)
-                        var parameters = new int[8];
-
-                        // Prendi tutti i parametri disponibili dopo il nome comando
-                        for (int i = 0; i < 8; i++)
-                        {
-                            if (i + 2 < parts.Length && int.TryParse(parts[i + 2], out int param))
-                            {
-                                parameters[i] = param;
-                            }
-                            else
-                            {
-                                parameters[i] = 0;
-                            }
-                        }
-
-                        instruction = new Instruction
-                        {
-                            Number = instructionNumber,
-                            OpCode = opCodeInfo.Id,
-                            Name = opCodeInfo.Name,
-                            Parameters = parameters
-                        };
-
-                        Console.WriteLine($"Parsed: {instructionNumber} -> {commandName} (OpCode: {opCodeInfo.Id})");
-                        return true;
-                    }
-                    else
-                    {
-                        Console.WriteLine($"OpCode non trovato per comando: '{commandName}'");
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Errore parsing linea '{line}': {ex.Message}");
-            }
-
-            return false;
-        }
-
-        private byte[] GenerateBinaryFromInstructions(List<Instruction> instructions, string programName)
-        {
-            using var stream = new MemoryStream();
-            using var writer = new BinaryWriter(stream);
-
-            // 1. Scrivi header (8 bytes)
-            var headerText = $" 106{programName}".PadRight(8).Substring(0, 8);
-            var headerBytes = Encoding.ASCII.GetBytes(headerText);
-            writer.Write(headerBytes);
-
-            // 2. Scrivi padding fino all'offset 0x32 (50)
-            var paddingBytes = new byte[42];
-            writer.Write(paddingBytes);
-
-            // 3. Scrivi le istruzioni (36 bytes ciascuna)
-            foreach (var instruction in instructions.OrderBy(i => i.Number))
-            {
-                // OpCode (4 bytes)
-                writer.Write(instruction.OpCode);
-
-                // 8 parametri (4 bytes ciascuno = 32 bytes)
+                var parts = line.Split(',').Select(p => p.Trim()).Where(p => !string.IsNullOrEmpty(p)).ToArray();
+                if (parts.Length < 2) return false;
+                if (!int.TryParse(parts[0], out int num)) return false;
+                var name = parts[1];
+                var info = _opCodeService.GetOpCodeByName(name);
+                if (info == null) return false;
+                var pars = new int[8];
                 for (int i = 0; i < 8; i++)
                 {
-                    writer.Write(instruction.Parameters[i]);
+                    int idx = i + 2;
+                    pars[i] = (idx < parts.Length && int.TryParse(parts[idx], out int val)) ? val : 0;
                 }
+                instruction = new Instruction { Number = num, OpCode = info.Id, Name = info.Name, Parameters = pars };
+                return true;
             }
-
-            return stream.ToArray();
+            catch { return false; }
         }
-
+        private byte[] GenerateBinaryFromInstructions(List<Instruction> instructions, string programName)
+        {
+            using var ms = new MemoryStream();
+            using var bw = new BinaryWriter(ms);
+            // Header 8 bytes (keep legacy style beginning with space)
+            var header = $" 106{programName}".PadRight(8).Substring(0, 8);
+            bw.Write(Encoding.ASCII.GetBytes(header));
+            // Padding to reach offset 0x32 (50 dec) => 42 bytes
+            bw.Write(new byte[42]);
+            // Each instruction: 4 bytes opcode + 8 * 4 bytes params = 36 bytes
+            foreach (var instr in instructions.OrderBy(i => i.Number))
+            {
+                bw.Write(instr.OpCode);
+                var pars = instr.Parameters ?? Array.Empty<int>();
+                for (int i = 0; i < 8; i++) bw.Write(i < pars.Length ? pars[i] : 0);
+            }
+            return ms.ToArray();
+        }
         #endregion
 
-        #region BINARY TO TEXT CONVERSION
+        #region BINARY → TEXT
+        public async Task<string> ConvertBinaryToTextAsync(byte[] binary) => GenerateTextFromInstructions(ExtractInstructionsFromBinary(binary, out string header), header);
+        public async Task<string> ConvertBinaryFileAsync(string path) => await ConvertBinaryToTextAsync(await File.ReadAllBytesAsync(path));
 
-        /// <summary>
-        /// Converte file binario in formato testuale
-        /// </summary>
-        public async Task<string> ConvertBinaryToTextAsync(byte[] binaryData)
+        public List<Instruction> ExtractInstructionsFromBinary(byte[] data, out string header)
         {
-            var instructions = ExtractInstructionsFromBinary(binaryData, out string header);
-            return GenerateTextFromInstructions(instructions, header);
-        }
-
-        /// <summary>
-        /// Converte file binario in formato testuale
-        /// </summary>
-        public async Task<string> ConvertBinaryFileAsync(string binaryFilePath)
-        {
-            var binaryData = await File.ReadAllBytesAsync(binaryFilePath);
-            return await ConvertBinaryToTextAsync(binaryData);
-        }
-
-        public List<Instruction> ExtractInstructionsFromBinary(byte[] binaryData, out string header)
-        {
-            var instructions = new List<Instruction>();
-            header = "";
-
-            if (binaryData.Length < 50)
-                return instructions;
-
-            // Extract header
-            if (binaryData.Length >= 8)
+            var list = new List<Instruction>();
+            header = string.Empty;
+            if (data.Length < 50) return list;
+            header = Encoding.ASCII.GetString(data, 0, 8).Trim();
+            int offset = 0x32; // 50
+            int number = 1;
+            bool fineEncountered = false;
+            while (offset + 36 <= data.Length && !fineEncountered)
             {
-                header = Encoding.ASCII.GetString(binaryData, 0, 8).Trim();
-            }
-
-            int offset = 0x32; // 50 decimale
-            int instructionNumber = 1;
-
-            while (offset + 36 <= binaryData.Length)
-            {
-                // Leggi OpCode
-                var opCode = BitConverter.ToInt32(binaryData, offset);
-
+                int opCode = BitConverter.ToInt32(data, offset);
+                // Detect FINE (ID 0) as terminator
+                var info = _opCodeService.GetOpCodeInfo(opCode);
+                if (opCode == 0 && info != null && string.Equals(info.Name, "FINE", StringComparison.OrdinalIgnoreCase))
+                {
+                    list.Add(new Instruction
+                    {
+                        Number = number,
+                        OpCode = opCode,
+                        Name = info.Name,
+                        Parameters = new int[8],
+                        Offset = offset
+                    });
+                    fineEncountered = true; // stop after FINE
+                    break;
+                }
+                // Skip padding zeros that are not FINE definitions
                 if (opCode == 0)
                 {
                     offset += 36;
                     continue;
                 }
-
-                var opCodeInfo = _opCodeService.GetOpCodeInfo(opCode);
-                if (opCodeInfo == null)
-                {
-                    offset += 36;
-                    continue;
-                }
-
-                // Leggi parametri
                 var parameters = new int[8];
-                for (int i = 0; i < 8; i++)
+                for (int i = 0; i < 8; i++) parameters[i] = BitConverter.ToInt32(data, offset + 4 + (i * 4));
+                string name = info?.Name ?? $"UNKNOWN_{opCode}";
+                list.Add(new Instruction
                 {
-                    parameters[i] = BitConverter.ToInt32(binaryData, offset + 4 + (i * 4));
-                }
-
-                instructions.Add(new Instruction
-                {
-                    Number = instructionNumber,
+                    Number = number,
                     OpCode = opCode,
-                    Name = opCodeInfo.Name,
+                    Name = name,
                     Parameters = parameters,
                     Offset = offset
                 });
-
                 offset += 36;
-                instructionNumber++;
+                number++;
             }
-
-            return instructions;
+            return list;
         }
 
         private string GenerateTextFromInstructions(List<Instruction> instructions, string header)
         {
-            var builder = new StringBuilder();
-
-            // Header
-            if (!string.IsNullOrEmpty(header))
+            var sb = new StringBuilder();
+            string programName = "MAIN";
+            if (!string.IsNullOrWhiteSpace(header))
             {
-                var parts = header.Split(new char[0], StringSplitOptions.RemoveEmptyEntries);
-                if (parts.Length >= 2)
-                {
-                    builder.AppendLine($"{parts[0]};{parts[1]}");
-                }
+                var letters = new string(header.Where(c => !char.IsDigit(c)).ToArray()).Trim();
+                if (!string.IsNullOrEmpty(letters)) programName = letters;
             }
-
-            // Istruzioni
-            foreach (var instruction in instructions)
+            sb.AppendLine($"{instructions.Count};{programName}");
+            int indentLevel = 0;
+            foreach (var instr in instructions)
             {
-                var opCodeInfo = _opCodeService.GetOpCodeInfo(instruction.OpCode);
-                var paramCount = opCodeInfo?.ParamCount ?? 8;
-
-                var line = $"{instruction.Number,4} , {instruction.Name,-12}";
-
-                // Aggiungi solo i parametri significativi
-                var significantParams = instruction.Parameters.Take(paramCount).ToArray();
-                if (significantParams.Length > 0)
-                {
-                    line += ", " + string.Join(", ", significantParams.Select(p => $"{p,8}"));
-                }
-
-                builder.AppendLine(line + ";");
+                var info = _opCodeService.GetOpCodeInfo(instr.OpCode);
+                var indentMode = info?.IndentMode ?? IndentMode.None;
+                if (indentMode == IndentMode.RemoveIndent || indentMode == IndentMode.RemoveAndAddIndent)
+                    indentLevel = Math.Max(0, indentLevel - 1);
+                int paramCount = info?.ParamCount ?? 8;
+                var significant = instr.Parameters.Take(paramCount).ToArray();
+                sb.Append($"{instr.Number,4} , ");
+                string indentedName = new string(' ', indentLevel * 2) + instr.Name;
+                if (indentedName.Length > 12) indentedName = indentedName.Substring(0, 12);
+                sb.Append(indentedName.PadRight(12));
+                foreach (var p in significant) sb.Append("," + p.ToString().PadLeft(11));
+                sb.Append("  ;\n");
+                if (indentMode == IndentMode.AddIndent || indentMode == IndentMode.RemoveAndAddIndent)
+                    indentLevel++;
             }
-
-            return builder.ToString();
+            return sb.ToString();
         }
-
         #endregion
 
-        #region FILE I/O HELPERS
-
-        /// <summary>
-        /// Salva dati binari su file
-        /// </summary>
-        public async Task SaveBinaryFileAsync(byte[] binaryData, string outputPath)
-        {
-            await File.WriteAllBytesAsync(outputPath, binaryData);
-        }
-
-        /// <summary>
-        /// Salva contenuto testuale su file
-        /// </summary>
-        public async Task SaveTextFileAsync(string textContent, string outputPath)
-        {
-            await File.WriteAllTextAsync(outputPath, textContent, Encoding.UTF8);
-        }
-
+        #region SAVE HELPERS
+        public async Task SaveBinaryFileAsync(byte[] data, string path) => await File.WriteAllBytesAsync(path, data);
+        public async Task SaveTextFileAsync(string text, string path) => await File.WriteAllTextAsync(path, text, Encoding.UTF8);
         #endregion
     }
 }

@@ -492,7 +492,16 @@ namespace FileViewerApp.ViewModels
             sb.AppendLine("==========");
             sb.AppendLine();
             foreach (var i in EditableInstructions.OrderBy(i => i.Number))
-                sb.AppendLine($"{i.Number:D3}: {i.Name} (OpCode: {i.OpCode})");
+            {
+                var pars = i.GetParameters();
+                // Mostra solo parametri significativi (non zero) oppure tutti se vuoi togliere filtro.
+                var significant = pars.Where(p => p != 0).ToArray();
+                string paramList = significant.Length > 0 ? string.Join(", ", significant) : "";
+                if (paramList.Length > 0)
+                    sb.AppendLine($"{i.Number:D3}: {i.Name} [{paramList}]");
+                else
+                    sb.AppendLine($"{i.Number:D3}: {i.Name}");
+            }
             sb.AppendLine();
             sb.AppendLine($"Totale: {EditableInstructions.Count}");
             InstructionView = sb.ToString();
