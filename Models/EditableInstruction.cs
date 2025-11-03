@@ -10,7 +10,7 @@ namespace FileViewerApp.Models
         private int _number;
         private int _opCode;
         private string _name = "";
-        private int[] _parameters = new int[8]; // Array semplice invece di 8 proprietà
+        private int[] _parameters = new int[8];
         private bool _isValid = true;
         private bool _isModified = false;
         private string _validationSummary = "OK";
@@ -19,35 +19,11 @@ namespace FileViewerApp.Models
         // Evento per notificare quando una proprietà cambia
         public event EventHandler<PropertyChangedEventArgs>? InstructionChanged;
 
-        public int Number
-        {
-            get => _number;
-            set => this.RaiseAndSetIfChanged(ref _number, value);
-        }
-
-        public string Name
-        {
-            get => _name;
-            set => this.RaiseAndSetIfChanged(ref _name, value);
-        }
-
-        public bool IsValid
-        {
-            get => _isValid;
-            set => this.RaiseAndSetIfChanged(ref _isValid, value);
-        }
-
-        public bool IsModified
-        {
-            get => _isModified;
-            set => this.RaiseAndSetIfChanged(ref _isModified, value);
-        }
-
-        public string ValidationSummary
-        {
-            get => _validationSummary;
-            set => this.RaiseAndSetIfChanged(ref _validationSummary, value);
-        }
+        public int Number { get => _number; set => this.RaiseAndSetIfChanged(ref _number, value); }
+        public string Name { get => _name; set => this.RaiseAndSetIfChanged(ref _name, value); }
+        public bool IsValid { get => _isValid; set => this.RaiseAndSetIfChanged(ref _isValid, value); }
+        public bool IsModified { get => _isModified; set => this.RaiseAndSetIfChanged(ref _isModified, value); }
+        public string ValidationSummary { get => _validationSummary; set => this.RaiseAndSetIfChanged(ref _validationSummary, value); }
 
         public int OpCode
         {
@@ -58,8 +34,6 @@ namespace FileViewerApp.Models
                 {
                     _opCode = value;
                     this.RaisePropertyChanged();
-
-                    // Auto-aggiorna il nome quando cambia l'OpCode
                     Name = GetOpCodeName(value);
                     UpdateInstructionText();
                     MarkAsModified();
@@ -78,8 +52,6 @@ namespace FileViewerApp.Models
                 {
                     _instructionText = value;
                     this.RaisePropertyChanged();
-
-                    // Parsa la stringa dell'istruzione e aggiorna OpCode e parametri
                     ParseInstructionText(value);
                     MarkAsModified();
                     ValidateInstruction();
@@ -87,15 +59,24 @@ namespace FileViewerApp.Models
             }
         }
 
-        // Proprietà di compatibilità (se hai ancora bisogno)
-        public int Param0 => _parameters[0];
-        public int Param1 => _parameters[1];
-        public int Param2 => _parameters[2];
-        public int Param3 => _parameters[3];
-        public int Param4 => _parameters[4];
-        public int Param5 => _parameters[5];
-        public int Param6 => _parameters[6];
-        public int Param7 => _parameters[7];
+        public int Param0 { get => _parameters[0]; set => SetParam(0, value); }
+        public int Param1 { get => _parameters[1]; set => SetParam(1, value); }
+        public int Param2 { get => _parameters[2]; set => SetParam(2, value); }
+        public int Param3 { get => _parameters[3]; set => SetParam(3, value); }
+        public int Param4 { get => _parameters[4]; set => SetParam(4, value); }
+        public int Param5 { get => _parameters[5]; set => SetParam(5, value); }
+        public int Param6 { get => _parameters[6]; set => SetParam(6, value); }
+        public int Param7 { get => _parameters[7]; set => SetParam(7, value); }
+        private void SetParam(int index, int value)
+        {
+            if (index < 0 || index >= _parameters.Length) return;
+            if (_parameters[index] == value) return;
+            _parameters[index] = value;
+            this.RaisePropertyChanged($"Param{index}");
+            UpdateInstructionText();
+            MarkAsModified();
+            ValidateInstruction();
+        }
 
         // Metodi principali
         private void ParseInstructionText(string instructionText)
@@ -163,16 +144,7 @@ namespace FileViewerApp.Models
             try
             {
                 var nonZeroParams = _parameters.Where(p => p != 0).ToArray();
-                if (nonZeroParams.Length > 0)
-                {
-                    var paramString = string.Join(" ", nonZeroParams);
-                    _instructionText = $"{OpCode} {paramString}";
-                }
-                else
-                {
-                    _instructionText = OpCode.ToString();
-                }
-
+                _instructionText = nonZeroParams.Length > 0 ? $"{OpCode} {string.Join(" ", nonZeroParams)}" : OpCode.ToString();
                 this.RaisePropertyChanged(nameof(InstructionText));
             }
             catch
@@ -184,14 +156,7 @@ namespace FileViewerApp.Models
 
         private void NotifyParametersChanged()
         {
-            this.RaisePropertyChanged(nameof(Param0));
-            this.RaisePropertyChanged(nameof(Param1));
-            this.RaisePropertyChanged(nameof(Param2));
-            this.RaisePropertyChanged(nameof(Param3));
-            this.RaisePropertyChanged(nameof(Param4));
-            this.RaisePropertyChanged(nameof(Param5));
-            this.RaisePropertyChanged(nameof(Param6));
-            this.RaisePropertyChanged(nameof(Param7));
+            for (int i = 0; i < 8; i++) this.RaisePropertyChanged($"Param{i}");
         }
 
         private void MarkAsModified()
@@ -258,60 +223,42 @@ namespace FileViewerApp.Models
             }
         }
 
-        private string GetOpCodeName(int opCode)
+        private string GetOpCodeName(int opCode) => opCode switch
         {
-            return opCode switch
-            {
-                1 => "NULLA",
-                5 => "INIZ MEM",
-                15 => "END IF",
-                105 => "IF_NUM",
-                110 => "IF_STR",
-                200 => "GOTO",
-                210 => "CALL",
-                255 => "END",
-                _ => $"UNKNOWN_{opCode}"
-            };
-        }
+            1 => "NULLA",
+            5 => "INIZ MEM",
+            15 => "END IF",
+            105 => "IF_NUM",
+            110 => "IF_STR",
+            200 => "GOTO",
+            210 => "CALL",
+            255 => "END",
+            _ => $"UNKNOWN_{opCode}"
+        };
 
-        private int GetOpCodeFromName(string name)
+        private int GetOpCodeFromName(string name) => name switch
         {
-            return name switch
-            {
-                "NULLA" => 1,
-                "INIZ_MEM" or "INIZ MEM" => 5,
-                "END_IF" or "END IF" => 15,
-                "IF_NUM" or "IF NUM" => 105,
-                "IF_STR" or "IF STR" => 110,
-                "GOTO" => 200,
-                "CALL" => 210,
-                "END" => 255,
-                _ => -1
-            };
-        }
+            "NULLA" => 1,
+            "INIZ_MEM" or "INIZ MEM" => 5,
+            "END_IF" or "END IF" => 15,
+            "IF_NUM" or "IF NUM" => 105,
+            "IF_STR" or "IF STR" => 110,
+            "GOTO" => 200,
+            "CALL" => 210,
+            "END" => 255,
+            _ => -1
+        };
 
         // Metodi di utility
-        public void ResetModifications()
-        {
-            IsModified = false;
-            ValidationSummary = "OK";
-            IsValid = true;
-        }
-
-        public int[] GetParameters()
-        {
-            return (int[])_parameters.Clone();
-        }
-
+        public void ResetModifications() { IsModified = false; ValidationSummary = "OK"; IsValid = true; }
+        public int[] GetParameters() => (int[])_parameters.Clone();
         public void SetParameters(int[] parameters)
         {
             Array.Clear(_parameters, 0, _parameters.Length);
             Array.Copy(parameters, _parameters, Math.Min(parameters.Length, _parameters.Length));
-
             NotifyParametersChanged();
             UpdateInstructionText();
             ValidateInstruction();
         }
-
     }
 }

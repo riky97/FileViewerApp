@@ -10,9 +10,9 @@
   x:DataType="vm:ContentTabsControlViewModel"
   mc:Ignorable="d">
 
-  <TabControl>
-    <!--  TAB EDITOR TESTO  -->
-    <!-- <TabItem Header="📝 Editor">
+	<TabControl>
+		<!--  TAB EDITOR TESTO  -->
+		<!-- <TabItem Header="📝 Editor">
       <Grid Margin="10">
         <Grid.RowDefinitions>
           <RowDefinition Height="*" />
@@ -59,56 +59,56 @@
       </Grid>
     </TabItem>-->
 
-    <!--  TAB HEX  -->
-    <TabItem Header="🔢 Hex">
-      <Grid Margin="10">
-        <Grid.RowDefinitions>
-          <RowDefinition Height="Auto" />
-          <RowDefinition Height="*" />
-        </Grid.RowDefinitions>
-        <TextBlock
-          Grid.Row="0"
-          Margin="0,0,0,10"
-          FontSize="14"
-          FontWeight="Bold"
-          Text="Vista Esadecimale" />
-        <ScrollViewer Grid.Row="1">
-          <TextBox
-            FontFamily="Consolas"
-            FontSize="11"
-            IsReadOnly="True"
-            Text="{Binding HexView}"
-            TextWrapping="NoWrap" />
-        </ScrollViewer>
-      </Grid>
-    </TabItem>
+		<!--  TAB HEX  -->
+		<TabItem Header="🔢 Hex">
+			<Grid Margin="10">
+				<Grid.RowDefinitions>
+					<RowDefinition Height="Auto" />
+					<RowDefinition Height="*" />
+				</Grid.RowDefinitions>
+				<TextBlock
+				  Grid.Row="0"
+				  Margin="0,0,0,10"
+				  FontSize="14"
+				  FontWeight="Bold"
+				  Text="Vista Esadecimale" />
+				<ScrollViewer Grid.Row="1">
+					<TextBox
+					  FontFamily="Consolas"
+					  FontSize="11"
+					  IsReadOnly="True"
+					  Text="{Binding HexView}"
+					  TextWrapping="NoWrap" />
+				</ScrollViewer>
+			</Grid>
+		</TabItem>
 
-    <!--  TAB LISTA ISTRUZIONI  -->
-    <TabItem Header="📋 Istruzioni">
-      <Grid Margin="10">
-        <Grid.RowDefinitions>
-          <RowDefinition Height="Auto" />
-          <RowDefinition Height="*" />
-        </Grid.RowDefinitions>
-        <TextBlock
-          Grid.Row="0"
-          Margin="0,0,0,10"
-          FontSize="14"
-          FontWeight="Bold"
-          Text="Lista Istruzioni" />
-        <ScrollViewer Grid.Row="1">
-          <TextBox
-            FontFamily="Consolas"
-            FontSize="12"
-            IsReadOnly="True"
-            Text="{Binding InstructionView}"
-            TextWrapping="NoWrap" />
-        </ScrollViewer>
-      </Grid>
-    </TabItem>
+		<!--  TAB LISTA ISTRUZIONI  -->
+		<TabItem Header="📋 Istruzioni">
+			<Grid Margin="10">
+				<Grid.RowDefinitions>
+					<RowDefinition Height="Auto" />
+					<RowDefinition Height="*" />
+				</Grid.RowDefinitions>
+				<TextBlock
+				  Grid.Row="0"
+				  Margin="0,0,0,10"
+				  FontSize="14"
+				  FontWeight="Bold"
+				  Text="Lista Istruzioni" />
+				<ScrollViewer Grid.Row="1">
+					<TextBox
+					  FontFamily="Consolas"
+					  FontSize="12"
+					  IsReadOnly="True"
+					  Text="{Binding InstructionView}"
+					  TextWrapping="NoWrap" />
+				</ScrollViewer>
+			</Grid>
+		</TabItem>
 
-    <!--  TAB STRUTTURA (TREE ORIGINALE)  -->
-    <!-- <TabItem Header="🌳 Struttura">
+		<!--  TAB STRUTTURA (TREE ORIGINALE)  -->
+		<!-- <TabItem Header="🌳 Struttura">
       <Grid Margin="10">
         <Grid.RowDefinitions>
           <RowDefinition Height="Auto" />
@@ -133,84 +133,83 @@
       </Grid>
     </TabItem>-->
 
-    <!--  TAB EDITOR ISTRUZIONI  -->
-    <TabItem Header="✏️ Editor Istruzioni" IsEnabled="{Binding IsEditMode}">
-      <DockPanel Margin="10">
-        <StackPanel
-          Margin="0,0,0,10"
-          DockPanel.Dock="Top"
-          Orientation="Horizontal"
-          Spacing="8">
-          <Button Command="{Binding AddInstructionCommand}" Content="➕ Aggiungi" />
-          <Button
-            Command="{Binding RemoveInstructionCommand}"
-            Content="🗑️ Rimuovi"
-            IsEnabled="{Binding CanRemoveInstruction}" />
-          <Button
-            Command="{Binding MoveUpCommand}"
-            Content="⬆️ Su"
-            IsEnabled="{Binding CanMoveUp}" />
-          <Button
-            Command="{Binding MoveDownCommand}"
-            Content="⬇️ Giù"
-            IsEnabled="{Binding CanMoveDown}" />
-          <Separator />
-          <Button
-            Command="{Binding SaveChangesCommand}"
-            Content="💾 Salva"
-            IsEnabled="{Binding HasUnsavedChanges}" />
-          <Button
-            Command="{Binding DiscardChangesCommand}"
-            Content="↶ Scarta"
-            IsEnabled="{Binding HasUnsavedChanges}" />
-        </StackPanel>
+		<!--  TAB EDITOR ISTRUZIONI  -->
+		<TabItem Header="✏️ Editor Istruzioni" IsEnabled="{Binding IsEditMode}">
+			<DockPanel Margin="10">
+				<StackPanel
+				  Margin="0,0,0,10"
+				  DockPanel.Dock="Top"
+				  Orientation="Horizontal"
+				  Spacing="8">
+					<Button Command="{Binding AddInstructionCommand}" Content="➕ Aggiungi" />
+					<Button
+					  Command="{Binding RemoveInstructionCommand}"
+					  Content="🗑️ Rimuovi"
+					  IsEnabled="{Binding CanRemoveInstruction}" />
+					<Button
+					  Command="{Binding MoveUpCommand}"
+					  Content="⬆️ Su"
+					  IsEnabled="{Binding CanMoveUp}" />
+					<Button
+					  Command="{Binding MoveDownCommand}"
+					  Content="⬇️ Giù"
+					  IsEnabled="{Binding CanMoveDown}" />
+					<Separator />
+					<Button
+					  Command="{Binding SaveChangesCommand}"
+					  Content="💾 Salva"
+					  IsEnabled="{Binding HasUnsavedChanges}" />
+					<Button
+					  Command="{Binding DiscardChangesCommand}"
+					  Content="↶ Scarta"
+					  IsEnabled="{Binding HasUnsavedChanges}" />
+				</StackPanel>
 
-        <ListBox ItemsSource="{Binding EditableInstructions}" SelectedItem="{Binding SelectedInstruction}">
-          <ListBox.ItemTemplate>
-            <DataTemplate x:DataType="models:EditableInstruction">
-              <Border
-                Margin="2"
-                Padding="6"
-                BorderBrush="#DDD"
-                BorderThickness="1"
-                CornerRadius="3">
-                <Grid MinHeight="30" ColumnDefinitions="60,220,140,Auto">
-                  <TextBlock
-                    Grid.Column="0"
-                    VerticalAlignment="Center"
-                    FontWeight="Bold"
-                    Text="{Binding Number, StringFormat='{}{0:D3}'}" />
-                  <ComboBox
-                    Grid.Column="1"
-                    Margin="8,0"
-                    IsEnabled="{Binding DataContext.IsEditMode, ElementName=Root}"
-                    ItemsSource="{Binding DataContext.AvailableInstructions, ElementName=Root}"
-                    SelectedItem="{Binding Name, Mode=TwoWay}"
-                    SelectionChanged="OnInstructionSelectionChanged"
-                    Tag="{Binding}">
-                    <!--  Force item display as text  -->
-                    <ComboBox.ItemTemplate>
-                      <DataTemplate>
-                        <TextBlock FontFamily="Consolas" Text="{Binding}" />
-                      </DataTemplate>
-                    </ComboBox.ItemTemplate>
-                  </ComboBox>
-                  <TextBlock
-                    Grid.Column="2"
-                    VerticalAlignment="Center"
-                    FontFamily="Consolas"
-                    Text="{Binding OpCode, StringFormat='OpCode: {0}'}" />
-                  <StackPanel
-                    Grid.Column="3"
-                    VerticalAlignment="Center"
-                    Orientation="Horizontal"
-                    Spacing="6" />
-                </Grid>
-              </Border>
-            </DataTemplate>
-          </ListBox.ItemTemplate>
-        </ListBox>
-      </DockPanel>
-    </TabItem>
-  </TabControl>
+				<ListBox ItemsSource="{Binding EditableInstructions}" SelectedItem="{Binding SelectedInstruction}">
+					<ListBox.ItemTemplate>
+						<DataTemplate x:DataType="models:EditableInstruction">
+							<Border
+							  Margin="2"
+							  Padding="6"
+							  BorderBrush="#DDD"
+							  BorderThickness="1"
+							  CornerRadius="3">
+								<Grid MinHeight="30" ColumnDefinitions="60,220,140,Auto">
+									<TextBlock
+									  Grid.Column="0"
+									  VerticalAlignment="Center"
+									  FontWeight="Bold"
+									  Text="{Binding Number, StringFormat='{}{0:D3}'}" />
+									<ComboBox
+									  Grid.Column="1"
+									  Margin="8,0"
+									  IsEnabled="{Binding DataContext.IsEditMode, ElementName=Root}"
+									  ItemsSource="{Binding DataContext.AvailableInstructions, ElementName=Root}"
+									  SelectedItem="{Binding Name, Mode=TwoWay}"
+									  SelectionChanged="OnInstructionSelectionChanged"
+									  Tag="{Binding}">
+										<!--  Force item display as text  -->
+										<ComboBox.ItemTemplate>
+											<DataTemplate>
+												<TextBlock FontFamily="Consolas" Text="{Binding}" />
+											</DataTemplate>
+										</ComboBox.ItemTemplate>
+									</ComboBox>
+									<StackPanel Grid.Column="2"
+										VerticalAlignment="Center"
+										Orientation="Horizontal"
+										Spacing="4">
+										<TextBox Width="46" TextAlignment="Center" Watermark="P0" Text="{Binding Param0, Mode=TwoWay}" />
+										<TextBox Width="46" TextAlignment="Center" Watermark="P1" Text="{Binding Param1, Mode=TwoWay}" />
+										<TextBox Width="46" TextAlignment="Center" Watermark="P2" Text="{Binding Param2, Mode=TwoWay}" />
+										<TextBox Width="46" TextAlignment="Center" Watermark="P3" Text="{Binding Param3, Mode=TwoWay}" />
+									</StackPanel>
+								</Grid>
+							</Border>
+						</DataTemplate>
+					</ListBox.ItemTemplate>
+				</ListBox>
+			</DockPanel>
+		</TabItem>
+	</TabControl>
 </UserControl>
