@@ -1,5 +1,6 @@
 using System.Collections.ObjectModel;
 using ReactiveUI;
+using System;
 
 namespace FileViewerApp.Models
 {
@@ -67,5 +68,10 @@ namespace FileViewerApp.Models
         // Proprietà per il display nella TreeView
         public string DisplayText => $"{InstructionNumber,3}: {Name}";
         public string ToolTipText => $"Offset: 0x{Offset:X6} | OpCode: {OpCode} | Params: {Parameters}";
+
+        // Nuovo display composito che include i parametri tra parentesi (esempio: "0 IF (300,0)")
+        public string DisplayWithParams => string.IsNullOrWhiteSpace(Parameters)
+            ? $"{InstructionNumber} {Name}"
+            : $"{InstructionNumber} {Name} [{Parameters}]";
     }
 }

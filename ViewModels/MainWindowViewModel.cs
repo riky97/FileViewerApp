@@ -242,6 +242,7 @@ namespace FileViewerApp.ViewModels
                 }
                 instruction.OpCode = info.Id;
                 instruction.Name = info.Name;
+                instruction.ParamCount = info.ParamCount; // limit visible params
                 instruction.IsModified = true;
                 HasUnsavedChanges = true;
                 StatusText = $"Modificata istruzione {instruction.Number:D3}";
@@ -515,6 +516,7 @@ namespace FileViewerApp.ViewModels
                 foreach (var n in _currentProcessedFile.InstructionTree)
                     InstructionTree.Add(n);
             }
+            ExpandAll();
         }
 
         private async void RebuildTreeViewSimple()
@@ -540,26 +542,6 @@ namespace FileViewerApp.ViewModels
 
             RebuildTreeViewInitial();
 
-            // List<InstructionNode> rootNodes = _orchestrator.GenerateInstructionTree(instructions, _currentProcessedFile!.Header);
-            // foreach (var node in rootNodes)
-            // {
-            //     InstructionTree.Add(node);
-            // }
-
-            // var root = new InstructionNode
-            // {
-            //     Name = $"Programma ({EditableInstructions.Count} istruzioni)",
-            //     IsExpanded = true
-            // };
-            // foreach (var i in EditableInstructions.OrderBy(i => i.Number))
-            // {
-            //     root.Children.Add(new InstructionNode
-            //     {
-            //         Name = $"{i.Number:D3}: {i.Name} (OpCode: {i.OpCode})",
-            //         IsExpanded = false
-            //     });
-            // }
-            // InstructionTree.Add(root);
         }
 
         private async Task UpdateUIFromProcessedFile(ProcessedFile processedFile)
@@ -588,13 +570,16 @@ namespace FileViewerApp.ViewModels
         private async Task PopulateEditableInstructions(ProcessedFile processedFile)
         {
             EditableInstructions.Clear();
+            var svc = _orchestrator.GetOpCodeService();
             foreach (var instr in processedFile.Instructions)
             {
+                var info = svc.GetOpCodeInfo(instr.OpCode);
                 var e = new EditableInstruction
                 {
                     Number = instr.Number,
                     OpCode = instr.OpCode,
-                    Name = instr.Name
+                    Name = instr.Name,
+                    ParamCount = info?.ParamCount ?? 8
                 };
                 e.SetParameters(instr.Parameters.ToArray());
                 EditableInstructions.Add(e);

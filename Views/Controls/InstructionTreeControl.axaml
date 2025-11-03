@@ -44,12 +44,7 @@
 				<TreeView.ItemTemplate>
 					<TreeDataTemplate ItemsSource="{Binding Children}">
 						<StackPanel Orientation="Horizontal">
-							<TextBlock Margin="0,0,8,0"
-									   FontSize="12"
-									   Foreground="#666666"
-									   Text="{Binding InstructionNumber}" />
-							<TextBlock FontWeight="Medium"
-									   Text="{Binding Name}" />
+							<TextBlock  FontWeight="Medium" Text="{Binding DisplayWithParams}" />
 						</StackPanel>
 					</TreeDataTemplate>
 				</TreeView.ItemTemplate>
