@@ -2,6 +2,7 @@
 using System.ComponentModel;
 using FileViewerApp.ViewModels;
 using ReactiveUI;
+using System.Windows.Input;
 
 namespace FileViewerApp.ViewModels.Controls;
 
@@ -22,12 +23,16 @@ public class ToolbarControlViewModel : ViewModelBase, IDisposable
     }
 
     // Command proxies
-    public System.Windows.Input.ICommand? LoadDefinitionsCommand => _parent.LoadDefinitionsCommand;
-    public System.Windows.Input.ICommand? OpenFileCommand => _parent.OpenFileCommand;
-    public System.Windows.Input.ICommand? SaveFileCommand => _parent.SaveFileCommand;
-    public System.Windows.Input.ICommand? ConvertFileCommand => _parent.ConvertFileCommand;
-    public System.Windows.Input.ICommand? RefreshCommand => _parent.RefreshCommand;
-    public System.Windows.Input.ICommand? CloseFileCommand => _parent.CloseFileCommand;
+    public ICommand? LoadDefinitionsCommand => _parent.LoadDefinitionsCommand;
+    public ICommand? OpenFileCommand => _parent.OpenFileCommand;
+    public ICommand? SaveFileCommand => _parent.SaveFileCommand;
+    public ICommand? ConvertFileCommand => _parent.ConvertFileCommand;
+    public ICommand? RefreshCommand => _parent.RefreshCommand;
+    public ICommand? CloseFileCommand => _parent.CloseFileCommand;
+
+    // New proxies for expand/collapse tree
+    public ICommand? ExpandAllCommand => _parent.ExpandAllCommand;
+    public ICommand? CollapseAllCommand => _parent.CollapseAllCommand;
 
     // State proxies
     public bool IsProcessing => _parent.IsProcessing;

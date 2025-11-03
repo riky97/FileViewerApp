@@ -10,45 +10,51 @@
   x:DataType="vm:MainWindowViewModel"
   mc:Ignorable="d">
 
-  <Border
-    Background="#FFFFFF"
-    BorderBrush="#E0E0E0"
-    BorderThickness="0,0,1,0">
+	<Border
+	  Background="#FFFFFF"
+	  BorderBrush="#E0E0E0"
+	  BorderThickness="0,0,1,0">
 
-    <DockPanel>
-      <!--  TreeView Header  -->
-      <Border
-        Padding="12,8"
-        Background="#F1F3F4"
-        DockPanel.Dock="Top">
-        <TextBlock
-          FontSize="14"
-          FontWeight="Medium"
-          Text="🌳 Struttura Istruzioni" />
-      </Border>
+		<DockPanel>
+			<!--  TreeView Header  -->
+			<Border
+			  Padding="12,8"
+			  Background="#F1F3F4"
+			  DockPanel.Dock="Top">
+				<TextBlock
+				  FontSize="14"
+				  FontWeight="Medium"
+				  Text="🌳 Struttura Istruzioni" />
+			</Border>
 
-      <!--  TreeView Content  -->
-      <ScrollViewer>
-        <TreeView
-          Name="InstructionTreeView"
-          Padding="8"
-          ItemsSource="{Binding InstructionTree}"
-          SelectedItem="{Binding SelectedNode}">
-          <TreeView.ItemTemplate>
-            <TreeDataTemplate ItemsSource="{Binding Children}">
-              <StackPanel Orientation="Horizontal">
-                <TextBlock
-                  Margin="0,0,8,0"
-                  FontSize="12"
-                  Foreground="#666666"
-                  Text="{Binding InstructionNumber}" />
-                <TextBlock FontWeight="Medium" Text="{Binding Name}" />
-              </StackPanel>
-            </TreeDataTemplate>
-          </TreeView.ItemTemplate>
+			<!--  TreeView Content  -->
+			<TreeView
+				Name="InstructionTreeView"
+				Padding="8"
+				ItemsSource="{Binding InstructionTree}"
+				SelectedItem="{Binding SelectedNode}">
 
-        </TreeView>
-      </ScrollViewer>
-    </DockPanel>
-  </Border>
+				<TreeView.Styles>
+					<Style Selector="TreeViewItem">
+						<Setter Property="IsExpanded"
+								Value="{ReflectionBinding $self.DataContext.IsExpanded, Mode=TwoWay}" />
+					</Style>
+				</TreeView.Styles>
+
+				<TreeView.ItemTemplate>
+					<TreeDataTemplate ItemsSource="{Binding Children}">
+						<StackPanel Orientation="Horizontal">
+							<TextBlock Margin="0,0,8,0"
+									   FontSize="12"
+									   Foreground="#666666"
+									   Text="{Binding InstructionNumber}" />
+							<TextBlock FontWeight="Medium"
+									   Text="{Binding Name}" />
+						</StackPanel>
+					</TreeDataTemplate>
+				</TreeView.ItemTemplate>
+
+			</TreeView>
+		</DockPanel>
+	</Border>
 </UserControl>

@@ -72,6 +72,10 @@ namespace FileViewerApp.ViewModels
         public ToolbarControlViewModel ToolbarViewModel { get; }
         public ContentTabsControlViewModel ContentTabsViewModel { get; }
 
+        // New commands for expand/collapse
+        public System.Windows.Input.ICommand? ExpandAllCommand { get; }
+        public System.Windows.Input.ICommand? CollapseAllCommand { get; }
+
         public MainWindowViewModel()
         {
             var opCodeService = new OpCodeService();
@@ -92,6 +96,10 @@ namespace FileViewerApp.ViewModels
             MoveDownCommand = new AsyncRelayCommand(MoveDownAsync, () => IsDefinitionsLoaded && CanMoveDown);
             SaveChangesCommand = new AsyncRelayCommand(SaveChangesAsync, () => IsDefinitionsLoaded && HasUnsavedChanges);
             DiscardChangesCommand = new AsyncRelayCommand(DiscardChangesAsync, () => IsDefinitionsLoaded && HasUnsavedChanges);
+
+            // Create expand/collapse commands
+            ExpandAllCommand = new RelayCommand(ExpandAll);
+            CollapseAllCommand = new RelayCommand(CollapseAll);
 
             // Now initialize the control viewmodels so their bindings see valid command instances
             ToolbarViewModel = new ToolbarControlViewModel(this);
@@ -710,6 +718,27 @@ namespace FileViewerApp.ViewModels
         {
             for (int i = 0; i < EditableInstructions.Count; i++)
                 EditableInstructions[i].Number = i + 1;
+        }
+
+        // New helper methods to expand/collapse the instruction tree
+        private void ExpandAll()
+        {
+            foreach (var node in InstructionTree)
+                SetNodeExpandedRecursive(node, true);
+        }
+
+        private void CollapseAll()
+        {
+            foreach (var node in InstructionTree)
+                SetNodeExpandedRecursive(node, false);
+        }
+
+        private void SetNodeExpandedRecursive(InstructionNode node, bool value)
+        {
+            if (node == null) return;
+            node.IsExpanded = value;
+            foreach (var child in node.Children)
+                SetNodeExpandedRecursive(child, value);
         }
     }
 }

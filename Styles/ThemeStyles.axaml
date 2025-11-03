@@ -21,6 +21,28 @@
     <Setter Property="Foreground" Value="#666666" />
   </Style>
 
+  <!-- Small icon-style buttons used for expand/collapse inside the tree header -->
+  <Style Selector="Button.expand-btn">
+    <Setter Property="Padding" Value="6" />
+    <Setter Property="Margin" Value="2,0" />
+    <Setter Property="Width" Value="34" />
+    <Setter Property="Height" Value="28" />
+    <Setter Property="CornerRadius" Value="6" />
+    <Setter Property="Background" Value="#EEEEEE" />
+    <Setter Property="Foreground" Value="#333333" />
+    <Setter Property="BorderBrush" Value="#DDDDDD" />
+    <Setter Property="BorderThickness" Value="1" />
+    <Setter Property="FontSize" Value="14" />
+  </Style>
+
+  <Style Selector="Button.expand-btn:pointerover">
+    <Setter Property="Background" Value="#E0E0E0" />
+  </Style>
+
+  <Style Selector="Button.expand-btn:pressed">
+    <Setter Property="Background" Value="#D0D0D0" />
+  </Style>
+
   <Style Selector="TabItem">
     <Setter Property="FontSize" Value="14" />
     <Setter Property="Padding" Value="16,8" />

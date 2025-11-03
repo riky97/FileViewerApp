@@ -32,9 +32,23 @@
             </Grid.ColumnDefinitions>
 
             <!--  🌳 LEFT PANEL: TreeView  -->
-            <controls:InstructionTreeControl Grid.Column="0" DataContext="{Binding}" />
+			<Grid Grid.Column="0" RowDefinitions="Auto,*">
+				<!-- Barra pulsanti -->
+				<StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="6">
+					<Button Classes="expand-btn" Command="{Binding ExpandAllCommand}" ToolTip.Tip="Espandi tutta la struttura">
+						<TextBlock FontSize="14" Text="▾" HorizontalAlignment="Center" VerticalAlignment="Center" />
+					</Button>
+					<Button Classes="expand-btn" Command="{Binding CollapseAllCommand}" ToolTip.Tip="Collassa tutta la struttura">
+						<TextBlock FontSize="14" Text="▴" HorizontalAlignment="Center" VerticalAlignment="Center" />
+					</Button>
+				</StackPanel>
 
-            <!--  SPLITTER  -->
+				<!-- TreeView -->
+				<controls:InstructionTreeControl Grid.Row="1" DataContext="{Binding}" />
+			</Grid>
+
+
+			<!--  SPLITTER  -->
             <GridSplitter
                 Grid.Column="1"
                 Background="#E0E0E0"
