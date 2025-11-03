@@ -1,0 +1,43 @@
+<UserControl
+  x:Class="FileViewerApp.Views.Controls.HistoryPanelControl"
+  xmlns="https://github.com/avaloniaui"
+  xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+  xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+  xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+  xmlns:vm="using:FileViewerApp.ViewModels"
+  x:DataType="vm:MainWindowViewModel"
+  d:DesignWidth="300"
+  d:DesignHeight="500"
+  mc:Ignorable="d">
+
+  <Border Margin="4" Padding="6" BorderBrush="#DDD" BorderThickness="1" CornerRadius="4" Background="#FAFAFA">
+    <DockPanel>
+      <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" HorizontalAlignment="Stretch" Margin="0,0,0,6" Spacing="8">
+        <TextBlock Text="Cronologia" FontWeight="Bold" />
+        <Button Command="{Binding RevertToHistoryCommand}" IsEnabled="{Binding SelectedHistoryEntry}" ToolTip.Tip="Ripristina lo stato selezionato">
+          <TextBlock Text="↺" FontSize="16" />
+        </Button>
+      </StackPanel>
+      <Grid RowDefinitions="Auto,*,Auto,*" RowSpacing="4">
+        <TextBlock Grid.Row="0" Text="Snapshot" FontWeight="Bold" />
+        <ListBox Grid.Row="1" ItemsSource="{Binding HistoryEntries}" SelectedItem="{Binding SelectedHistoryEntry}" MinHeight="160">
+          <ListBox.ItemTemplate>
+            <DataTemplate>
+              <Border Margin="0,0,0,4" Padding="4" Background="#FFFFFF" BorderBrush="#E0E0E0" BorderThickness="1" CornerRadius="3">
+                <StackPanel Spacing="2">
+                  <TextBlock FontFamily="Consolas" FontSize="11" Text="{Binding Id, StringFormat='#{0}'}" />
+                  <TextBlock FontSize="11" Text="{Binding Description}" />
+                  <TextBlock FontSize="10" Foreground="#666" Text="{Binding Timestamp, StringFormat='{}{0:HH:mm:ss}'}" />
+                </StackPanel>
+              </Border>
+            </DataTemplate>
+          </ListBox.ItemTemplate>
+        </ListBox>
+        <TextBlock Grid.Row="2" Text="Diff" FontWeight="Bold" />
+        <ScrollViewer Grid.Row="3" Height="160">
+          <TextBox TextWrapping="NoWrap" AcceptsReturn="True" IsReadOnly="True" FontFamily="Consolas" FontSize="11" Text="{Binding DiffText}" />
+        </ScrollViewer>
+      </Grid>
+    </DockPanel>
+  </Border>
+</UserControl>

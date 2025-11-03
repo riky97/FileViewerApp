@@ -26,20 +26,25 @@
         <!--  🏠 MAIN CONTENT AREA  -->
         <Grid>
             <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="300" MinWidth="200" />
-                <ColumnDefinition Width="4" />
-                <ColumnDefinition Width="*" MinWidth="400" />
+                <ColumnDefinition Width="300" MinWidth="200" /> <!-- Tree -->
+                <ColumnDefinition Width="*" MinWidth="400" />    <!-- Content Tabs (flex) -->
+                <ColumnDefinition Width="4" />                   <!-- Splitter -->
+                <ColumnDefinition Width="260" MinWidth="200" /> <!-- History (narrow) -->
             </Grid.ColumnDefinitions>
 
+            <Grid.RowDefinitions>
+                <RowDefinition Height="*" />
+            </Grid.RowDefinitions>
+
             <!--  🌳 LEFT PANEL: TreeView  -->
-			<Grid Grid.Column="0" RowDefinitions="Auto,*">
+			<Grid Grid.Column="0" RowDefinitions="Auto,*" Margin="0,0,0,4">
 				<!-- Barra pulsanti -->
 				<StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="6">
 					<Button Classes="expand-btn" Command="{Binding ExpandAllCommand}" ToolTip.Tip="Espandi tutta la struttura">
-						<TextBlock FontSize="14" Text="▾" HorizontalAlignment="Center" VerticalAlignment="Center" />
+						<TextBlock FontSize="14" Text="▾" />
 					</Button>
 					<Button Classes="expand-btn" Command="{Binding CollapseAllCommand}" ToolTip.Tip="Collassa tutta la struttura">
-						<TextBlock FontSize="14" Text="▴" HorizontalAlignment="Center" VerticalAlignment="Center" />
+						<TextBlock FontSize="14" Text="▴" />
 					</Button>
 				</StackPanel>
 
@@ -48,14 +53,17 @@
 			</Grid>
 
 
-			<!--  SPLITTER  -->
+            <!--  SPLITTER  -->
             <GridSplitter
-                Grid.Column="1"
+                Grid.Column="2"
                 Background="#E0E0E0"
                 ResizeDirection="Columns" />
 
             <!--  📝 RIGHT PANEL: Content Tabs  -->
-            <controls:ContentTabsControl Grid.Column="2" DataContext="{Binding ContentTabsViewModel}" />
+            <controls:ContentTabsControl Grid.Column="1" DataContext="{Binding ContentTabsViewModel}" />
+
+			<!--  COLONNA STORICO  -->
+			<controls:HistoryPanelControl Grid.Column="3" DataContext="{Binding}" />
 
         </Grid>
 

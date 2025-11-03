@@ -17,6 +17,11 @@ using FileViewerApp.Services;
 using FileViewerApp.Enums;
 using FileViewerApp.ViewModels.Controls;
 using FileViewerApp.Models.FileViewerApp.Models; // aggiungi questo using in cima al file
+using Avalonia;
+using Avalonia.Layout;
+using Avalonia.Media;
+using Avalonia.Controls.Primitives;
+using System.Diagnostics;
 
 namespace FileViewerApp.ViewModels
 {
@@ -76,6 +81,14 @@ namespace FileViewerApp.ViewModels
         public System.Windows.Input.ICommand? ExpandAllCommand { get; }
         public System.Windows.Input.ICommand? CollapseAllCommand { get; }
 
+        private string _diffText = string.Empty;
+        public string DiffText { get => _diffText; set => this.RaiseAndSetIfChanged(ref _diffText, value); }
+
+        private readonly List<PendingChange> _pendingChanges = new();
+
+        private enum PendingChangeType { Add, Remove, Move }
+        private record PendingChange(PendingChangeType Type, string Detail);
+
         public MainWindowViewModel()
         {
             var opCodeService = new OpCodeService();
@@ -113,6 +126,9 @@ namespace FileViewerApp.ViewModels
 
             // Do NOT auto-load definitions or call LoadAvailableInstructions here.
             // Everything starts disabled until user loads the XML via LoadDefinitionsCommand.
+
+            RevertToHistoryCommand = new AsyncRelayCommand(RevertToHistoryAsync, () => CanRevertSelected);
+            HistoryEntries.CollectionChanged += (_, __) => { this.RaisePropertyChanged(nameof(CanRevertSelected)); RevertToHistoryCommand.NotifyCanExecuteChanged(); };
         }
 
         private void OpCodeService_DefinitionsLoaded(object? sender, EventArgs e)
@@ -212,6 +228,7 @@ namespace FileViewerApp.ViewModels
         public bool CanRemoveInstruction => SelectedInstruction != null && IsEditMode;
         public bool CanMoveUp => SelectedInstruction != null && IsEditMode && EditableInstructions.IndexOf(SelectedInstruction) > 0;
         public bool CanMoveDown => SelectedInstruction != null && IsEditMode && EditableInstructions.IndexOf(SelectedInstruction) < EditableInstructions.Count - 1;
+        public bool CanRevertSelected => SelectedHistoryEntry != null && HistoryEntries.IndexOf(SelectedHistoryEntry) > 0;
 
         private void LoadAvailableInstructions()
         {
@@ -284,10 +301,7 @@ namespace FileViewerApp.ViewModels
                 var path = files[0].Path.LocalPath;
                 _currentFileBytes = await File.ReadAllBytesAsync(path);
 
-                // Processa il file (qui LoadOpCodeDefinitionsAsync viene eseguito dentro ProcessFileAsync)
                 _currentProcessedFile = await _orchestrator.ProcessFileAsync(path);
-
-                // Ricarica la lista delle istruzioni ora che OpCodeService è popolato
                 LoadAvailableInstructions();
 
                 await UpdateUIFromProcessedFile(_currentProcessedFile);
@@ -295,6 +309,8 @@ namespace FileViewerApp.ViewModels
                 RebuildInstructionViewSimple();
                 RebuildTreeViewInitial();
                 UpdateStatus($"Caricato: {_currentProcessedFile.FileType} - {_currentProcessedFile.Instructions.Count} istruzioni");
+                AddHistory(HistoryActionType.Load, $"Caricato {Path.GetFileName(path)}");
+                AddHistory(HistoryActionType.Load, "Stato iniziale", force: true);
             }
             catch (Exception ex)
             {
@@ -424,17 +440,20 @@ namespace FileViewerApp.ViewModels
             HasUnsavedChanges = true;
             UpdateCanEditState();
             StatusText = "Aggiunta istruzione";
+            AppendPending(PendingChangeType.Add, $"Add #{EditableInstructions.Count}");
             await Task.CompletedTask;
         }
 
         private async Task RemoveInstructionAsync()
         {
             if (SelectedInstruction == null || !IsEditMode) return;
+            int removedNum = SelectedInstruction.Number;
             EditableInstructions.Remove(SelectedInstruction);
             RenumberInstructions();
             HasUnsavedChanges = true;
             UpdateCanEditState();
             StatusText = "Rimossa istruzione";
+            AppendPending(PendingChangeType.Remove, $"Del #{removedNum}");
             await Task.CompletedTask;
         }
 
@@ -446,6 +465,7 @@ namespace FileViewerApp.ViewModels
             RenumberInstructions();
             HasUnsavedChanges = true;
             StatusText = "Spostata su";
+            AppendPending(PendingChangeType.Move, $"MoveUp to {SelectedInstruction.Number}");
             await Task.CompletedTask;
         }
 
@@ -457,6 +477,7 @@ namespace FileViewerApp.ViewModels
             RenumberInstructions();
             HasUnsavedChanges = true;
             StatusText = "Spostata giù";
+            AppendPending(PendingChangeType.Move, $"MoveDown to {SelectedInstruction.Number}");
             await Task.CompletedTask;
         }
 
@@ -470,7 +491,10 @@ namespace FileViewerApp.ViewModels
                 instr.IsModified = false;
             HasUnsavedChanges = false;
             IsProcessing = false;
+            var summary = BuildPendingSummary();
             StatusText = "Modifiche salvate";
+            AddHistory(HistoryActionType.Save, $"Salvataggio modifiche ({summary})", force: true);
+            ClearPendingChanges();
             await UpdateHexViewAsync();
             RebuildInstructionViewSimple();
             RebuildTreeViewSimple();
@@ -484,6 +508,9 @@ namespace FileViewerApp.ViewModels
             RebuildInstructionViewSimple();
             RebuildTreeViewInitial();
             StatusText = "Modifiche scartate";
+            var discardSummary = BuildPendingSummary();
+            AddHistory(HistoryActionType.Discard, $"Scartate modifiche ({discardSummary})", force: true);
+            ClearPendingChanges();
         }
 
         private void RebuildInstructionViewSimple()
@@ -695,7 +722,7 @@ namespace FileViewerApp.ViewModels
             HasUnsavedChanges = EditableInstructions.Any(i => i.IsModified);
             UpdateAllButtonStates();
             NotifyAllCommands();
-            // Nessun refresh immediato: solo dopo Salva
+            // RIMOSSO: niente AddHistory per modifiche parametri singole
         }
 
         private void UpdateCanEditState()
@@ -712,23 +739,25 @@ namespace FileViewerApp.ViewModels
             this.RaisePropertyChanged(nameof(CanMoveDown));
         }
 
-        // Notify all AsyncRelayCommand instances to recompute CanExecute
-        private void NotifyAllCommands()
+        // Backward compatible method name used everywhere else
+        private void NotifyAllCommands() => NotificationAllCommands();
+
+        // Centralized command can-execute notifications
+        private void NotificationAllCommands()
         {
             OpenFileCommand.NotifyCanExecuteChanged();
             CloseFileCommand.NotifyCanExecuteChanged();
             SaveFileCommand.NotifyCanExecuteChanged();
             ConvertFileCommand.NotifyCanExecuteChanged();
             RefreshCommand.NotifyCanExecuteChanged();
-
             AddInstructionCommand.NotifyCanExecuteChanged();
             RemoveInstructionCommand.NotifyCanExecuteChanged();
             MoveUpCommand.NotifyCanExecuteChanged();
             MoveDownCommand.NotifyCanExecuteChanged();
             SaveChangesCommand.NotifyCanExecuteChanged();
             DiscardChangesCommand.NotifyCanExecuteChanged();
-
             LoadDefinitionsCommand.NotifyCanExecuteChanged();
+            RevertToHistoryCommand.NotifyCanExecuteChanged();
         }
 
         private void UpdateStatus(string msg)
@@ -771,5 +800,190 @@ namespace FileViewerApp.ViewModels
             foreach (var child in node.Children)
                 SetNodeExpandedRecursive(child, value);
         }
+
+        private readonly HistoryService _historyService = new();
+        public ObservableCollection<HistoryEntry> HistoryEntries { get; } = new();
+        public IAsyncRelayCommand RevertToHistoryCommand { get; }
+        private HistoryEntry? _selectedHistoryEntry;
+        public HistoryEntry? SelectedHistoryEntry { get => _selectedHistoryEntry; set { this.RaiseAndSetIfChanged(ref _selectedHistoryEntry, value); RevertToHistoryCommand.NotifyCanExecuteChanged(); BuildDiffFromSelection(); this.RaisePropertyChanged(nameof(CanRevertSelected)); } }
+
+        private void AddHistory(HistoryActionType actionType, string description, bool force = false)
+        {
+            var entry = _historyService.CaptureSnapshot(EditableInstructions, actionType, description, force);
+            if (!HistoryEntries.Contains(entry)) HistoryEntries.Insert(0, entry); // newest on top
+            this.RaisePropertyChanged(nameof(CanRevertSelected));
+            RevertToHistoryCommand.NotifyCanExecuteChanged();
+        }
+
+        private async Task RevertToHistoryAsync()
+        {
+            if (SelectedHistoryEntry == null) return;
+            // Conferma utente prima di procedere
+            if (!await ShowRevertConfirmationAsync())
+                return;
+
+            var snap = _historyService.RevertTo(SelectedHistoryEntry.Id);
+            EditableInstructions.Clear();
+            var svc = _orchestrator.GetOpCodeService();
+            foreach (var s in snap.OrderBy(s => s.Number))
+            {
+                var e = new EditableInstruction
+                {
+                    Number = s.Number,
+                    OpCode = s.OpCode,
+                    Name = s.Name
+                };
+                e.SetParameters(s.Parameters);
+                var info = svc.GetOpCodeInfo(s.OpCode);
+                if (info != null) e.ParamCount = info.ParamCount;
+                e.ResetModifications();
+                EditableInstructions.Add(e);
+            }
+            RenumberInstructions();
+            // Revert porta lo stato a uno snapshot esistente quindi non lo consideriamo modificato
+            HasUnsavedChanges = false;
+            foreach (var instr in EditableInstructions) instr.IsModified = false;
+            RebuildInstructionViewSimple();
+            RebuildTreeViewSimple();
+            AddHistory(HistoryActionType.Revert, $"Revert a #{SelectedHistoryEntry.Id}");
+            ClearPendingChanges();
+        }
+
+        private async Task<bool> ShowRevertConfirmationAsync()
+        {
+            if (_currentWindow == null) return true; // fallback: procedi
+            var tcs = new TaskCompletionSource<bool>();
+            var dialog = new Window
+            {
+                Title = "Conferma Revert",
+                Width = 360,
+                Height = 160,
+                WindowStartupLocation = WindowStartupLocation.CenterOwner,
+                CanResize = false
+            };
+
+            var cancelBtn = new Button { Content = "Annulla" };
+            cancelBtn.Click += (_, __) => { tcs.TrySetResult(false); dialog.Close(); };
+            var revertBtn = new Button { Content = "Revert" };
+            revertBtn.Click += (_, __) => { tcs.TrySetResult(true); dialog.Close(); };
+
+            var buttons = new StackPanel
+            {
+                Orientation = Orientation.Horizontal,
+                HorizontalAlignment = HorizontalAlignment.Right,
+                Spacing = 8,
+                Children = { cancelBtn, revertBtn }
+            };
+
+            dialog.Content = new StackPanel
+            {
+                Spacing = 12,
+                Margin = new Avalonia.Thickness(16),
+                Children =
+                {
+                    new TextBlock{ Text = "Vuoi ripristinare lo stato selezionato?", TextWrapping = TextWrapping.Wrap },
+                    buttons
+                }
+            };
+
+            _ = dialog.ShowDialog(_currentWindow); // non bloccare thread chiamante
+            return await tcs.Task;
+        }
+
+        private void BuildDiffFromSelection()
+        {
+            if (SelectedHistoryEntry == null)
+            {
+                DiffText = string.Empty;
+                return;
+            }
+
+            try
+            {
+                // HistoryEntries: newest inserted at index 0
+                var index = HistoryEntries.IndexOf(SelectedHistoryEntry);
+                HistoryEntry? previous = null;
+                if (index >= 0 && index + 1 < HistoryEntries.Count)
+                    previous = HistoryEntries[index + 1]; // older snapshot
+
+                if (previous == null)
+                {
+                    DiffText = $"Entry #{SelectedHistoryEntry.Id} (nessun snapshot precedente)\nNessuna diff disponibile";
+                    return;
+                }
+
+                var oldSnap = previous.Snapshot;   // stato precedente
+                var newSnap = SelectedHistoryEntry.Snapshot; // stato della entry selezionata
+
+                var oldByNum = oldSnap.ToDictionary(s => s.Number, s => s);
+                var newByNum = newSnap.ToDictionary(s => s.Number, s => s);
+                var allNums = oldByNum.Keys.Union(newByNum.Keys).OrderBy(n => n);
+
+                var sb = new StringBuilder();
+                sb.AppendLine($"Diff tra entry #{previous.Id} -> #{SelectedHistoryEntry.Id}");
+                sb.AppendLine(new string('-', 56));
+                int changeCount = 0;
+                foreach (var num in allNums)
+                {
+                    bool hadOld = oldByNum.TryGetValue(num, out var oInstr);
+                    bool hasNew = newByNum.TryGetValue(num, out var nInstr);
+
+                    if (!hadOld && hasNew)
+                    {
+                        sb.AppendLine($"+ {num:D3} {nInstr!.Name} (Op:{nInstr.OpCode}) {FormatParams(nInstr.Parameters)}");
+                        changeCount++; continue;
+                    }
+                    if (hadOld && !hasNew)
+                    {
+                        sb.AppendLine($"- {num:D3} {oInstr!.Name} (Op:{oInstr.OpCode}) {FormatParams(oInstr.Parameters)}");
+                        changeCount++; continue;
+                    }
+                    // both
+                    if (oInstr!.OpCode != nInstr!.OpCode || oInstr.Name != nInstr.Name || !oInstr.Parameters.SequenceEqual(nInstr.Parameters))
+                    {
+                        sb.AppendLine($"~ {num:D3} {oInstr.Name} -> {nInstr.Name} (Op {oInstr.OpCode}->{nInstr.OpCode})");
+                        for (int p = 0; p < Math.Max(oInstr.Parameters.Length, nInstr.Parameters.Length); p++)
+                        {
+                            int ov = p < oInstr.Parameters.Length ? oInstr.Parameters[p] : 0;
+                            int nv = p < nInstr.Parameters.Length ? nInstr.Parameters[p] : 0;
+                            if (ov != nv)
+                                sb.AppendLine($"    P{p}: {ov} -> {nv}");
+                        }
+                        changeCount++;
+                    }
+                }
+                if (changeCount == 0)
+                    sb.AppendLine("(Nessuna differenza)");
+                DiffText = sb.ToString();
+            }
+            catch (Exception ex)
+            {
+                DiffText = $"Errore diff: {ex.Message}";
+            }
+        }
+
+        private string FormatParams(int[] pars)
+        {
+            if (pars == null || pars.Length == 0) return string.Empty;
+            return string.Join(',', pars.Where(p => p != 0));
+        }
+
+        private void AppendPending(PendingChangeType type, string detail)
+        {
+            _pendingChanges.Add(new PendingChange(type, detail));
+        }
+        private string BuildPendingSummary()
+        {
+            if (_pendingChanges.Count == 0) return "Nessuna modifica strutturale";
+            int adds = _pendingChanges.Count(c => c.Type == PendingChangeType.Add);
+            int removes = _pendingChanges.Count(c => c.Type == PendingChangeType.Remove);
+            int moves = _pendingChanges.Count(c => c.Type == PendingChangeType.Move);
+            var parts = new List<string>();
+            if (adds > 0) parts.Add($"Aggiunte: {adds}");
+            if (removes > 0) parts.Add($"Rimosse: {removes}");
+            if (moves > 0) parts.Add($"Spostate: {moves}");
+            return string.Join(", ", parts);
+        }
+        private void ClearPendingChanges() => _pendingChanges.Clear();
     }
 }

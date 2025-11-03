@@ -223,7 +223,8 @@ namespace FileViewerApp.Models
         private void MarkAsModified()
         {
             IsModified = true;
-            InstructionChanged?.Invoke(this, new PropertyChangedEventArgs("Modified"));
+            // Use standard property name so listeners can match nameof(EditableInstruction.IsModified)
+            InstructionChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(IsModified)));
         }
 
         private void ValidateInstruction()
