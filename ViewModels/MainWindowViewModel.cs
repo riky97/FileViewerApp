@@ -606,22 +606,59 @@ namespace FileViewerApp.ViewModels
 
         private async Task ApplyChangesToFile()
         {
-            if (_currentFileBytes == null || _currentProcessedFile == null) return;
-            var modifiedBytes = new byte[_currentFileBytes.Length];
-            Array.Copy(_currentFileBytes, modifiedBytes, _currentFileBytes.Length);
+            if (_currentProcessedFile == null) return;
 
-            foreach (var instr in EditableInstructions.Where(i => i.IsModified))
+            // Rebuild binary from editable instructions using 4-byte int layout
+            // Header: preserve original header if available, else derive from file name
+            string header = _currentProcessedFile.Header;
+            if (string.IsNullOrWhiteSpace(header))
             {
-                int offset = _startOffset + ((instr.Number - 1) * 9);
-                if (offset + 8 >= modifiedBytes.Length) continue;
-                modifiedBytes[offset] = (byte)instr.OpCode;
+                header = $" 106{Path.GetFileNameWithoutExtension(_currentProcessedFile.FileName)}";
+            }
+            header = header.PadRight(8).Substring(0, 8);
+
+            var instructions = EditableInstructions.OrderBy(i => i.Number).ToList();
+            int recordSize = 36; // 4 bytes opcode + 8 * 4 bytes params
+            int totalSize = 8 + 42 + (instructions.Count * recordSize);
+            var newBytes = new byte[totalSize];
+
+            // Header
+            Encoding.ASCII.GetBytes(header).CopyTo(newBytes, 0);
+            // Padding already zero-initialized for bytes 8..49 (42 bytes)
+
+            // Write instructions
+            int offset = 0x32; // 50
+            foreach (var instr in instructions)
+            {
+                // Write opcode
+                BitConverter.GetBytes(instr.OpCode).CopyTo(newBytes, offset);
                 var pars = instr.GetParameters();
-                for (int i = 0; i < pars.Length && offset + 1 + i < modifiedBytes.Length; i++)
-                    modifiedBytes[offset + 1 + i] = (byte)pars[i];
+                for (int p = 0; p < 8; p++)
+                {
+                    int val = p < pars.Length ? pars[p] : 0;
+                    BitConverter.GetBytes(val).CopyTo(newBytes, offset + 4 + (p * 4));
+                }
+                offset += recordSize;
             }
 
-            _currentFileBytes = modifiedBytes;
-            _currentProcessedFile.RawContent = modifiedBytes;
+            // Update processed file model
+            _currentFileBytes = newBytes;
+            _currentProcessedFile.RawContent = newBytes;
+            _currentProcessedFile.FileSize = newBytes.Length;
+            _currentProcessedFile.Instructions = instructions.Select(e => new Instruction
+            {
+                Number = e.Number,
+                OpCode = e.OpCode,
+                Name = e.Name,
+                Parameters = e.GetParameters(),
+                Offset = 0x32 + ((e.Number - 1) * recordSize)
+            }).ToList();
+
+            // Regenerate textual & tree views with orchestrator helpers
+            _currentProcessedFile.HexView = _orchestrator.GetOpCodeService() != null ? _orchestrator.GenerateInstructionTree(_currentProcessedFile.Instructions, header) != null ? _currentProcessedFile.HexView : _currentProcessedFile.HexView : _currentProcessedFile.HexView; // leave hex for later explicit refresh
+            // Simpler: rebuild InstructionTree
+            _currentProcessedFile.InstructionTree = _orchestrator.GenerateInstructionTree(_currentProcessedFile.Instructions, header);
+
             await Task.CompletedTask;
         }
 
