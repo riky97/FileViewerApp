@@ -1,0 +1,99 @@
+ASPS;ErroreCollisioni;1;prg 15 girare la chiavetta e ripristinare il sistema
+ACS;MicroPresenzaPezzoAttivo;2;Foglio presente su ventose. Per eseguire l'operazione richiesta e' necessario che non ci sia del materiale sotto le ventose. Effettuare un ripristino sistema e rieseguire il ciclo. Se il problema persiste verificare il funzionamento dei sensori di presenza foglio.
+ACS;InterventoTermicaMotore;3;E' intervenuto l' interruttore automatico di protezione motore nel quadro elettrico. Riarmare l'interruttore. Se continua a scattare contattare Assistenza Antil
+LASER;TavolaNonInPosizione;4;La tavola del laser su cui si sta agendo non ? in posizione. Verificare posizione tavola. Effettuare un ripristino sistema e rieseguire il ciclo.
+ASPS;ASPS azzeramentoNonSicuro;5;Verificare corsa verticale ASPS libera e azzerare mem.9
+LASER;IncongruenzaMaterialeSuLaser;6;Per eseguire l'operazione richiesta e' necessario che non ci sia del materiale sulla tavola del laser. Lo stato attuale della tavola esterna del laser non ? vuoto. Ripristinare il sistema e verificare lo stato tavole sul laser e sull'ACS.
+ACS;MicroPresenzaPezzoNonAttivo;7;Foglio assente su ventose. Per eseguire l'operazione richiesta e' necessario che ci sia del materiale sotto le ventose. Effettuare un ripristino sistema e rieseguire il ciclo. Se il problema persiste verificare il funzionamento dei sensori di presenza foglio.
+ACS;Err Sinc Database Cass Scar;8;Prog in automatico, cassetto di scarico fisicamente assente ma presente nel database. Allineare il database alla realt? nell'ATM.
+ACS-2F;Incongruenza sensori ribalta cassetto;9;I sensori non sono allineati con la posizione della ribaltina
+;CassettoDiCaricoNonPresente;10;
+Inutili;err.11;11;
+Inutili;err.12;12;
+Inutili;err.13;13;
+Inutili;err.14;14;
+Inutili;err.15;15;
+Inutili;err.16;16;
+Inutili;err.17;17;
+Inutili;err.18;18;
+ACS;CassScarPresente;19;Cassetto di scarico presente su Carro ventose - Non si puo' portare un'altro
+ACS;CarroNonInPosizDiCarico;20;Per eseguire l'operazione richiesta e' necessario che il carro ventose sia nella postazione di carico. Effettuare un ripristino sistema e rieseguire il ciclo. In caso il problema non si risolva, contattare il Servizio Assistenza Antil
+Inutili;err.25;25;
+ACS;FotocellulaUnload;22;La fotocellula di unload lamiera poste sotto il carro ventose ? oscurata. Verificare l'allineamento e l'eventuale presenza di ostacoli. Effettuare un ripristino sistema e rieseguire il ciclo
+ACS;IncongTavEstLaserAcs;23;Stato tavola esterna su mobil panel e interfaccia laser non e' uguale. Verificare e correggere o sull'interfaccia laser o su mobil panel.
+ACS;CassTroppoPienoPerMagaz;24;E' stata superata la massima altezza per permettere il rientro del materiale in magazzino. Verificare che ci siano degli ingombri  troppo alti sul cassetto di carico e rimuoverli a mano. Effettuare un ripristino sistema e rieseguire il ciclo. Nel caso in cui  non ci siano ingombri verificare l'allineamento della fotocellula di cassetto troppo pieno.
+ACS;CarroNonInMagazzino;26;Per eseguire l'operazione richiesta e' necessario che il carro ventose sia nella postazione in magazzino. Effettuare un ripristino sistema e rieseguire il ciclo. In caso il problema non si risolva, contattare il Servizio Assistenza Antil
+ACS;VentoseNonSu;27;Per eseguire l'operazione richiesta e' necessario che le ventose siano al punto morto superiore. Eseguire un ripristino sistema o muovere manualmente le ventose fino al PMS. Effettuare un ripristino sistema
+ACS;CassettoDiScaricoNonInPos;28;Il cassetto di scarico sul carro ventose risulta presente, ma non in posizione. Verificare la lettura della fotocellula di cassetto in posizione. Portare a mano il cassetto in posizione corretta. Effettuare un ripristino sistema
+ACS-NoMagazzino;FinePalletDiCarico;29;prg 21
+ACS;CarroVentoseNonSuLaser;30;Per eseguire l'operazione richiesta e' necessario che il carro ventose sia nella postazione sopra il laser. Effettuare un ripristino sistema e rieseguire il ciclo. In caso il problema non si risolva, contattare il Servizio Assistenza Antil
+ACS;PresoDoppioFoglo;31;Spessore lamiera vergine errato o impossibile effettuare sfogliamento correttamente. Verificare che lo sfogliamento sia possibile e verificare il funzionamento del controllo spessore tramite macro-button. Effettuare un ripristino sistema
+ACS;CarroVentseNonInPosDiScarico;32;Per eseguire l'operazione richiesta e' necessario che il carro ventose sia nella postazione di scarico. Effettuare un ripristino sistema e rieseguire il ciclo. In caso il problema non si risolva, contattare il Servizio Assistenza Antil
+ACS;ContLamNonGiu;33;Per eseguire l'operazione richiesta e' necessario che il contenimento lamiera sia abbassato. Effettuare un ripristino sistema e rieseguire il ciclo. In caso il problema non si risolva verificare tramite macro-button il funzionamento del contenimento lamiera.
+ACS;CassScarBloccato;34;Per eseguire l'operazione richiesta e' necessario che il cassetto di scarico non sia bloccato. Effettuare un ripristino sistema e rieseguire il ciclo.
+ACS;ContLamNonSu;35;Per eseguire l'operazione richiesta e' necessario che il contenimento lamiera sia alzato. Effettuare un ripristino sistema e rieseguire il ciclo. In caso il problema non si risolva verificare tramite macro-button il funzionamento del contenimento lamiera.
+ACS;CassScarSbloccato;37;Per eseguire l'operazione richiesta e' necessario che il cassetto di scarico non sia bloccato. Effettuare un ripristino sistema e rieseguire il ciclo.
+ACS;ErroreBloccoCassettoScarico;38;Il blocco cassetto di scarico non arriva in posizione. Verificare la lettura dei sensori magnetici sui cilindri pneumatici e verificare che i blocchi cassetto si possano chiudere. Verificare la posizione del cassetto di scarico e eventualmente portare a mano il cassetto in posizione corretta. Effettuare un ripristino sistema
+;ForcSenzaMat;39;
+ACS;ForcheNonGiuSuCarro;40;Per eseguire l'operazione richiesta e' necessario che le forche siano sotto un'altezza di sicurezza. Eseguire un ripristino sistema o muovere manualmente le forche. Effettuare un ripristino sistema e rieseguire il ciclo.
+ACS;ForcheNonSu;41;Per eseguire l'operazione richiesta e' necessario che le forche siano al punto morto superiore. Eseguire un ripristino sistema o muovere manualmente le forche fino al PMS. Effettuare un ripristino sistema
+ACS;ForcheNonChiuse;42;Per eseguire l'operazione richiesta e' necessario che le forche siano chiuse. Eseguire un ripristino sistema o muovere manualmente le forche fino a chiuderle. Effettuare un ripristino sistema
+ACS;FotScaricoIncrociataNonLibera;43;Le fotocellule di scarico lamiera poste sotto le forche sono oscurate. Verificare l'allineamento e l'eventuale presenza di ostacoli. Effettuare un ripristino sistema e rieseguire il ciclo
+ACS;CassettoDiScaricoNonPresente;44;Per eseguire l'operazione richiesta e' sia presente il cassetto di scarico. Verificare la lettura della fotocellula di cassetto presente. Effettuare un ripristino sistema
+ACS;ForcheNonGiuLaser;45;Per eseguire l'operazione richiesta e' necessario che le forche siano all'altezza della tavola del laser. Eseguire un ripristino sistema o muovere manualmente le forche. Effettuare un ripristino sistema e rieseguire il ciclo.
+ACS;ForcheNonAperte;46;Per eseguire l'operazione richiesta e' necessario che le forche siano aperte. Eseguire un ripristino sistema o muovere manualmente le forche fino ad aprirle. Effettuare un ripristino sistema
+ACS;err.47;47;
+ACS;err.48;48;
+ACS;err.49;49;
+ACS;ForcheNoAperteNoChiuse;50;Per eseguire l'operazione richiesta e' necessario che le forche siano aperte o chiuse. Eseguire un ripristino sistema o muovere manualmente le forche fino ad aprirle o a chiuderle. Effettuare un ripristino sistema
+ACS-ASPS;MicroForcheDietro;51;Incongruenza pos.att forche aperte e micro forche dietro
+Inutili;err.52;52;
+Inutili;err.53;53;
+Inutili;err.54;54;
+Inutili;err.55;55;
+Inutili;err.56;56;
+Inutili;err.57;57;
+ASPS;ASPS NonInFuoriIngombro;58;
+ASPS;ASPS SfridoAttaccatoAllaMano;59;ASPS sfrido attaccato alla mano
+ASPS;ASPS NonInFuoriIngomLatoLaser;60;ASPS non in fuoringom.lato laser, prg 36/26
+ASPS;ASPS NonInFuoriIngomLatoCarro;61;ASPS NON in fuoringom.lato carro, prg 37/38/39
+ASPS;ASPS InLavoroSuTorretta1;62;ASPS in lavoro su torretta 1, prg s/carico cassetto torretta 1 
+ASPS;ASPS InLavoroSuTorretta2;63;ASPS in lavoro su torretta 2, prg s/carico cassetto torretta 2
+Inutili;FileTxtInesistente;64;file TXT inesistente, prg 7
+Inutili;FileCsvInesistente;65;file CSV inesistente, prg 7
+Inutili;err.66;66;
+Inutili;err.67;67;
+Inutili;err.68;68;
+Inutili;err.69;69;
+Inutili;err.70;70;
+Inutili;err.71;71;
+Inutili;err.72;72;
+Inutili;err.73;73;
+Inutili;err.74;74;
+;err.75;75;
+NavASPS;EntrambiCassAspsInCaricament;76;entrambi cass.asps in caricament
+NavASPS;RilevamCassettoSuNav e torre;77;rilevam.cassetto su Nav e torre
+Inutili;Incoerenza DB;78;incoerenza DB: associaz.cass-loc
+;err.79;79;
+;err.80;80;
+;err.81;81;
+;err.82;82;
+;err.83;83;
+;err.84;84;
+;err.85;85;
+;err.86;86;
+;err.87;87;
+;err.88;88;
+Inutili;err.89;89;
+;err.90;90;
+;err.91;91;
+ASPS;ASPS non resettato;92;Gli assi dell'ASPS non risultano resettati
+;CollisFotocelMaxAltezza;36;
+Lst;LaserInLavoro;129;
+Lst;LaserZnonAlta;108;
+Lst;AcsAspsNoFuoriIngombro;126;
+;MissioneInCorso;128;
+Lst;X o Z non in posizione di origine;121;
+Lst;Chiave controllo linea;123;
+;ErroreJobList;125;
+Lst;BarriereInterrotte;130;

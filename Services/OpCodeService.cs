@@ -20,6 +20,10 @@ namespace FileViewerApp.Services
         // Evento notificatore quando le definizioni sono state caricate
         public event EventHandler? DefinitionsLoaded;
 
+        private readonly ResourceService _resourceService = new ResourceService(Path.Combine(AppContext.BaseDirectory, "Resources"));
+        private readonly Dictionary<int, Dictionary<int, List<string>>> _opcodeParamGroups = new(); // op -> paramIdx -> groups
+        private readonly Dictionary<string, Dictionary<int, List<string>>> _opcodeNameParamGroups = new(StringComparer.OrdinalIgnoreCase); // name -> paramIdx -> groups
+
         public OpCodeService()
         {
             // Registra i loader in ordine di priorità
@@ -52,17 +56,25 @@ namespace FileViewerApp.Services
                     {
                         Console.WriteLine($"Caricamento OpCodes con {loader.LoaderName}: {configFile}");
                         _opCodeInfos = await loader.LoadAsync(configFile);
+                        // Parse gruppi parametri se XML
+                        if (loader is XmlOpCodeLoader)
+                        {
+                            try { ParseXmlParamGroups(configFile); } catch (Exception ex) { Console.WriteLine($"ParseXmlParamGroups errore: {ex.Message}"); }
+                        }
                         Console.WriteLine($"Caricati {_opCodeInfos.Count} OpCodes da {configFile}");
                         DefinitionsLoaded?.Invoke(this, EventArgs.Empty);
-                        return _opCodeInfos;
+                        // NON fare return anticipato; prosegue per eventuali altre inizializzazioni
                     }
                 }
 
-                // Usa il fallback
-                Console.WriteLine("Nessun file di configurazione trovato, usando definizioni di fallback");
-                var fallbackLoader = _loaders.OfType<FallbackOpCodeLoader>().First();
-                _opCodeInfos = await fallbackLoader.LoadAsync("");
-                DefinitionsLoaded?.Invoke(this, EventArgs.Empty);
+                // Se non era XML o non trovato file, gestito sotto.
+                if (_opCodeInfos.Count == 0)
+                {
+                    Console.WriteLine("Nessun file di configurazione valido caricato, usando definizioni di fallback");
+                    var fallbackLoader = _loaders.OfType<FallbackOpCodeLoader>().First();
+                    _opCodeInfos = await fallbackLoader.LoadAsync("");
+                    DefinitionsLoaded?.Invoke(this, EventArgs.Empty);
+                }
             }
             catch (Exception ex)
             {
@@ -70,6 +82,16 @@ namespace FileViewerApp.Services
                 var fallbackLoader = _loaders.OfType<FallbackOpCodeLoader>().First();
                 _opCodeInfos = await fallbackLoader.LoadAsync("");
                 DefinitionsLoaded?.Invoke(this, EventArgs.Empty);
+            }
+
+            var infoXml = FindConfigFile();
+            if (infoXml != null && infoXml.EndsWith("INFO.XML", StringComparison.OrdinalIgnoreCase))
+            {
+                // Se non già parsato (fallback scenario) prova a parsare
+                if (_opcodeParamGroups.Count == 0)
+                {
+                    try { ParseXmlParamGroups(infoXml); } catch (Exception ex) { Console.WriteLine($"ParseXmlParamGroups (late) errore: {ex.Message}"); }
+                }
             }
 
             return _opCodeInfos;
@@ -125,10 +147,55 @@ namespace FileViewerApp.Services
                 _opCodeInfos = await loader.LoadAsync(filePath);
                 Console.WriteLine($"Caricati {_opCodeInfos.Count} OpCodes");
                 DefinitionsLoaded?.Invoke(this, EventArgs.Empty);
+
+                if (loader is XmlOpCodeLoader)
+                {
+                    try { ParseXmlParamGroups(filePath); } catch { }
+                }
             }
             else
             {
                 throw new NotSupportedException($"Nessun loader disponibile per il file: {filePath}");
+            }
+        }
+
+        private void ParseXmlParamGroups(string xmlPath)
+        {
+            if (!File.Exists(xmlPath)) return;
+            var doc = System.Xml.Linq.XDocument.Load(xmlPath);
+            _opcodeParamGroups.Clear();
+            _opcodeNameParamGroups.Clear();
+            foreach (var cmd in doc.Root!.Elements("CMD"))
+            {
+                var idAttr = cmd.Attribute("ID");
+                var nameAttr = cmd.Attribute("Name");
+                int? opId = null;
+                if (idAttr != null && int.TryParse(idAttr.Value, out var parsed)) opId = parsed;
+                var nameKey = nameAttr?.Value ?? string.Empty;
+                var nameDict = new Dictionary<int, List<string>>();
+                int paramIndex = 0;
+                foreach (var par in cmd.Elements("PAR"))
+                {
+                    var groups = par.Elements("RESGROUP").Select(r => r.Attribute("Name")?.Value).Where(v => !string.IsNullOrWhiteSpace(v)).Distinct(StringComparer.OrdinalIgnoreCase).ToList();
+                    if (groups.Count > 0)
+                    {
+                        nameDict[paramIndex] = groups;
+                        if (opId.HasValue)
+                        {
+                            if (!_opcodeParamGroups.TryGetValue(opId.Value, out var idDict))
+                            {
+                                idDict = new Dictionary<int, List<string>>();
+                                _opcodeParamGroups[opId.Value] = idDict;
+                            }
+                            idDict[paramIndex] = groups;
+                        }
+                    }
+                    paramIndex++;
+                }
+                if (!string.IsNullOrWhiteSpace(nameKey) && nameDict.Count > 0)
+                {
+                    _opcodeNameParamGroups[nameKey] = nameDict;
+                }
             }
         }
 
@@ -165,6 +232,68 @@ namespace FileViewerApp.Services
         public List<string> GetAllOpCodeNames()
         {
             return _opCodeInfos.Values.Select(info => info.Name).OrderBy(name => name).ToList();
+        }
+
+        public ResourceService GetResourceService() => _resourceService;
+
+        public IReadOnlyList<string> GetParamResourceGroups(int opCode, int paramIndex)
+        {
+            if (_opcodeParamGroups.TryGetValue(opCode, out var d) && d.TryGetValue(paramIndex, out var g)) return g;
+            return Array.Empty<string>();
+        }
+        public IReadOnlyList<string> GetParamResourceGroupsByName(string name, int paramIndex)
+        {
+            if (_opcodeNameParamGroups.TryGetValue(name, out var d) && d.TryGetValue(paramIndex, out var g)) return g;
+            return Array.Empty<string>();
+        }
+        public IEnumerable<ResourceOption> GetParamOptions(int opCode, int paramIndex)
+        {
+            var groups = GetParamResourceGroups(opCode, paramIndex);
+            if (groups.Count == 0) return Enumerable.Empty<ResourceOption>();
+            return ResolveGroupsToOptions(groups);
+        }
+        public IEnumerable<ResourceOption> GetParamOptionsByName(string name, int paramIndex)
+        {
+            var groups = GetParamResourceGroupsByName(name, paramIndex);
+            if (groups.Count == 0) return Enumerable.Empty<ResourceOption>();
+            return ResolveGroupsToOptions(groups);
+        }
+
+        private IEnumerable<ResourceOption> ResolveGroupsToOptions(IReadOnlyList<string> groups)
+        {
+            var rs = _resourceService;
+            var seen = new HashSet<int>();
+            foreach (var g in groups)
+            {
+                // prima prova gruppo diretto (case-insensitive) su file index key
+                var idx = rs.GetFileIndex(g);
+                if (idx == null)
+                {
+                    // fallback: prova lowercase
+                    idx = rs.GetFileIndex(g.ToLowerInvariant());
+                }
+                if (idx == null)
+                {
+                    // fallback: prova normalizzare underscore/spazi
+                    var alt = g.Replace("_", "").Replace(" ", "");
+                    idx = rs.GetFileIndex(alt);
+                }
+                if (idx == null) continue;
+                foreach (var item in idx.Entries)
+                {
+                    if (item.IntValue.HasValue && !seen.Add(item.IntValue.Value)) continue;
+                    yield return new ResourceOption(item);
+                }
+            }
+        }
+
+        public IEnumerable<ResourceOption> FilterParamOptions(int opCode, int paramIndex, string filter)
+        {
+            return _resourceService.FilterOptions(GetParamOptions(opCode, paramIndex), filter);
+        }
+        public IEnumerable<ResourceOption> FilterParamOptionsByName(string name, int paramIndex, string filter)
+        {
+            return _resourceService.FilterOptions(GetParamOptionsByName(name, paramIndex), filter);
         }
     }
 }

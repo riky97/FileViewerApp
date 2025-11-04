@@ -1,0 +1,14 @@
+TAV;vuota;1;
+TAV;foglio;2;
+TAV;tagliato;3;
+ATM;CassettoVuoto;10;
+SincAspsN;StartCambioCass;11;
+SincAspsN;CambioCassEseguito;15;
+SincAspsN;PastroNoCambCass;10;
+Acs;NumLocCarico;311;
+DB;NumLocCarico;311;
+DB;NumLocScarico;315;
+StatoMissione;RichiestaCassetto;1;
+StatoMissione;EvacuaCassetto;2;
+JOB;VerificaMissioneCarico;0;
+JOB;VerificaMissioneScarico;1;

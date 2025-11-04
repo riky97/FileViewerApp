@@ -1,0 +1,11 @@
+JOB;dec. num. cicli;-1;text
+JOB;carico su laser;2;text
+JOB;rimozione tag;3;text
+JOB;presa fatta;4;text
+JOB;scarico su cassetto;6;text
+JOB;carico su laser con forche;7;text
+JOB;cass.scarico in torre;8;text
+JOB;unload fatto;10;text
+JOB;AggiornaQuantita;11;
+JOB;VerificaMissioneCarico;0;
+JOB;VerificaMissioneScarico;1;

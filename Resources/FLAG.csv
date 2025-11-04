@@ -1,0 +1,137 @@
+ASPS;Pezzo preso;96;
+FLG;FINITE_PRESE;97;
+FLG;SYNC_PROCESSI;98;
+FLG;GET_SPESSORE;101;Aggiorna la memoria  10 (Lunghezza foglio nella job)  e 11 (Peso foglio nella job) e legge lo spessore per poter utilizzare il comando MIS. SPESS. Dopo averla accesa, aspettare che si spenga.
+FLG;RITARDO_PRESA;102;
+FLG;CAS_MODUL_2;256;Se accesa, il cassetto viene evaquato con modularit? doppia
+FLG;CAS_TROPPO_PIENO;104;
+FLG;UPDATE_DB_PAL_CAR;105;
+FLG;UPDATE_DB_PAL_SCAR;106;
+FLG;ATM ASPS;107;
+FLG;se ASPS da usare;108;
+FLG;FORZA_CAMBIO_CASSETTO_SCARICO;255;Se accesa, il cassetto di scarico viene evaquato, (viene spenta nel momento in cui si esegue il comando magazziono che evaqua quel cassetto di scaricoimpostata nel robot.cnf
+FLG;CARICO_EFFETTUATO;110;
+FLG;CollisioniClient1;111;locazione di carico num.546 
+FLG;MISS_SU_CLIENT_1;112;Se accesa, il client 1 deve eseguire una missione, gestita dal comando GMISSIONI
+FLG;MISS_SU_CLIENT_2;113;
+FLG;MISS_SU_CLIENT_3;114;
+FLG;MISS_SU_CLIENT_4;115;
+FLG;CollisioniClient2;116;locazione di scarico num.549
+FLG;MANUALE;117;
+FLG;presenza pezzo;118;Micro presenza pezzi, Se acceso, pezzo presente
+FLG;ERRORE_TENTATIVI;119;Flag Raggiunto tentativi max per controllo spessore
+FLG;carro no fuori ing;120;
+FLG;SFOGLIAMENTO;121;
+FLG;FINE_CARICO;122;
+FLG;FINE_SCARICO;123;
+FLG;FINE_PROGRAMMA;124;
+FLG;RESULT;125;Dopo il comando COMP MEM, 1=risultato OK
+FLG;START;126;Impianto in automatico
+FLG;CollisioniClient3;127;locazione di nastro ASPS num.482
+FLG;EFFETTUA_CONSEGNA;128;
+FLG;WAIT_LASER;129;
+FLG;EFFETTUA_SCARICO;130;
+FLG;EFFETTUA_PRESA;131;
+FLG;ASPETTA_CAMBIO_TAV;132;
+FLG;TAVOLA_IN_POSIZIONE;133;Flag di tavola in posizione che vale 1 dopo aver aggiornato tutte le memorie
+FLG;START_CAMBIO_TAV;134;
+FLG;EFFETTUA_RIMOZIONE;135;
+FLG;Asps_PezzoPendente;137;
+FLG;sincr cv forche1;138;
+FLG;EFFETTUA_CARICO;139;
+FLG;incr cv forche2;140;
+FLG;ASPS Vuoto att;141;
+FLG;Vibrazione;142;
+FLG;CS_LASER;143;
+FLG;ASPS in lavoro;144;
+FLG;ASPS fuoring las;145;
+FLG;ASPS fuoring CV;146;
+FLG;reset assi ok;147;
+FLG;forche in lavoro;148;
+FLG;CV in lavoro;149;
+FLG;nav in lavoro;150;
+FLG;collis for sugiu laser;151;
+FLG;collis asps;152;
+FLG;collis cv dxsx;153;
+FLG;collis for sugiu scarico;154;
+FLG;stato collisioni;155;
+FLG;Cambio Tavola fatto;156;
+FLG_NOT;Pezzo preso;-96;
+FLG_NOT;FINITE_PRESE;-97;
+FLG_NOT;SYNC_PROCESSI;-98;
+FLG_NOT;GET_SPESSORE;-101;
+FLG_NOT;RITARDO_PRESA;-102;
+FLG_NOT;CAS_MODUL_2;-103;
+FLG_NOT;CAS_TROPPO_PIENO;-104;
+FLG_NOT;UPDATE_DB_PAL_CAR;-105;
+FLG_NOT;UPDATE_DB_PAL_SCAR;-106;
+FLG_NOT;ATM ASPS;-107;
+FLG_NOT;se ASPS da usare;-108;
+FLG_NOT;FORZA_CAMBIO_CASSETTO_SCARICO;-109;
+FLG_NOT;CARICO_EFFETTUATO;-110;
+FLG_NOT;CollisioniClient1;-111;locazione di carico num.546 
+FLG_NOT;MISS_SU_CLIENT_1;-112;
+FLG_NOT;MISS_SU_CLIENT_2;-113;
+FLG_NOT;MISS_SU_CLIENT_3;-114;
+FLG_NOT;MISS_SU_CLIENT_4;-115;
+FLG_NOT;CollisioniClient2;-116;locazione di scarico num.549
+FLG_NOT;MANUALE;-117;
+FLG_NOT;presenza pezzo;-118;
+FLG_NOT;ERRORE_TENTATIVI;-119;
+FLG_NOT;carro no fuori ing;-120;
+FLG_NOT;SFOGLIAMENTO;-121;
+FLG_NOT;FINE_CARICO;-122;
+FLG_NOT;FINE_SCARICO;-123;
+FLG_NOT;FINE_PROGRAMMA;-124;
+FLG_NOT;RESULT;-125;
+FLG_NOT;START;-126;
+FLG_NOT;CollisioniClient3;-127;locazione di nastro ASPS num.482
+FLG_NOT;EFFETTUA_CONSEGNA;-128;
+FLG_NOT;WAIT_LASER;-129;
+FLG_NOT;EFFETTUA_SCARICO;-130;
+FLG_NOT;EFFETTUA_PRESA;-131;
+FLG_NOT;ASPETTA_CAMBIO_TAV;-132;
+FLG_NOT;TAVOLA_IN_POSIZIONE;-133;
+FLG_NOT;START_CAMBIO_TAV;-134;
+FLG_NOT;EFFETTUA_RIMOZIONE;-135;
+FLG_NOT;Pezzo pendente;-137;
+FLG_NOT;sincr cv forche1;-138;
+FLG_NOT;EFFETTUA_CARICO;-139;
+FLG_NOT;incr cv forche2;-140;
+FLG_NOT;ASPS Vuoto att;-141;
+FLG_NOT;Vibrazione;-142;
+FLG_NOT;CS_LASER;-143;
+FLG_NOT;ASPS in lavoro;-144;
+FLG_NOT;ASPS fuoring las;-145;
+FLG_NOT;ASPS fuoring CV;-146;
+FLG_NOT;reset assi ok;-147;
+FLG_NOT;forche in lavoro;-148;
+FLG_NOT;CV in lavoro;-149;
+FLG_NOT;nav in lavoro;-150;
+FLG_NOT;collis for sugiu laser;-151;
+FLG_NOT;collis asps;-152;
+FLG_NOT;collis cv dxsx;-153;
+FLG_NOT;collis for sugiu scarico;-154;
+FLG_NOT;stato collisioni;-155;
+FLG_NOT;Cambio Tavola fatto;-156;
+FLG;Cambio cassetto nastro;157;
+FLG;Operazione nastro completata;158;
+FLG;Cassetto su nastro troppo pieno;159;
+ASPS;Multideposito;160;Settata dal software con l'ultimo parametro del set presa di infolab
+ASPS;Incremento pila;161;
+ASPS;Presenza pezzo;162;Flag presenza pezzo ASPS
+ASPS;Bypass cambio cassetto;163;Bypass su verifica cambio cassetto
+MAIN;ASPSdeveAspettare;164;
+MAIN;ACSdeveAspettare;165;
+FLG;Errore;166;Usata per generare errore in caso di malfunzionamento dei pistoni
+FLG;DiTavInPos;168;Ingresso tavola in posizione con filtro
+;TimeOutTavoleLaser;181;
+;SincCmdAtm;176;
+ACS;ForcheDevonoScendere;167;
+LST;ReadyStartNc;252;
+LST;Dato LST.NC START;189;
+LST;FlgComadoCambioTavola;188;
+;CmdAggiornaMemoriaTavole;192;
+;flag_enable_ct;249;
+;flag_pallet_load;253;
+LST;CmdSpegnereLaser;251;

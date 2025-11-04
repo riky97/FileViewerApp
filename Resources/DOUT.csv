@@ -1,0 +1,27 @@
+Semaforo;LAVORO;5;Semaforo
+Semaforo;ALLARME;6;Semaforo
+Semaforo;EMERGENZA;7;Semaforo
+CV;PompaVuoto;2;
+Lst;Running;13;
+Lst;Stop comand;14;
+CV;VuotoVentose;402;Vuoto ventose su ACS
+CV;SoffioVentose;403;Soffio ventose su ACS
+Lst;OnLineMode;15;
+CV;SoffioSfogliatore;404;
+CV;ChiusuraControlloSpessore;405;
+CV;VentosSfogliamento;401;Vuoto su ventosa di sfogliamento 4020
+F;SecondoLimiteCorrente;4;Secondo limite corrente per ingresso forche nella tavola del laser
+CV;BloccaCassDiScar;406;Blocco cassetto di scarico su carro ventose
+Lst;UnderLoadingUnloading;16;
+SemTraslo;Verde;22;
+SemTraslo;Giallo;23;
+SemTraslo;Rosso;24;
+Traslo;SemVerde;22;
+Traslo;SemGiallo;23;
+Traslo;SemRosso;24;
+Lst;WorkSetCompletion;17;
+Lst;PosibleToMove;18;
+Lst;ShuttleExchangeCommand;19;
+Lst;M-FIN;33;
+Lst;NC-RESET;35;
+Lst;AutoPowerOff;37;

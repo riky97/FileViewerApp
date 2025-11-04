@@ -1,0 +1,19 @@
+;PrgMb;0;Programma Macro Button Manuale
+;StartAuto;1;Start automatico
+;StopAuto;2;Stop automatico
+;RicCar;3;Richiesta Carico Attiva
+;RicScar;4;Richiesta Scarico Attiva
+;StartCar;5;Start Ciclo Solo Carico Laser
+;StartCarScar;6;Start Ciclo Carico Scarico Lase
+;StartScaric;7;Start Ciclo Solo ScaricoLaser
+;FgCaricato;8;Foglio caricato su tavola esterna laser
+;FgScaricato;9;Foglio scaricato da tavola esterna laser
+;FgScaricatoDaForche;10;Foglio scaricato da forche
+;CambioTavola;11;Eseguito camio tavola laser
+;DatiTavolaEsterna;12;Dati tavola esterna
+;DatiTavolaInterna;13;Dati tavola interna
+;DatiForche;14;Dati forche
+;FgCaricatoConMb;15;Foglio caricato su tavola esterna laser con macrobutton
+;VuotoOffDaMb;16;
+;StartSinc;17;
+;EndSinc;18;

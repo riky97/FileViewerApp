@@ -1,0 +1,242 @@
+Mem;trasf specifiche lam;10;text
+ACS;scambio stato tav;11;text
+ACS;stato prec tav fuo;12;text
+ACS;StatoTavolaEstDaLaser;29;text
+ACS;quota evac forche;30;text
+Mem;auto da passo 1;34;text
+ACS;FC scarico pieno;35;text
+Mem;prog macro button;36;text
+ACS;quota per sfogliam;37;text
+ACS;quota depos forche;38;text
+Mem;modo cambio casset;39;text
+Delta;PosAssi;40;Tolleranza per verificare la posizione degli assi
+Quota;ForcheSu;52;
+Quota;ForcheGiuLaser;53;
+Quota;ForcheGiuScarico;54;Verticale forche. Minima altezza di scarico nel cassetto sul carro ventose
+Quota;ForcheChiuse;55;text
+Quota;ForcheAperte;56;text
+Quota;CVinMagazino;57;Carro ventose orizzonla in magazziono
+Quota;CVinScarico;58;Carro ventose orizzonla sotto le forche per permettere lo scarico
+Quota;CVsuLaser;59;Carro ventose orizzonla sul laser per permettere alle ventose di depositare la lamiera FormatoCassetto 4020
+Quota;SfoglSu;60;Ventose verticale su
+Quota;SfogGiuCassCar;61;Ventose verticale giu' per prelievo fogli da cassetto di carico - maz corsa
+Quota;SfogGiuLaser;62;Ventose verticale giu' per deposito fogli su laser
+Delta;ForcheScarico;63;Dopo aver rilevato l'altezza di scarico le forche scendono del delta per accostarsi ulteriormente al cassett di scarico
+ACS;modo sfogliamento;67;0=Sempre 1=Mai 2=<di spess
+ACS;modo ctl spessore;68;text
+ACS;spessore misurato;69;text
+ACS;spessore limite;70;Spassore linite per il controllo spessore usata anche per lo sfogliamento - Scelta alla pg Auto Spess<
+PosAtt;ForcheOriz;71;Posizione attuale delle forche orizzontale
+PosAtt;ForcheVert;72;Posizione attuale delle forche verticale
+PosAtt;Sfogliamento;73;Posizione attuale sfogliamento - Ventose verticali
+PosAtt;CtlSpess;74;Posizione attuale controllo spessore
+PosAtt;CandeleNav;75;Posizione attuale delle candele della navetta
+PosAtt;CarroVentose;77;Posizione attuale carro ventose - Orizzontale
+PosAtt;Nastro;78;Posizione attuale natta  - Navetta Orizzontale
+ACS;mem di calcolo cv;100;text
+NU;Carro mosso man;101;non usata
+NU;forche or mosse m;102;text
+NU;forche ve mosse m;103;text
+NU;ventose mosse man;104;text
+NU;nav oriz mossa man;105;text
+NU;nav vert mossa man;106;text
+NU;asps or mosso man;107;text
+Mem;var. time lavoro GTav;118;text
+Mem;var. time lavoro CV;119;text
+Mem;get_time attuale;120;text
+Mem;get_time ultima on;121;text
+Mem;get_time ultima off;122;text
+Mem;get_time risultato;123;text
+ATM_clnt2;Cmd;151;text
+ATM_clnt2;Par 1;152;text
+ATM_clnt2;Par 2;153;text
+ATM_clnt2;Par 3;154;text
+ATM_clnt2;Par 4;155;text
+ATM_clnt2;Par 5;156;text
+ATM_clnt2;Par 6;157;text
+ATM_clnt2;Par 7;158;text
+ATM_clnt2;Par 8;159;text
+ATM_clnt2;Return Cmd;160;text
+ATM_clnt2;Return Par1;161;text
+ATM_clnt2;Return Par2;162;text
+ATM_clnt2;Return Par3;163;text
+ATM_clnt2;Return Par4;164;text
+ATM_clnt2;Return Par5;165;text
+ATM_clnt2;Return Par6;166;text
+ATM_clnt2;Return Par7;167;text
+ATM_clnt2;Return Par8;168;text
+M_clnt1;IDmat locaz caric;187;text
+M_clnt1;Lungh mat in caric;188;text
+M_clnt1;Largh mat in caric;189;text
+M_clnt1;Spess mat in caric;190;text
+M_clnt1;Quantit? in caric;191;text
+M_clnt1;mod casset in caric;192;text
+M_clnt1;peso mat in caric;193;text
+M_clnt1;ID Cass loc Caric;194;text
+M_clnt1;Tipo Cass loc Caric;195;text
+M_clnt1;Tipo Cont cass Caric;196;text
+M_clnt1;id sottolocaz Caric;197;text
+M_clnt1;IDmat locaz scaric;198;text
+M_clnt1;Lungh mat in scaric;199;text
+M_clnt1;Largh mat in scaric;200;text
+M_clnt1;Spess mat in scaric;201;text
+M_clnt1;Quantit? in scaric;202;text
+M_clnt1;mod casset in scaric;203;text
+M_clnt1;peso mat in scaric;204;text
+M_clnt1;tipo missione;205;text
+M_clnt1;ID Cass loc Scaric;206;text
+M_clnt1;Tipo Cass loc Scaric;207;text
+M_clnt1;Tipo Cont cass Scaric;208;text
+M_clnt1;id sottolocaz Scaric;209;text
+M_clnt2;IDmat locaz caric;210;text
+M_clnt2;Lungh mat in caric;211;text
+M_clnt2;Largh mat in caric;212;text
+M_clnt2;Spess mat in caric;213;text
+M_clnt2;Quantit? in caric;214;text
+M_clnt2;mod casset in caric;215;text
+M_clnt2;peso mat in caric;216;text
+M_clnt2;ID Cass loc Caric;217;text
+M_clnt2;Tipo Cass loc Caric;218;text
+M_clnt2;Tipo Cont cass Caric;219;text
+M_clnt2;id sottolocaz Caric;220;text
+M_clnt2;IDmat locaz scaric;221;text
+M_clnt2;Lungh mat in scaric;222;text
+M_clnt2;Largh mat in scaric;223;text
+M_clnt2;Spess mat in scaric;224;text
+M_clnt2;Quantit? in scaric;225;text
+M_clnt2;mod casset in scaric;226;text
+M_clnt2;peso mat in scaric;227;text
+M_clnt2;ID Cass loc Scaric;228;text
+M_clnt2;Tipo Cass loc Scaric;229;text
+M_clnt2;Tipo Cont cass Scaric;230;text
+M_clnt2;id sottolocaz Scaric;231;text
+M_clnt2;tipo missione;232;text
+M_clnt3;IDmat locaz caric;233;text
+M_clnt3;Lungh mat in caric;234;text
+M_clnt3;Largh mat in caric;235;text
+M_clnt3;Spess mat in caric;236;text
+M_clnt3;Quantita' in caric;237;text
+M_clnt3;mod casset in caric;238;text
+M_clnt3;peso mat in caric;239;text
+M_clnt3;ID Cass loc Caric;240;text
+M_clnt3;Tipo Cass loc Caric;241;text
+M_clnt3;Tipo Cont cass Caric;242;text
+M_clnt3;id sottolocaz Caric;243;text
+M_clnt3;IDmat locaz scaric;244;text
+M_clnt3;Lungh mat in scaric;245;text
+M_clnt3;Largh mat in scaric;246;text
+M_clnt3;Spess mat in scaric;247;text
+M_clnt3;Quantit? in scaric;248;text
+M_clnt3;mod casset in scaric;249;text
+M_clnt3;peso mat in scaric;250;text
+M_clnt3;tipo missione in;251;text
+M_clnt3;ID Cass loc Scaric;252;text
+M_clnt3;Tipo Cass loc Scaric;253;text
+M_clnt3;Tipo Cont cass Scaric;254;text
+M_clnt3;id sottolocaz Scaric;255;text
+Quota;MaxAltForcScar;350;Massima altezza da cui si possono aprire le forche per effettuare lo scarico
+Quota;ForcheSuPerScar;351;Forche su non alla max altezza perche' aperte. Altezza per far passare il carro ventose e non andare in collisione son la trave dell'ASPS
+Quota;CVsuLaser3015;352;Carro ventose orizzonla sul laser per permettere alle ventose di depositare la lamiera FormatoCassetto 3015
+Quota;CVsuCarico3015;353;Carro ventose orizzontale su carico per presa lam da cass 3015
+Quota;CVsuCarico4020;355;Carro ventose orizzontale su carico per presa lam da cass 4020
+Quota;UnloadPosPartenza;356;Posizione di partenza per effettuare l unload con la fotocellula in lettura
+Quota;CVposIntermedia;357;Posizione intermedia del carro ventose per attivare il cambio tavola
+Quota;ForcheGiuLaserAttesa;358;Posizione dove le forche iniziano a posizionarsi per il prelievo del tagliato per guadaganare tempo ciclo
+;NumTentPrelievo;359;
+;TempTavoleLaser;362;
+ACS;OffsetForche;370;Offest per asse vert in prel lamiera da laser
+Quota;ForcheAperteXPrelievo;371;posizione forche indietro per scarico tagliato
+Quota;SfoglInTorre;372;posizione Sfogl in torre
+;Comunica0;373;
+;Comunica1;374;
+Temp;Forche;400;Memoria temporanea per i programmi che muovono le forche
+Temp;Ventose;402;
+;GestSemTraslo;408;
+ATM_Sinc;StatoTraso;409;text
+ATM_Sinc;StatoClient1;411;locazione di carico num.546
+ATM_Sinc;StatoClient2;412;locazione di scarico num.549
+ATM_Sinc;StatoClient3;413;locazione di nastro ASPS num.482
+ATM_Sinc;Sinc1;414;Memoria per sincronismo con ATM
+ATM_Sinc;Sinc2;415;Memoria per sincronismo con ATM
+ATM_Sinc;Sinc3;416;Memoria per sincronismo con ATM
+ATM_Sinc;Sinc1b;417;Seconda memoria per sincronismo con ATM Client 1
+Temp;CheckStatoImpianto;423;
+Delta;Tol_6mm;424;
+Temp;Sfogliamento;425;
+;OwerrideSfogliamento;460;
+;CicloFast;461;Default = 0 CicloFast = 1
+Lst;StartMovimentoPallet;480;
+Lst;Temp;481;
+Lst;OperazioneInCorso;482;= 1 portare dentro il pallet superiore = 2 portare dentro il pallet inferiore
+ACS;stato forche;500;text
+ACS;id mater su forche;507;text
+ACS;lungh fgl su forche;508;text
+ACS;largh fgl su forche;509;text
+ACS;spess fgl su forche;510;text
+ACS;stato tavola laser;550;text
+ASPS;su fgl tav laser;551;
+Mem;Enab ASPS TavLas;552;
+;TavolaLaserId_lav;554;
+;TavolaLaserId_dist;555;
+;TavolaLaserN_sheet;556;
+ACS;id mater su tav laser;557;text
+ACS;lungh fgl su tav laser;558;text
+ACS;largh fgl su tav laser;559;text
+ACS;spess fgl su tav laser;560;text
+ACS;stato tavola fuori;565;text
+ASPS;su fgl tav fuori;566;
+Mem;Enab ASPS TavOut;567;
+;TavolaOutId_lav;569;
+;TavolaOutId_dist;570;
+;TavolaOutN_sheet;571;
+ACS;id mater su tav fuori;572;text
+ACS;lungh fgl su tav fuori;573;text
+ACS;largh fgl su tav fuori;574;text
+ACS;spess fgl su tav fuori;575;text
+LST;CMD;594;
+ACS;numero cicli totale;598;text
+ATM_clnt1;Cmd;800;text
+ATM_clnt1;Return Cmd;801;text
+ATM_clnt1;ReturnError;802;
+ATM_clnt1;Par 1;810;text
+ATM_clnt1;Par 2;811;text
+ATM_clnt1;Par 3;812;text
+ATM_clnt1;Par 4;813;text
+ATM_clnt1;Par 5;814;text
+ATM_clnt1;Par 6;815;text
+ATM_clnt1;Par 7;816;text
+ATM_clnt1;Par 8;817;text
+ATM_clnt1;Return Par1;820;text
+ATM_clnt1;Return Par2;821;text
+ATM_clnt1;Return Par3;822;text
+ATM_clnt1;Return Par4;823;text
+ATM_clnt1;Return Par5;824;text
+ATM_clnt1;Return Par6;825;text
+ATM_clnt1;Return Par7;826;text
+ATM_clnt1;Return Par8;827;text
+Client1;LocCarico;830;
+Client1;LocScarico;831;
+Client1;StatoMissioneCarico;840;
+Client1;StatoMissioneScarico;841;
+ATM_clnt3;Cmd;900;text
+ATM_clnt3;Return Cmd;901;text
+ATM_clnt3;Par 1;910;text
+ATM_clnt3;Par 2;911;text
+ATM_clnt3;Par 3;912;text
+ATM_clnt3;Par 4;913;text
+ATM_clnt3;Par 5;914;text
+ATM_clnt3;Par 6;915;text
+ATM_clnt3;Par 7;916;text
+ATM_clnt3;Par 8;917;text
+ATM_clnt3;Return Par1;920;text
+ATM_clnt3;Return Par2;921;text
+ATM_clnt3;Return Par3;922;text
+ATM_clnt3;Return Par4;923;text
+ATM_clnt3;Return Par5;924;text
+ATM_clnt3;Return Par6;925;text
+ATM_clnt3;Return Par7;926;text
+ATM_clnt3;Return Par8;927;text
+Client4;LocCarico;980;Usata nel software per fare le richieste al database
+ACS;NumTavolaFuori;564;
+Lst;PalletLoadTelegram;597;
+;StatoProgramma;14;1=automatico

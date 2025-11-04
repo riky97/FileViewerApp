@@ -129,7 +129,16 @@
 										</ItemsControl.ItemsPanel>
 										<ItemsControl.ItemTemplate>
 											<DataTemplate x:DataType="models:InstructionParameter">
-												<TextBox Width="46" TextAlignment="Center" Watermark="{Binding Index, StringFormat='P{0}'}" Text="{Binding Value, Mode=TwoWay}" />
+												<Grid>
+													<ComboBox Width="160" IsEditable="True" ItemsSource="{Binding Options}" SelectedItem="{Binding SelectedOption, Mode=TwoWay}" IsVisible="{Binding HasOptions}">
+														<ComboBox.ItemTemplate>
+															<DataTemplate x:DataType="models:ResourceOption">
+																<TextBlock Text="{Binding Display}" ToolTip.Tip="{Binding Item.Description}" />
+															</DataTemplate>
+														</ComboBox.ItemTemplate>
+													</ComboBox>
+													<TextBox Width="70" TextAlignment="Center" Watermark="{Binding Index, StringFormat='P{0}'}" Text="{Binding Value, Mode=TwoWay}" IsVisible="{Binding HasOptions, Converter={StaticResource InverseBooleanConverter}}" />
+												</Grid>
 											</DataTemplate>
 										</ItemsControl.ItemTemplate>
 									</ItemsControl>

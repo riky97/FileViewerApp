@@ -9,6 +9,7 @@
     <conv:BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter" />
     <conv:InverseBooleanToVisibilityConverter x:Key="InverseBooleanToVisibilityConverter" />
     <conv:BooleanToBrushConverter x:Key="BooleanToBrushConverter" />
+    <conv:InverseBooleanConverter x:Key="InverseBooleanConverter" />
   </Application.Resources>
 
   <Application.Styles>

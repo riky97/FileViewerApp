@@ -1,0 +1,91 @@
+;ErroreCollisioni;1;prg 15 girare la chiavetta e ripristinare il sistema
+;MicroPresenzaPezzoAttivo;2;prg gestione carro /21/28
+;InterventoTermicaMotore;3;intervento termica motore pompa vuoto. prg 22/29
+;TavolaNonInPosizione;4;prg 24/39
+;ASPS azzeramentoNonSicuro;5;Verificare corsa verticale ASPS libera e azzerare mem.9
+;IncongruenzaMaterialeSuLaser;6;prg gestione carro/forche
+;MicroPresenzaPezzoNonAttivo;7;
+;Collisione lamiera intraversata corsia traslo;8;
+;Incongruenza sensori ribalta cassetto;9;I sensori non sono allineati con la posizione della ribaltina
+;err.10;10;
+;err.11;11;
+;err.12;12;
+;err.13;13;
+;err.14;14;
+;err.15;15;
+;err.16;16;
+;err.17;17;
+;err.18;18;
+;err.19;19;
+;CarroNonInPosizDiCarico;20;prg 28/39
+;ErrorePosizioneVentose;25;prg 25
+;FotocellulaUnload;22;prg 28 fotocellula unload
+;VentoseNonGiuSuCarico;23;prg 29
+;CassTroppoPienoPerMagaz;24;prg 27 scaricare a mano cassetto di scarico
+;CollisFotocelMaxAltezza;36;collis. fotocellula max altezza. prg 26 fotocellula che guarda tutto il campo di lavoro
+;CarroNonInMagazzino;26;prg gestione carro /21
+;VentoseNonSu;27;prg gest carro /26/27
+;CassettoDiScaricoNonInPos;28;prg gestione carro
+;FinePalletDiCarico;29;prg 21
+;CarroVentoseNonSuLaser;30;prg 24/36/40
+;PresoDoppioFoglo;31;errore presa due fogli rilevati prg 6 
+;CarroVentseNonInPosDiScarico;32;Carro ventose non in posizione per scarico forche
+;ContLamNonGiu;33;Contenimento lamiera non giu'
+;CassScarBloccato;34;Cassetto di scarico su carro ventose bloccato
+;ContLamNonSu;35;Contenimento lamiera non su
+;CassScarSbloccato;37;Cassetto di scarico su casso ventose non bloccato
+ACS;ErroreBloccoCassettoScarico;38;
+;err.39;39;
+;ForcheNonGiuSuCarro;40;forche non giu su carro, prg 40
+;ForcheNonSu;41;forche non su prg 26/27
+;ForcheNonChiuse;42;forche non chiuse,prg 26/27 prg 36
+;FotScaricoIncrociataGuasta;43;sens. tagliato su forche guasto,  prg 36/38
+;CassettoDiScaricoNonPresente;44;cassetto di scarico non presente, prg 36
+;ForcheNonGiuLaser;45;forche NON giu su laser, prg 37
+;ForcheNonAperte;46;forche non aperte, prg 39
+;PortareLeForcheSu;47;portare le forche su, prg 4 ripristino
+;ChiudereLeForche;48;chiudere le forche, prg 4 ripristino
+;StaccareManualmentePezziInPresa;49;Staccare manualmente pz in presa,  prg 4 ripristino
+;ForcheNoAperteNoChiuse;50;Forche orizzontale non aperte e non chiuse
+F;MicroForcheDietro;51;Incongruenza pos.att forche aperte e micro forche dietro
+;err.52;52;
+;err.53;53;
+;err.54;54;
+;err.55;55;
+;err.56;56;
+;err.57;57;
+;ASPS NonInFuoriIngombro;58;
+;ASPS SfridoAttaccatoAllaMano;59;ASPS sfrido attaccato alla mano
+;ASPS NonInFuoriIngomLatoLaser;60;ASPS non in fuoringom.lato laser, prg 36/26
+;ASPS NonInFuoriIngomLatoCarro;61;ASPS NON in fuoringom.lato carro, prg 37/38/39
+;ASPS InLavoroSuTorretta1;62;ASPS in lavoro su torretta 1, prg s/carico cassetto torretta 1 
+;ASPS InLavoroSuTorretta2;63;ASPS in lavoro su torretta 2, prg s/carico cassetto torretta 2
+;FileTxtInesistente;64;file TXT inesistente, prg 7
+;FileCsvInesistente;65;file CSV inesistente, prg 7
+;err.66;66;
+;err.67;67;
+;err.68;68;
+;err.69;69;
+;err.70;70;
+;err.71;71;
+;err.72;72;
+;err.73;73;
+;err.74;74;
+;TroppePili;75;hai fatto una pila in piu
+;EntrambiCassAspsInCaricament;76;entrambi cass.asps in caricament
+;RilevamCassettoSuNav e torre;77;rilevam.cassetto su Nav e torre
+;Incoerenza DB;78;incoerenza DB: associaz.cass-loc
+;ErroreEvacuazioneCassettoAsps;79;Errore evacuazione cassetto asps
+;CassettoNonPresenteInTorretta2;80;cass NON presente in torretta 2, prg scarico cassetto torretta 2
+N;CassettoNonPresenteInZonaASPS;81;cass NON presente in torretta 1
+N;CassettoNonPresenteInTorreMagazz;82;cass NON presente in tor.magazz
+N;CassettoNonInPosizione;83;cassetto non in posizione
+N;CassettoPresenteInZonaASPS;84;cass presente in zona ASPS
+N;CassettoPresenteInTorreMagazz;85;cass presente in tor.magazz
+N;CassettoSuNavetta;86;cass su navetta
+N;CassettoNonPresenteSuNavetta;87;cass non presente su navetta
+;NavettaNonGiu;88;navetta non giu, prg 55
+;err.89;89;NAV - Ripristinare il sistema, prg 9
+N;Presenza ostacolo;90;NAV - presenza ostacolo
+N;CassettoTroppoPieno;91;NAV - cassetto di scarico troppo pieno
+;ASPS non resettato;92;Gli assi dell'ASPS non risultano resettati

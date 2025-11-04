@@ -56,6 +56,7 @@ namespace FileViewerApp.ViewModels
         public ObservableCollection<string> AvailableInstructions { get; } = new();
         public ObservableCollection<InstructionNode> InstructionTree { get; private set; } = new();
         public ObservableCollection<EditableInstruction> EditableInstructions { get; } = new();
+        public ObservableCollection<ResourceOption> ParameterPickerOptions { get; } = new();
 
         // Commands typed as IAsyncRelayCommand so we can call NotifyCanExecuteChanged()
         public IAsyncRelayCommand OpenFileCommand { get; }
@@ -89,9 +90,15 @@ namespace FileViewerApp.ViewModels
         private enum PendingChangeType { Add, Remove, Move }
         private record PendingChange(PendingChangeType Type, string Detail);
 
+        private IRelayCommand? _refreshParameterOptionsCommand;
+        private IRelayCommand? _applySelectedParameterOptionCommand;
+        public IRelayCommand RefreshParameterOptionsCommand => _refreshParameterOptionsCommand!;
+        public IRelayCommand ApplySelectedParameterOptionCommand => _applySelectedParameterOptionCommand!;
+
         public MainWindowViewModel()
         {
             var opCodeService = new OpCodeService();
+            EditableInstruction.OpCodeServiceProvider = opCodeService; // collega servizio alle istruzioni
             _orchestrator = new FileProcessorOrchestrator(opCodeService);
 
             // Initialize commands FIRST so control viewmodels see them when instantiated
@@ -113,6 +120,9 @@ namespace FileViewerApp.ViewModels
             // Create expand/collapse commands
             ExpandAllCommand = new RelayCommand(ExpandAll);
             CollapseAllCommand = new RelayCommand(CollapseAll);
+
+            _refreshParameterOptionsCommand = new RelayCommand(RefreshParameterOptions);
+            _applySelectedParameterOptionCommand = new RelayCommand(ApplySelectedParameterOption, () => SelectedParameterOption != null && SelectedInstruction != null);
 
             // Now initialize the control viewmodels so their bindings see valid command instances
             ToolbarViewModel = new ToolbarControlViewModel(this);
@@ -223,7 +233,7 @@ namespace FileViewerApp.ViewModels
         public bool IsEditMode { get => _isEditMode; set { this.RaiseAndSetIfChanged(ref _isEditMode, value); UpdateCanEditState(); } }
         public bool HasUnsavedChanges { get => _hasUnsavedChanges; set { this.RaiseAndSetIfChanged(ref _hasUnsavedChanges, value); NotifyAllCommands(); } }
         public bool CanEdit { get => _canEdit; set => this.RaiseAndSetIfChanged(ref _canEdit, value); }
-        public EditableInstruction? SelectedInstruction { get => _selectedInstruction; set { this.RaiseAndSetIfChanged(ref _selectedInstruction, value); UpdateAllButtonStates(); NotifyAllCommands(); } }
+        public EditableInstruction? SelectedInstruction { get => _selectedInstruction; set { this.RaiseAndSetIfChanged(ref _selectedInstruction, value); UpdateAllButtonStates(); NotifyAllCommands(); RefreshParameterOptions(); } }
 
         public bool CanRemoveInstruction => SelectedInstruction != null && IsEditMode;
         public bool CanMoveUp => SelectedInstruction != null && IsEditMode && EditableInstructions.IndexOf(SelectedInstruction) > 0;
@@ -263,6 +273,7 @@ namespace FileViewerApp.ViewModels
                 instruction.IsModified = true;
                 HasUnsavedChanges = true;
                 StatusText = $"Modificata istruzione {instruction.Number:D3}";
+                instruction.LoadResourceOptions();
             }
             catch (Exception ex)
             {
@@ -634,7 +645,14 @@ namespace FileViewerApp.ViewModels
             }
             IsEditMode = EditableInstructions.Count > 0;
             HasUnsavedChanges = false;
+            foreach (var instruction in EditableInstructions)
+                instruction.LoadResourceOptions();
             await Task.CompletedTask;
+        }
+
+        public void PopulateEditableInstructionsSync(ProcessedFile processedFile)
+        {
+            PopulateEditableInstructions(processedFile).GetAwaiter().GetResult();
         }
 
         private async Task ApplyChangesToFile()
@@ -1070,6 +1088,7 @@ namespace FileViewerApp.ViewModels
             DiscardChangesCommand.NotifyCanExecuteChanged();
             LoadDefinitionsCommand.NotifyCanExecuteChanged();
             RevertToHistoryCommand.NotifyCanExecuteChanged();
+            _applySelectedParameterOptionCommand?.NotifyCanExecuteChanged();
         }
         private void UpdateStatus(string msg)
         {
@@ -1102,6 +1121,38 @@ namespace FileViewerApp.ViewModels
             node.IsExpanded = value;
             foreach (var child in node.Children)
                 SetNodeExpandedRecursive(child, value);
+        }
+
+        private int _parameterPickerIndex;
+        public int ParameterPickerIndex { get => _parameterPickerIndex; set { this.RaiseAndSetIfChanged(ref _parameterPickerIndex, value); RefreshParameterOptions(); } }
+        private string _parameterPickerFilter = string.Empty;
+        public string ParameterPickerFilter { get => _parameterPickerFilter; set { this.RaiseAndSetIfChanged(ref _parameterPickerFilter, value); RefreshParameterOptions(); } }
+        private ResourceOption? _selectedParameterOption;
+        public ResourceOption? SelectedParameterOption { get => _selectedParameterOption; set { this.RaiseAndSetIfChanged(ref _selectedParameterOption, value); _applySelectedParameterOptionCommand?.NotifyCanExecuteChanged(); } }
+        private void RefreshParameterOptions()
+        {
+            ParameterPickerOptions.Clear();
+            if (SelectedInstruction == null) return;
+            var svc = _orchestrator.GetOpCodeService();
+            var raw = svc.GetParamOptions(SelectedInstruction.OpCode, ParameterPickerIndex);
+            var filtered = string.IsNullOrWhiteSpace(ParameterPickerFilter) ? raw : svc.FilterParamOptions(SelectedInstruction.OpCode, ParameterPickerIndex, ParameterPickerFilter);
+            foreach (var opt in filtered.OrderBy(o => o.Id.HasValue ? 0 : 1).ThenBy(o => o.Id).ThenBy(o => o.Display))
+                ParameterPickerOptions.Add(opt);
+            _applySelectedParameterOptionCommand?.NotifyCanExecuteChanged();
+        }
+        private void ApplySelectedParameterOption()
+        {
+            if (SelectedInstruction == null || SelectedParameterOption == null || !SelectedParameterOption.Id.HasValue) return;
+            // Applica valore al parametro scelto
+            int val = SelectedParameterOption.Id.Value;
+            if (ParameterPickerIndex >= 0 && ParameterPickerIndex < SelectedInstruction.ParameterEntries.Count)
+            {
+                SelectedInstruction.ParameterEntries[ParameterPickerIndex].Value = val; // trigger modifica
+                SelectedInstruction.IsModified = true;
+                HasUnsavedChanges = true;
+                StatusText = $"Param {ParameterPickerIndex} impostato a {val}";
+            }
+            RefreshParameterOptions();
         }
     }
 }

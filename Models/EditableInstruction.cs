@@ -2,6 +2,8 @@ using System;
 using System.ComponentModel;
 using System.Linq;
 using System.Collections.ObjectModel;
+using System.Collections.Generic; // aggiunto
+using FileViewerApp.Services; // aggiunto per OpCodeService
 using ReactiveUI;
 
 namespace FileViewerApp.Models
@@ -12,6 +14,35 @@ namespace FileViewerApp.Models
         private int _value;
         public int Value { get => _value; set => this.RaiseAndSetIfChanged(ref _value, value); }
         public InstructionParameter(int index, int value) { Index = index; _value = value; }
+
+        private ObservableCollection<ResourceOption>? _options;
+        public ObservableCollection<ResourceOption>? Options => _options;
+        public bool HasOptions => _options != null && _options.Count > 0;
+        private ResourceOption? _selectedOption;
+        public ResourceOption? SelectedOption
+        {
+            get => _selectedOption;
+            set
+            {
+                if (_selectedOption == value) return;
+                _selectedOption = value;
+                this.RaisePropertyChanged();
+                if (value?.Id.HasValue == true && Value != value.Id.Value)
+                {
+                    Value = value.Id.Value; // aggiorna Value -> triggers RaiseAndSetIfChanged
+                }
+            }
+        }
+        public void SetOptions(IEnumerable<ResourceOption> opts, int currentValue)
+        {
+            if (_options == null) _options = new ObservableCollection<ResourceOption>();
+            _options.Clear();
+            foreach (var o in opts) _options.Add(o);
+            this.RaisePropertyChanged(nameof(Options));
+            this.RaisePropertyChanged(nameof(HasOptions));
+            _selectedOption = _options.FirstOrDefault(o => o.Id == currentValue);
+            this.RaisePropertyChanged(nameof(SelectedOption));
+        }
     }
 
     public class EditableInstruction : ReactiveObject, INotifyPropertyChanged
@@ -36,6 +67,8 @@ namespace FileViewerApp.Models
         private int _initializingSkipRemaining; // ignora i primi eventi parametri (sync UI)
         private bool _trackingEnabled = true; // nuovo flag per controllo esplicito
 
+        public static OpCodeService? OpCodeServiceProvider { get; set; }
+
         public EditableInstruction()
         {
             // Initialize parameter entries
@@ -46,6 +79,7 @@ namespace FileViewerApp.Models
                 ParameterEntries.Add(entry);
             }
             UpdateVisibleParameters();
+            LoadResourceOptions();
         }
 
         private void OnParameterEntryChanged(object? sender, PropertyChangedEventArgs e)
@@ -102,6 +136,7 @@ namespace FileViewerApp.Models
                 {
                     _opCode = value;
                     this.RaisePropertyChanged();
+                    LoadResourceOptions();
                     UpdateInstructionText();
                     MarkAsModified();
                     ValidateInstruction();
@@ -309,6 +344,30 @@ namespace FileViewerApp.Models
             // Mantieni soppressione; tracking resta disabilitato finché abilitato esplicitamente dal ViewModel
             IsModified = false;
             _initializingSkipRemaining = ParamCount; // ignora eventuali rimbalzi
+        }
+
+        public void LoadResourceOptions()
+        {
+            var svc = OpCodeServiceProvider;
+            if (svc == null) return;
+            System.Diagnostics.Debug.WriteLine($"[RES] LoadResourceOptions for Instruction #{Number} Name='{Name}' OpCode={OpCode}");
+            for (int i = 0; i < ParameterEntries.Count; i++)
+            {
+                var opts = svc.GetParamOptions(OpCode, i);
+                if (!opts.Any() && !string.IsNullOrWhiteSpace(Name))
+                {
+                    opts = svc.GetParamOptionsByName(Name, i);
+                }
+                System.Diagnostics.Debug.WriteLine($"[RES] Param {i} groups count={opts.Count()} value={_parameters[i]}");
+                if (opts.Any())
+                {
+                    ParameterEntries[i].SetOptions(opts, _parameters[i]);
+                }
+                else
+                {
+                    ParameterEntries[i].SetOptions(Array.Empty<ResourceOption>(), _parameters[i]);
+                }
+            }
         }
 
         private string GetOpCodeName(int opCode) => opCode switch

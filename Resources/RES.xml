@@ -1,0 +1,23 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<Root>
+  <GROUP FileName="AXIS.csv" Type="AXIS" Descr="" />
+  <GROUP FileName="BOOL.csv" Type="CUSTOM" Descr="" />
+  <GROUP FileName="Cmd_ATM.csv" Type="CUSTOM" Descr="" />
+  <GROUP FileName="Cmd_If.csv" Type="CUSTOM" Descr="" />
+  <GROUP FileName="Cmd_job.csv" Type="CUSTOM" Descr="" />
+  <GROUP FileName="Cmd_Logica.csv" Type="CUSTOM" Descr="" />
+  <GROUP FileName="Cmd_Op.csv" Type="CUSTOM" Descr="" />
+  <GROUP FileName="Cmd_Velocita.csv" Type="CUSTOM" Descr="" />
+  <GROUP FileName="Costanti.csv" Type="CUSTOM" Descr="" />
+  <GROUP FileName="DIN.csv" Type="DIN" Descr="" />
+  <GROUP FileName="DOUT.csv" Type="DOUT" Descr="" />
+  <GROUP FileName="ERROR.csv" Type="ERROR" Descr="" />
+  <GROUP FileName="ERROR_old.csv" Type="CUSTOM" Descr="" />
+  <GROUP FileName="FLAG.csv" Type="FLAG" Descr="" />
+  <GROUP FileName="MEM.csv" Type="MEM" Descr="" />
+  <GROUP FileName="PROGRAM.csv" Type="PROGRAM" Descr="" />
+  <GROUP FileName="SINC_TRASLO_CLIENT.csv" Type="CUSTOM" Descr="" />
+  <GROUP FileName="TimeOut.csv" Type="CUSTOM" Descr="" />
+  <GROUP FileName="WR_EVENT.csv" Type="CUSTOM" Descr="" />
+  <GROUP FileName="Zone.csv" Type="CUSTOM" Descr="" />
+</Root>

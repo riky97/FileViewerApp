@@ -1,0 +1,42 @@
+COM;AbilitMan;52;Pulsante per abilitazione movimenti in manuale
+COM;TermPompaVuoto;53;Termica pompa vuoto
+CV;PresPezzo1;449;Presenza pezzo 1 carro ventose
+CV;PresPezzo2;450;Presenza pezzo 2 carro ventose
+CV;CassettoScarBloccato;455;Cassetto di scarico bloccato su carro ventose
+CV;Unload;451;Unload
+CV;CassettoScarInPos;453;Cassetto scarico in posizione su carro ventose
+CV;CassettoScarPresente;452;Cassetto scarico presente su carro ventose
+CV;CassettoDiScarSbloccato;456;Cassetto di scarico sbloccato su carro ventose
+Lst;StopCommand;64;
+F;RilevAltScar;54;Fotocellula montata sotto le forche per rilevare l'altezza di scarico
+CV;CassScarDaEvac;56;Raggiunta quota evacuazione  cassetto di scarico
+CV;CassScarTroppoPieno;55;Cassetto di scarico troppo pieno
+CV;FogliSuCassCar;454;Presenza fogli su cassetto di carico 
+Not_COM;AbilitMan;-52;Pulsante per abilitazione movimenti in manuale
+Not_COM;TermPompaVuoto;-53;Termica pompa vuoto
+Not_CV;PresPezzo1;-449;Presenza pezzo 1 carro ventose
+Not_CV;PresPezzo2;-450;Presenza pezzo 2 carro ventose
+Not_CV;CassettoScarBloccato;-455;Cassetto di scarico bloccato su carro ventose
+Not_CV;Unload;-451;Unload
+Not_CV;CassettoScarInPos;-453;Cassetto scarico in posizione su carro ventose
+Not_CV;CassettoScarPresente;-452;Cassetto scarico presente su carro ventose
+Not_CV;CassettoDiScarSbloccato;-456;Cassetto di scarico sbloccato su carro ventose
+Not_F;RilevAltScar;-54;Fotocellula montata sotto le forche per rilevare l'altezza di scarico
+Not_CV;CassScarDaEvac;-56;Raggiunta quota evacuazione  cassetto di scarico
+Not_CV;CassScarTroppoPieno;-55;Cassetto di scarico troppo pieno
+Not_CV;FogliSuCassCar;-454;Presenza fogli su cassetto di carico 
+Lst;AutoMode;62;
+Lst;LstReady;63;
+;CorsiaTrasloLibera;71;
+Lst;ManualMode;61;
+Lst;LoadingUnloadingPossible;65;
+Lst;LstInAlarm;66;
+Lst;SafetyAlarm;69;
+Lst;WorkSetCompletionAck;70;
+Lst;Pallet exchangeInMotion;72;
+Lst;ANTIL MF;378;
+LST;Z origine;389;
+LST;ZERO POSITION XY;382;
+Lst;LaserInLavoro;381;
+;NEW;0;
+LST;LINE CONTROL ON;380;
