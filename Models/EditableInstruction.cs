@@ -32,6 +32,10 @@ namespace FileViewerApp.Models
         public ObservableCollection<InstructionParameter> ParameterEntries { get; } = new();
         public ObservableCollection<InstructionParameter> VisibleParameterEntries { get; } = new();
 
+        private bool _suppressChanges; // evita IsModified durante caricamenti snapshot
+        private int _initializingSkipRemaining; // ignora i primi eventi parametri (sync UI)
+        private bool _trackingEnabled = true; // nuovo flag per controllo esplicito
+
         public EditableInstruction()
         {
             // Initialize parameter entries
@@ -49,6 +53,12 @@ namespace FileViewerApp.Models
             if (sender is InstructionParameter ip && e.PropertyName == nameof(InstructionParameter.Value))
             {
                 _parameters[ip.Index] = ip.Value;
+                // Se siamo in fase di caricamento o soppressione, ignora modifica
+                if (_suppressChanges || _initializingSkipRemaining > 0)
+                {
+                    if (_initializingSkipRemaining > 0) _initializingSkipRemaining--;
+                    return; // niente MarkAsModified
+                }
                 UpdateInstructionText();
                 MarkAsModified();
                 ValidateInstruction();
@@ -222,8 +232,8 @@ namespace FileViewerApp.Models
 
         private void MarkAsModified()
         {
+            if (_suppressChanges || !_trackingEnabled) return;
             IsModified = true;
-            // Use standard property name so listeners can match nameof(EditableInstruction.IsModified)
             InstructionChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(IsModified)));
         }
 
@@ -256,10 +266,49 @@ namespace FileViewerApp.Models
         {
             Array.Clear(_parameters, 0, _parameters.Length);
             Array.Copy(parameters, _parameters, Math.Min(parameters.Length, _parameters.Length));
-            for (int i = 0; i < 8; i++) ParameterEntries[i].Value = _parameters[i];
+            for (int i = 0; i < 8; i++)
+            {
+                // aggiornamento diretto senza trigger interno quando in silent
+                if (_suppressChanges)
+                {
+                    ParameterEntries[i].PropertyChanged -= OnParameterEntryChanged;
+                    ParameterEntries[i].Value = _parameters[i];
+                    ParameterEntries[i].PropertyChanged += OnParameterEntryChanged;
+                }
+                else
+                {
+                    ParameterEntries[i].Value = _parameters[i];
+                }
+            }
             NotifyParametersChanged();
             UpdateInstructionText();
-            ValidateInstruction();
+            if (!_suppressChanges)
+                ValidateInstruction();
+        }
+
+        public void DisableModificationTracking()
+        {
+            _trackingEnabled = false;
+            _suppressChanges = true; // garantisce nessun IsModified
+        }
+        public void EnableModificationTracking()
+        {
+            _trackingEnabled = true;
+            _suppressChanges = false;
+            _initializingSkipRemaining = 0;
+        }
+
+        public void BeginSilentUpdate()
+        {
+            _suppressChanges = true;
+            _trackingEnabled = false; // disabilita fino a enable esplicito
+            _initializingSkipRemaining = 0;
+        }
+        public void EndSilentUpdate()
+        {
+            // Mantieni soppressione; tracking resta disabilitato finché abilitato esplicitamente dal ViewModel
+            IsModified = false;
+            _initializingSkipRemaining = ParamCount; // ignora eventuali rimbalzi
         }
 
         private string GetOpCodeName(int opCode) => opCode switch

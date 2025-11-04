@@ -740,101 +740,13 @@ namespace FileViewerApp.ViewModels
 
         private void OnInstructionChanged(object? sender, PropertyChangedEventArgs e)
         {
-            if (_isReverting) return; // ignora eventi durante revert
+            if (_isReverting || _suppressInstructionEvents || _ignoreInstructionChanged) return; // ignora eventi in fasi protette
             HasUnsavedChanges = EditableInstructions.Any(i => i.IsModified);
+#if DEBUG
+            Debug.WriteLine($"[DEBUG] OnInstructionChanged -> HasUnsavedChanges={HasUnsavedChanges}");
+#endif
             UpdateAllButtonStates();
             NotifyAllCommands();
-            // RIMOSSO: niente AddHistory per modifiche parametri singole
-        }
-
-        private void UpdateCanEditState()
-        {
-            CanEdit = IsEditMode && EditableInstructions.Count > 0;
-            UpdateAllButtonStates();
-            NotifyAllCommands();
-        }
-
-        private void UpdateAllButtonStates()
-        {
-            this.RaisePropertyChanged(nameof(CanRemoveInstruction));
-            this.RaisePropertyChanged(nameof(CanMoveUp));
-            this.RaisePropertyChanged(nameof(CanMoveDown));
-        }
-
-        // Backward compatible method name used everywhere else
-        private void NotifyAllCommands() => NotificationAllCommands();
-
-        // Centralized command can-execute notifications
-        private void NotificationAllCommands()
-        {
-            OpenFileCommand.NotifyCanExecuteChanged();
-            CloseFileCommand.NotifyCanExecuteChanged();
-            SaveFileCommand.NotifyCanExecuteChanged();
-            ConvertFileCommand.NotifyCanExecuteChanged();
-            RefreshCommand.NotifyCanExecuteChanged();
-            AddInstructionCommand.NotifyCanExecuteChanged();
-            RemoveInstructionCommand.NotifyCanExecuteChanged();
-            MoveUpCommand.NotifyCanExecuteChanged();
-            MoveDownCommand.NotifyCanExecuteChanged();
-            SaveChangesCommand.NotifyCanExecuteChanged();
-            DiscardChangesCommand.NotifyCanExecuteChanged();
-            LoadDefinitionsCommand.NotifyCanExecuteChanged();
-            RevertToHistoryCommand.NotifyCanExecuteChanged();
-        }
-
-        private void UpdateStatus(string msg)
-        {
-            StatusText = $"{DateTime.Now:HH:mm:ss} - {msg}";
-        }
-
-        // Utility method added (was missing)
-        private string FormatFileSize(long bytes)
-        {
-            if (bytes < 1024) return $"{bytes} bytes";
-            if (bytes < 1024 * 1024) return $"{bytes / 1024.0:F1} KB";
-            return $"{bytes / (1024.0 * 1024.0):F1} MB";
-        }
-
-        // Utility method added (was missing)
-        private void RenumberInstructions()
-        {
-            for (int i = 0; i < EditableInstructions.Count; i++)
-                EditableInstructions[i].Number = i + 1;
-        }
-
-        // New helper methods to expand/collapse the instruction tree
-        private void ExpandAll()
-        {
-            foreach (var node in InstructionTree)
-                SetNodeExpandedRecursive(node, true);
-        }
-
-        private void CollapseAll()
-        {
-            foreach (var node in InstructionTree)
-                SetNodeExpandedRecursive(node, false);
-        }
-
-        private void SetNodeExpandedRecursive(InstructionNode node, bool value)
-        {
-            if (node == null) return;
-            node.IsExpanded = value;
-            foreach (var child in node.Children)
-                SetNodeExpandedRecursive(child, value);
-        }
-
-        private readonly HistoryService _historyService = new();
-        public ObservableCollection<HistoryEntry> HistoryEntries { get; } = new();
-        public IAsyncRelayCommand RevertToHistoryCommand { get; }
-        private HistoryEntry? _selectedHistoryEntry;
-        public HistoryEntry? SelectedHistoryEntry { get => _selectedHistoryEntry; set { this.RaiseAndSetIfChanged(ref _selectedHistoryEntry, value); RevertToHistoryCommand.NotifyCanExecuteChanged(); BuildDiffFromSelection(); this.RaisePropertyChanged(nameof(CanRevertSelected)); } }
-
-        private void AddHistory(HistoryActionType actionType, string description, bool force = false)
-        {
-            var entry = _historyService.CaptureSnapshot(EditableInstructions, actionType, description, force);
-            if (!HistoryEntries.Contains(entry)) HistoryEntries.Insert(0, entry); // newest on top
-            this.RaisePropertyChanged(nameof(CanRevertSelected));
-            RevertToHistoryCommand.NotifyCanExecuteChanged();
         }
 
         private async Task RevertToHistoryAsync()
@@ -842,6 +754,8 @@ namespace FileViewerApp.ViewModels
             if (SelectedHistoryEntry == null) return;
             if (!await ShowRevertConfirmationAsync()) return;
             _isReverting = true;
+            _suppressInstructionEvents = true; // sopprimi durante la ricostruzione
+            _ignoreInstructionChanged = true; // ignora eventi temporaneamente (post-revert)
             try
             {
                 var snap = _historyService.RevertTo(SelectedHistoryEntry.Id);
@@ -849,38 +763,62 @@ namespace FileViewerApp.ViewModels
                 var svc = _orchestrator.GetOpCodeService();
                 foreach (var s in snap.OrderBy(s => s.Number))
                 {
-                    var e = new EditableInstruction { Number = s.Number, OpCode = s.OpCode, Name = s.Name };
+                    var e = new EditableInstruction();
+                    e.BeginSilentUpdate();
+                    e.Number = s.Number;
+                    e.OpCode = s.OpCode;
+                    e.Name = s.Name;
                     e.SetParameters(s.Parameters);
                     var info = svc.GetOpCodeInfo(s.OpCode);
                     if (info != null) e.ParamCount = info.ParamCount;
-                    e.ResetModifications();
+                    e.EndSilentUpdate();
                     EditableInstructions.Add(e);
                 }
+
+                // Disable modification tracking on revert-loaded instructions
+                foreach (var instr in EditableInstructions)
+                    instr.DisableModificationTracking();
+
                 RenumberInstructions();
                 ClearPendingChanges();
-                // Stato identico a snapshot: nessuna modifica
-                foreach (var instr in EditableInstructions) instr.IsModified = false;
-                HasUnsavedChanges = false;
                 RebuildInstructionViewSimple();
                 RebuildTreeViewSimple();
-                // Sincronizza il file in memoria allo snapshot revertito così non risultano modifiche pendenti
-                await ApplyChangesToFile();
-                foreach (var instr in EditableInstructions) instr.IsModified = false;
-                HasUnsavedChanges = false;
+                await ApplyChangesToFile(); // sincronizza modello file
+                ResetUnsavedChanges();
                 AddHistory(HistoryActionType.Revert, $"Revert a #{SelectedHistoryEntry.Id}");
+            }
+            catch (Exception ex)
+            {
+                StatusText = $"Errore revert: {ex.Message}";
+#if DEBUG
+                Debug.WriteLine($"[DEBUG] Errore revert: {ex}");
+#endif
             }
             finally
             {
+                _suppressInstructionEvents = false;
                 _isReverting = false;
-                // Forza stato senza modifiche
-                HasUnsavedChanges = false;
-                foreach (var instr in EditableInstructions) instr.IsModified = false;
-                // Notifica esplicita comandi Save/Discard
+                ResetUnsavedChanges(); // sicurezza finale
                 SaveChangesCommand.NotifyCanExecuteChanged();
                 DiscardChangesCommand.NotifyCanExecuteChanged();
                 RevertToHistoryCommand.NotifyCanExecuteChanged();
-                NotifyAllCommands(); // aggiornamento generale
+                NotifyAllCommands();
                 StatusText = $"{DateTime.Now:HH:mm:ss} - Revert completato";
+#if DEBUG
+                Debug.WriteLine("[DEBUG] Revert completato");
+#endif
+                // Re-enable modification tracking after UI idle
+                Avalonia.Threading.Dispatcher.UIThread.Post(() =>
+                {
+                    foreach (var instr in EditableInstructions)
+                        instr.EnableModificationTracking();
+                    ResetUnsavedChanges(); // assicurati stato pulito dopo riabilitazione tracking
+                    _ignoreInstructionChanged = false; // da ora eventi validi
+#if DEBUG
+                    Debug.WriteLine("[DEBUG] Tracking riabilitato e stato pulito");
+#endif
+                    NotifyAllCommands();
+                }, DispatcherPriority.Background);
             }
         }
 
@@ -1076,23 +1014,94 @@ namespace FileViewerApp.ViewModels
         }
         private void ClearPendingChanges() => _pendingChanges.Clear();
         private bool _isReverting = false; // flag per ignorare eventi durante revert
+        private bool _suppressInstructionEvents = false; // sopprime OnInstructionChanged temporaneamente
+        private bool _ignoreInstructionChanged = false; // ignora eventi temporaneamente (post-revert)
 
-        private void ForceClearUnsavedChanges()
+        private void ResetUnsavedChanges()
         {
-            _isReverting = true; // evita eventi
-            try
-            {
-                foreach (var instr in EditableInstructions)
-                {
-                    if (instr.IsModified) instr.IsModified = false; // setter silenziato dal flag
-                }
-                HasUnsavedChanges = false;
-            }
-            finally
-            {
-                _isReverting = false;
-                NotifyAllCommands();
-            }
+            foreach (var instr in EditableInstructions)
+                instr.IsModified = false;
+            HasUnsavedChanges = false;
+#if DEBUG
+            Debug.WriteLine("[DEBUG] ResetUnsavedChanges eseguito");
+#endif
+        }
+
+        // === Ripristino proprietà e metodi mancanti ===
+        private readonly HistoryService _historyService = new();
+        public ObservableCollection<HistoryEntry> HistoryEntries { get; } = new();
+        public IAsyncRelayCommand RevertToHistoryCommand { get; } // già inizializzato nel costruttore
+        private HistoryEntry? _selectedHistoryEntry;
+        public HistoryEntry? SelectedHistoryEntry { get => _selectedHistoryEntry; set { this.RaiseAndSetIfChanged(ref _selectedHistoryEntry, value); RevertToHistoryCommand.NotifyCanExecuteChanged(); BuildDiffFromSelection(); this.RaisePropertyChanged(nameof(CanRevertSelected)); } }
+
+        private void AddHistory(HistoryActionType actionType, string description, bool force = false)
+        {
+            var entry = _historyService.CaptureSnapshot(EditableInstructions, actionType, description, force);
+            if (!HistoryEntries.Contains(entry)) HistoryEntries.Insert(0, entry);
+            this.RaisePropertyChanged(nameof(CanRevertSelected));
+            RevertToHistoryCommand.NotifyCanExecuteChanged();
+        }
+
+        private void UpdateCanEditState()
+        {
+            CanEdit = IsEditMode && EditableInstructions.Count > 0;
+            UpdateAllButtonStates();
+            NotifyAllCommands();
+        }
+        private void UpdateAllButtonStates()
+        {
+            this.RaisePropertyChanged(nameof(CanRemoveInstruction));
+            this.RaisePropertyChanged(nameof(CanMoveUp));
+            this.RaisePropertyChanged(nameof(CanMoveDown));
+        }
+        private void NotifyAllCommands() => NotificationAllCommands();
+        private void NotificationAllCommands()
+        {
+            OpenFileCommand.NotifyCanExecuteChanged();
+            CloseFileCommand.NotifyCanExecuteChanged();
+            SaveFileCommand.NotifyCanExecuteChanged();
+            ConvertFileCommand.NotifyCanExecuteChanged();
+            RefreshCommand.NotifyCanExecuteChanged();
+            AddInstructionCommand.NotifyCanExecuteChanged();
+            RemoveInstructionCommand.NotifyCanExecuteChanged();
+            MoveUpCommand.NotifyCanExecuteChanged();
+            MoveDownCommand.NotifyCanExecuteChanged();
+            SaveChangesCommand.NotifyCanExecuteChanged();
+            DiscardChangesCommand.NotifyCanExecuteChanged();
+            LoadDefinitionsCommand.NotifyCanExecuteChanged();
+            RevertToHistoryCommand.NotifyCanExecuteChanged();
+        }
+        private void UpdateStatus(string msg)
+        {
+            StatusText = $"{DateTime.Now:HH:mm:ss} - {msg}";
+        }
+        private string FormatFileSize(long bytes)
+        {
+            if (bytes < 1024) return $"{bytes} bytes";
+            if (bytes < 1024 * 1024) return $"{bytes / 1024.0:F1} KB";
+            return $"{bytes / (1024.0 * 1024.0):F1} MB";
+        }
+        private void RenumberInstructions()
+        {
+            for (int i = 0; i < EditableInstructions.Count; i++)
+                EditableInstructions[i].Number = i + 1;
+        }
+        private void ExpandAll()
+        {
+            foreach (var node in InstructionTree)
+                SetNodeExpandedRecursive(node, true);
+        }
+        private void CollapseAll()
+        {
+            foreach (var node in InstructionTree)
+                SetNodeExpandedRecursive(node, false);
+        }
+        private void SetNodeExpandedRecursive(InstructionNode node, bool value)
+        {
+            if (node == null) return;
+            node.IsExpanded = value;
+            foreach (var child in node.Children)
+                SetNodeExpandedRecursive(child, value);
         }
     }
 }
