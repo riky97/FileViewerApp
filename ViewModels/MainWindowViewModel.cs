@@ -459,25 +459,46 @@ namespace FileViewerApp.ViewModels
 
         private async Task MoveUpAsync()
         {
-            if (!CanMoveUp || SelectedInstruction == null) return;
-            var i = EditableInstructions.IndexOf(SelectedInstruction);
-            EditableInstructions.Move(i, i - 1);
-            RenumberInstructions();
-            HasUnsavedChanges = true;
-            StatusText = "Spostata su";
-            AppendPending(PendingChangeType.Move, $"MoveUp to {SelectedInstruction.Number}");
+            try
+            {
+                if (!CanMoveUp || SelectedInstruction == null) return;
+                var instr = SelectedInstruction; // capture before move
+                int i = EditableInstructions.IndexOf(instr);
+                if (i <= 0) return; // safety
+                EditableInstructions.Move(i, i - 1);
+                RenumberInstructions();
+                // restore selection explicitly (it may get lost after move)
+                SelectedInstruction = instr;
+                HasUnsavedChanges = true;
+                StatusText = $"Spostata su {instr.Number}";
+                AppendPending(PendingChangeType.Move, $"MoveUp to {instr.Number}");
+            }
+            catch (Exception ex)
+            {
+                StatusText = $"Errore MoveUp: {ex.Message}";
+            }
             await Task.CompletedTask;
         }
 
         private async Task MoveDownAsync()
         {
-            if (!CanMoveDown || SelectedInstruction == null) return;
-            var i = EditableInstructions.IndexOf(SelectedInstruction);
-            EditableInstructions.Move(i, i + 1);
-            RenumberInstructions();
-            HasUnsavedChanges = true;
-            StatusText = "Spostata giù";
-            AppendPending(PendingChangeType.Move, $"MoveDown to {SelectedInstruction.Number}");
+            try
+            {
+                if (!CanMoveDown || SelectedInstruction == null) return;
+                var instr = SelectedInstruction; // capture
+                int i = EditableInstructions.IndexOf(instr);
+                if (i < 0 || i >= EditableInstructions.Count - 1) return;
+                EditableInstructions.Move(i, i + 1);
+                RenumberInstructions();
+                SelectedInstruction = instr; // keep selection on moved item
+                HasUnsavedChanges = true;
+                StatusText = $"Spostata giù {instr.Number}";
+                AppendPending(PendingChangeType.Move, $"MoveDown to {instr.Number}");
+            }
+            catch (Exception ex)
+            {
+                StatusText = $"Errore MoveDown: {ex.Message}";
+            }
             await Task.CompletedTask;
         }
 
@@ -719,6 +740,7 @@ namespace FileViewerApp.ViewModels
 
         private void OnInstructionChanged(object? sender, PropertyChangedEventArgs e)
         {
+            if (_isReverting) return; // ignora eventi durante revert
             HasUnsavedChanges = EditableInstructions.Any(i => i.IsModified);
             UpdateAllButtonStates();
             NotifyAllCommands();
@@ -818,35 +840,48 @@ namespace FileViewerApp.ViewModels
         private async Task RevertToHistoryAsync()
         {
             if (SelectedHistoryEntry == null) return;
-            // Conferma utente prima di procedere
-            if (!await ShowRevertConfirmationAsync())
-                return;
-
-            var snap = _historyService.RevertTo(SelectedHistoryEntry.Id);
-            EditableInstructions.Clear();
-            var svc = _orchestrator.GetOpCodeService();
-            foreach (var s in snap.OrderBy(s => s.Number))
+            if (!await ShowRevertConfirmationAsync()) return;
+            _isReverting = true;
+            try
             {
-                var e = new EditableInstruction
+                var snap = _historyService.RevertTo(SelectedHistoryEntry.Id);
+                EditableInstructions.Clear();
+                var svc = _orchestrator.GetOpCodeService();
+                foreach (var s in snap.OrderBy(s => s.Number))
                 {
-                    Number = s.Number,
-                    OpCode = s.OpCode,
-                    Name = s.Name
-                };
-                e.SetParameters(s.Parameters);
-                var info = svc.GetOpCodeInfo(s.OpCode);
-                if (info != null) e.ParamCount = info.ParamCount;
-                e.ResetModifications();
-                EditableInstructions.Add(e);
+                    var e = new EditableInstruction { Number = s.Number, OpCode = s.OpCode, Name = s.Name };
+                    e.SetParameters(s.Parameters);
+                    var info = svc.GetOpCodeInfo(s.OpCode);
+                    if (info != null) e.ParamCount = info.ParamCount;
+                    e.ResetModifications();
+                    EditableInstructions.Add(e);
+                }
+                RenumberInstructions();
+                ClearPendingChanges();
+                // Stato identico a snapshot: nessuna modifica
+                foreach (var instr in EditableInstructions) instr.IsModified = false;
+                HasUnsavedChanges = false;
+                RebuildInstructionViewSimple();
+                RebuildTreeViewSimple();
+                // Sincronizza il file in memoria allo snapshot revertito così non risultano modifiche pendenti
+                await ApplyChangesToFile();
+                foreach (var instr in EditableInstructions) instr.IsModified = false;
+                HasUnsavedChanges = false;
+                AddHistory(HistoryActionType.Revert, $"Revert a #{SelectedHistoryEntry.Id}");
             }
-            RenumberInstructions();
-            // Revert porta lo stato a uno snapshot esistente quindi non lo consideriamo modificato
-            HasUnsavedChanges = false;
-            foreach (var instr in EditableInstructions) instr.IsModified = false;
-            RebuildInstructionViewSimple();
-            RebuildTreeViewSimple();
-            AddHistory(HistoryActionType.Revert, $"Revert a #{SelectedHistoryEntry.Id}");
-            ClearPendingChanges();
+            finally
+            {
+                _isReverting = false;
+                // Forza stato senza modifiche
+                HasUnsavedChanges = false;
+                foreach (var instr in EditableInstructions) instr.IsModified = false;
+                // Notifica esplicita comandi Save/Discard
+                SaveChangesCommand.NotifyCanExecuteChanged();
+                DiscardChangesCommand.NotifyCanExecuteChanged();
+                RevertToHistoryCommand.NotifyCanExecuteChanged();
+                NotifyAllCommands(); // aggiornamento generale
+                StatusText = $"{DateTime.Now:HH:mm:ss} - Revert completato";
+            }
         }
 
         private async Task<bool> ShowRevertConfirmationAsync()
@@ -897,14 +932,12 @@ namespace FileViewerApp.ViewModels
                 DiffText = string.Empty;
                 return;
             }
-
             try
             {
-                // HistoryEntries: newest inserted at index 0
                 var index = HistoryEntries.IndexOf(SelectedHistoryEntry);
                 HistoryEntry? previous = null;
                 if (index >= 0 && index + 1 < HistoryEntries.Count)
-                    previous = HistoryEntries[index + 1]; // older snapshot
+                    previous = HistoryEntries[index + 1];
 
                 if (previous == null)
                 {
@@ -912,48 +945,105 @@ namespace FileViewerApp.ViewModels
                     return;
                 }
 
-                var oldSnap = previous.Snapshot;   // stato precedente
-                var newSnap = SelectedHistoryEntry.Snapshot; // stato della entry selezionata
+                var oldSnap = previous.Snapshot;
+                var newSnap = SelectedHistoryEntry.Snapshot;
 
-                var oldByNum = oldSnap.ToDictionary(s => s.Number, s => s);
-                var newByNum = newSnap.ToDictionary(s => s.Number, s => s);
-                var allNums = oldByNum.Keys.Union(newByNum.Keys).OrderBy(n => n);
+                string Sig(InstructionSnapshot s) => $"{s.OpCode}|{s.Name}|{string.Join(',', s.Parameters)}";
+                var oldSigs = oldSnap.Select(Sig).ToList();
+                var newSigs = newSnap.Select(Sig).ToList();
 
-                var sb = new StringBuilder();
-                sb.AppendLine($"Diff tra entry #{previous.Id} -> #{SelectedHistoryEntry.Id}");
-                sb.AppendLine(new string('-', 56));
-                int changeCount = 0;
-                foreach (var num in allNums)
+                // Greedy match ignoring order to detect pure moves
+                var newSigUsage = new Dictionary<int, int>(); // maps new index used count (occurrence)
+                var matchedOld = new int[oldSnap.Count]; // store matched new index or -1
+                for (int i = 0; i < matchedOld.Length; i++) matchedOld[i] = -1;
+
+                for (int oi = 0; oi < oldSnap.Count; oi++)
                 {
-                    bool hadOld = oldByNum.TryGetValue(num, out var oInstr);
-                    bool hasNew = newByNum.TryGetValue(num, out var nInstr);
-
-                    if (!hadOld && hasNew)
+                    var sig = oldSigs[oi];
+                    for (int ni = 0; ni < newSnap.Count; ni++)
                     {
-                        sb.AppendLine($"+ {num:D3} {nInstr!.Name} (Op:{nInstr.OpCode}) {FormatParams(nInstr.Parameters)}");
-                        changeCount++; continue;
-                    }
-                    if (hadOld && !hasNew)
-                    {
-                        sb.AppendLine($"- {num:D3} {oInstr!.Name} (Op:{oInstr.OpCode}) {FormatParams(oInstr.Parameters)}");
-                        changeCount++; continue;
-                    }
-                    // both
-                    if (oInstr!.OpCode != nInstr!.OpCode || oInstr.Name != nInstr.Name || !oInstr.Parameters.SequenceEqual(nInstr.Parameters))
-                    {
-                        sb.AppendLine($"~ {num:D3} {oInstr.Name} -> {nInstr.Name} (Op {oInstr.OpCode}->{nInstr.OpCode})");
-                        for (int p = 0; p < Math.Max(oInstr.Parameters.Length, nInstr.Parameters.Length); p++)
+                        if (newSigs[ni] == sig && !newSigUsage.ContainsKey(ni))
                         {
-                            int ov = p < oInstr.Parameters.Length ? oInstr.Parameters[p] : 0;
-                            int nv = p < nInstr.Parameters.Length ? nInstr.Parameters[p] : 0;
-                            if (ov != nv)
-                                sb.AppendLine($"    P{p}: {ov} -> {nv}");
+                            matchedOld[oi] = ni;
+                            newSigUsage[ni] = 1;
+                            break;
                         }
-                        changeCount++;
                     }
                 }
-                if (changeCount == 0)
-                    sb.AppendLine("(Nessuna differenza)");
+
+                var removed = new List<InstructionSnapshot>();
+                for (int oi = 0; oi < oldSnap.Count; oi++) if (matchedOld[oi] == -1) removed.Add(oldSnap[oi]);
+                var added = new List<InstructionSnapshot>();
+                for (int ni = 0; ni < newSnap.Count; ni++) if (!newSigUsage.ContainsKey(ni)) added.Add(newSnap[ni]);
+
+                var sb = new StringBuilder();
+                sb.AppendLine($"Diff #{previous.Id} -> #{SelectedHistoryEntry.Id} (ignora semplice rinumerazione)");
+                sb.AppendLine(new string('-', 65));
+
+                int changeCount = 0;
+                foreach (var r in removed)
+                {
+                    changeCount++;
+                    sb.AppendLine($"- {r.Number:D3} {r.Name} {FormatParams(r.Parameters)}");
+                }
+                foreach (var a in added)
+                {
+                    changeCount++;
+                    sb.AppendLine($"+ {a.Number:D3} {a.Name} {FormatParams(a.Parameters)}");
+                }
+
+                // Pure move detection (no real add/remove; signatures identical count)
+                bool isPureReorder = changeCount == 0 && oldSnap.Count == newSnap.Count && oldSnap.Count > 0;
+                if (isPureReorder)
+                {
+                    // Build movement list: match by same signature sequence order preserving first occurrences
+                    var moves = new List<string>();
+                    for (int oi = 0; oi < oldSnap.Count; oi++)
+                    {
+                        int ni = matchedOld[oi];
+                        if (ni >= 0 && oi != ni)
+                        {
+                            var instrOld = oldSnap[oi];
+                            var instrNew = newSnap[ni];
+                            // report move using original number and new number
+                            moves.Add($"mv {instrOld.Number:D3} -> {instrNew.Number:D3} {instrOld.Name}");
+                        }
+                    }
+                    if (moves.Count > 0)
+                    {
+                        sb.AppendLine("Spostamenti:");
+                        foreach (var m in moves) sb.AppendLine("  " + m);
+                    }
+                    else
+                    {
+                        sb.AppendLine("(Solo rinumerazione senza spostamenti)");
+                    }
+                }
+                else
+                {
+                    // Heuristic modifications pairing removed & added when counts equal
+                    if (removed.Count == added.Count && removed.Count > 0)
+                    {
+                        sb.AppendLine("Modifiche:");
+                        for (int i = 0; i < removed.Count; i++)
+                        {
+                            var r = removed[i];
+                            var a = added[i];
+                            sb.AppendLine($"~ {r.Number:D3}->{a.Number:D3} {r.Name} -> {a.Name}");
+                            int maxP = Math.Max(r.Parameters.Length, a.Parameters.Length);
+                            for (int p = 0; p < maxP; p++)
+                            {
+                                int ov = p < r.Parameters.Length ? r.Parameters[p] : 0;
+                                int nv = p < a.Parameters.Length ? a.Parameters[p] : 0;
+                                if (ov != nv)
+                                    sb.AppendLine($"    P{p}: {ov} -> {nv}");
+                            }
+                        }
+                    }
+                    if (changeCount == 0)
+                        sb.AppendLine("(Nessuna differenza significativa)");
+                }
+
                 DiffText = sb.ToString();
             }
             catch (Exception ex)
@@ -985,5 +1075,24 @@ namespace FileViewerApp.ViewModels
             return string.Join(", ", parts);
         }
         private void ClearPendingChanges() => _pendingChanges.Clear();
+        private bool _isReverting = false; // flag per ignorare eventi durante revert
+
+        private void ForceClearUnsavedChanges()
+        {
+            _isReverting = true; // evita eventi
+            try
+            {
+                foreach (var instr in EditableInstructions)
+                {
+                    if (instr.IsModified) instr.IsModified = false; // setter silenziato dal flag
+                }
+                HasUnsavedChanges = false;
+            }
+            finally
+            {
+                _isReverting = false;
+                NotifyAllCommands();
+            }
+        }
     }
 }

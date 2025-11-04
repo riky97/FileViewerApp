@@ -10,34 +10,50 @@
   d:DesignHeight="500"
   mc:Ignorable="d">
 
-  <Border Margin="4" Padding="6" BorderBrush="#DDD" BorderThickness="1" CornerRadius="4" Background="#FAFAFA">
-    <DockPanel>
-      <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" HorizontalAlignment="Stretch" Margin="0,0,0,6" Spacing="8">
-        <TextBlock Text="Cronologia" FontWeight="Bold" />
-        <Button Command="{Binding RevertToHistoryCommand}" IsEnabled="{Binding SelectedHistoryEntry}" ToolTip.Tip="Ripristina lo stato selezionato">
-          <TextBlock Text="↺" FontSize="16" />
-        </Button>
-      </StackPanel>
-      <Grid RowDefinitions="Auto,*,Auto,*" RowSpacing="4">
-        <TextBlock Grid.Row="0" Text="Snapshot" FontWeight="Bold" />
-        <ListBox Grid.Row="1" ItemsSource="{Binding HistoryEntries}" SelectedItem="{Binding SelectedHistoryEntry}" MinHeight="160">
-          <ListBox.ItemTemplate>
-            <DataTemplate>
-              <Border Margin="0,0,0,4" Padding="4" Background="#FFFFFF" BorderBrush="#E0E0E0" BorderThickness="1" CornerRadius="3">
-                <StackPanel Spacing="2">
-                  <TextBlock FontFamily="Consolas" FontSize="11" Text="{Binding Id, StringFormat='#{0}'}" />
-                  <TextBlock FontSize="11" Text="{Binding Description}" />
-                  <TextBlock FontSize="10" Foreground="#666" Text="{Binding Timestamp, StringFormat='{}{0:HH:mm:ss}'}" />
-                </StackPanel>
-              </Border>
-            </DataTemplate>
-          </ListBox.ItemTemplate>
-        </ListBox>
-        <TextBlock Grid.Row="2" Text="Diff" FontWeight="Bold" />
-        <ScrollViewer Grid.Row="3" Height="160">
-          <TextBox TextWrapping="NoWrap" AcceptsReturn="True" IsReadOnly="True" FontFamily="Consolas" FontSize="11" Text="{Binding DiffText}" />
-        </ScrollViewer>
-      </Grid>
-    </DockPanel>
-  </Border>
+	<Border Margin="4" Padding="6" BorderBrush="#DDD" BorderThickness="1" CornerRadius="4" Background="#FAFAFA">
+		<Grid RowSpacing="6">
+			<Grid.RowDefinitions>
+				<RowDefinition Height="Auto"/>
+				<RowDefinition Height="2*"/>
+				<RowDefinition Height="4"/>
+				<RowDefinition Height="*"/>
+			</Grid.RowDefinitions>
+			<!-- Header -->
+			<Grid Grid.Row="0" ColumnDefinitions="*,Auto">
+				<TextBlock Grid.Column="0" Text="Cronologia" FontWeight="Bold"/>
+				<Button Grid.Column="1" Command="{Binding RevertToHistoryCommand}" IsEnabled="{Binding CanRevertSelected}" ToolTip.Tip="Ripristina lo stato selezionato" HorizontalAlignment="Right">
+					<TextBlock Text="↺" FontSize="16"/>
+				</Button>
+			</Grid>
+			<!-- History block -->
+			<Border Grid.Row="1" BorderBrush="#E0E0E0" BorderThickness="1" CornerRadius="4" Background="#FFFFFF" Padding="4">
+				<ScrollViewer>
+					<ListBox ItemsSource="{Binding HistoryEntries}" SelectedItem="{Binding SelectedHistoryEntry}">
+						<ListBox.ItemTemplate>
+							<DataTemplate>
+								<Border Margin="0,0,0,4" Padding="4" Background="#FFFFFF" BorderBrush="#E0E0E0" BorderThickness="1" CornerRadius="3">
+									<StackPanel Spacing="2">
+										<TextBlock FontFamily="Consolas" FontSize="11" Text="{Binding Id, StringFormat='#{0}'}"/>
+										<TextBlock FontSize="11" Text="{Binding Description}"/>
+										<TextBlock FontSize="10" Foreground="#666" Text="{Binding Timestamp, StringFormat='{}{0:HH:mm:ss}'}"/>
+									</StackPanel>
+								</Border>
+							</DataTemplate>
+						</ListBox.ItemTemplate>
+					</ListBox>
+				</ScrollViewer>
+			</Border>
+			<!-- Splitter -->
+			<GridSplitter Grid.Row="2" Height="4" Background="#E0E0E0" ResizeDirection="Rows"/>
+			<!-- Diff block -->
+			<Border Grid.Row="3" BorderBrush="#E0E0E0" BorderThickness="1" CornerRadius="4" Background="#FFFFFF" Padding="4">
+				<Grid RowDefinitions="Auto,*" RowSpacing="4">
+					<TextBlock Grid.Row="0" Text="Diff" FontWeight="Bold"/>
+					<ScrollViewer Grid.Row="1">
+						<TextBox TextWrapping="NoWrap" AcceptsReturn="True" IsReadOnly="True" FontFamily="Consolas" FontSize="11" Text="{Binding DiffText}"/>
+					</ScrollViewer>
+				</Grid>
+			</Border>
+		</Grid>
+	</Border>
 </UserControl>
