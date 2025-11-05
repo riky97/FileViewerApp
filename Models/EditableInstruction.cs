@@ -33,6 +33,14 @@ namespace FileViewerApp.Models
                 }
             }
         }
+        private string _filterText = string.Empty;
+        public string FilterText { get => _filterText; set { this.RaiseAndSetIfChanged(ref _filterText, value); UpdateFilteredOptions(); } }
+        private ObservableCollection<ResourceOption>? _filteredOptions;
+        public ObservableCollection<ResourceOption>? FilteredOptions => _filteredOptions;
+        public bool HasFilteredOptions => _filteredOptions != null && _filteredOptions.Count > 0;
+        public bool IsValueValid => (_options != null && _options.Any(o => o.Id == Value));
+        private ResourceOption _placeholder = new ResourceOption(new ResourceItem("PLACEHOLDER", null, "Seleziona...", "", null, null, null));
+
         public void SetOptions(IEnumerable<ResourceOption> opts, int currentValue)
         {
             if (_options == null) _options = new ObservableCollection<ResourceOption>();
@@ -42,6 +50,29 @@ namespace FileViewerApp.Models
             this.RaisePropertyChanged(nameof(HasOptions));
             _selectedOption = _options.FirstOrDefault(o => o.Id == currentValue);
             this.RaisePropertyChanged(nameof(SelectedOption));
+            UpdateFilteredOptions();
+        }
+        private void UpdateFilteredOptions()
+        {
+            if (_filteredOptions == null) _filteredOptions = new ObservableCollection<ResourceOption>();
+            _filteredOptions.Clear();
+            IEnumerable<ResourceOption> source = _options ?? Enumerable.Empty<ResourceOption>();
+            if (!string.IsNullOrWhiteSpace(_filterText))
+            {
+                var ft = _filterText.Trim();
+                bool numeric = int.TryParse(ft, out var num);
+                source = source.Where(o => (numeric && o.Id == num) || o.Display.Contains(ft, StringComparison.OrdinalIgnoreCase));
+            }
+            foreach (var o in source) _filteredOptions.Add(o);
+            // placeholder se nessuna o valore non valido
+            if (_filteredOptions.Count == 0 || !IsValueValid)
+            {
+                if (!_filteredOptions.Contains(_placeholder))
+                    _filteredOptions.Insert(0, _placeholder);
+            }
+            this.RaisePropertyChanged(nameof(FilteredOptions));
+            this.RaisePropertyChanged(nameof(HasFilteredOptions));
+            this.RaisePropertyChanged(nameof(IsValueValid));
         }
     }
 
@@ -359,14 +390,7 @@ namespace FileViewerApp.Models
                     opts = svc.GetParamOptionsByName(Name, i);
                 }
                 System.Diagnostics.Debug.WriteLine($"[RES] Param {i} groups count={opts.Count()} value={_parameters[i]}");
-                if (opts.Any())
-                {
-                    ParameterEntries[i].SetOptions(opts, _parameters[i]);
-                }
-                else
-                {
-                    ParameterEntries[i].SetOptions(Array.Empty<ResourceOption>(), _parameters[i]);
-                }
+                ParameterEntries[i].SetOptions(opts, _parameters[i]);
             }
         }
 

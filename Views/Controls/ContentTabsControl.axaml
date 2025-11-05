@@ -129,16 +129,36 @@
 										</ItemsControl.ItemsPanel>
 										<ItemsControl.ItemTemplate>
 											<DataTemplate x:DataType="models:InstructionParameter">
-												<Grid>
-													<ComboBox Width="160" IsEditable="True" ItemsSource="{Binding Options}" SelectedItem="{Binding SelectedOption, Mode=TwoWay}" IsVisible="{Binding HasOptions}">
+												<StackPanel Spacing="2">
+													<TextBox Width="140"
+															 Watermark="Filtro"
+															 Text="{Binding FilterText, Mode=TwoWay}"
+															 IsVisible="{Binding HasOptions}" />
+													<ComboBox Width="160"
+															  ItemsSource="{Binding FilteredOptions}"
+															  SelectedItem="{Binding SelectedOption, Mode=TwoWay}"
+															  IsVisible="{Binding HasOptions}">
 														<ComboBox.ItemTemplate>
 															<DataTemplate x:DataType="models:ResourceOption">
-																<TextBlock Text="{Binding Display}" ToolTip.Tip="{Binding Item.Description}" />
+																<TextBlock Text="{Binding Display}"
+																		   ToolTip.Tip="{Binding Item.Description}" />
 															</DataTemplate>
 														</ComboBox.ItemTemplate>
 													</ComboBox>
-													<TextBox Width="70" TextAlignment="Center" Watermark="{Binding Index, StringFormat='P{0}'}" Text="{Binding Value, Mode=TwoWay}" IsVisible="{Binding HasOptions, Converter={StaticResource InverseBooleanConverter}}" />
-												</Grid>
+													<TextBox Width="70"
+															 TextAlignment="Center"
+															 Watermark="{Binding Index, StringFormat='P{0}'}"
+															 Text="{Binding Value, Mode=TwoWay}"
+															 IsVisible="{Binding HasOptions, Converter={StaticResource InverseBooleanConverter}}" />
+													<Border BorderThickness="1"
+															CornerRadius="3"
+															Padding="2"
+															BorderBrush="{Binding IsValueValid, Converter={StaticResource BooleanToBrushConverter}}"
+															IsVisible="{Binding HasOptions}">
+														<TextBlock FontSize="10"
+																   Text="{Binding Value, StringFormat='Valore: {0}'}" />
+													</Border>
+												</StackPanel>
 											</DataTemplate>
 										</ItemsControl.ItemTemplate>
 									</ItemsControl>
