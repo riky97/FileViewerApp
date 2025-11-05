@@ -48,6 +48,8 @@ namespace FileViewerApp.ViewModels.Controls
         // Selection proxies
         public InstructionNode? SelectedNode { get => _parent.SelectedNode; set => _parent.SelectedNode = value; }
         public EditableInstruction? SelectedInstruction { get => _parent.SelectedInstruction; set => _parent.SelectedInstruction = value; }
+        public int SelectedParameterIndex { get => _parent.SelectedParameterIndex; set => _parent.SelectedParameterIndex = value; }
+        public ResourceOption? SelectedResourceOption { get => _parent.SelectedResourceOption; set => _parent.SelectedResourceOption = value; }
 
         // Command proxies
         public ICommand AddInstructionCommand => _parent.AddInstructionCommand;
@@ -56,6 +58,9 @@ namespace FileViewerApp.ViewModels.Controls
         public ICommand MoveDownCommand => _parent.MoveDownCommand;
         public ICommand SaveChangesCommand => _parent.SaveChangesCommand;
         public ICommand DiscardChangesCommand => _parent.DiscardChangesCommand;
+        public ICommand SelectParameterCommand => _parent.SelectParameterCommand;
+        public ICommand ApplyResourceOptionCommand => _parent.ApplyResourceOptionCommand;
+        public ICommand ParameterClickCommand => _parent.ParameterClickCommand;
 
         // State proxies used by XAML
         public bool IsEditMode => _parent.IsEditMode;
@@ -63,6 +68,9 @@ namespace FileViewerApp.ViewModels.Controls
         public bool CanMoveUp => _parent.CanMoveUp;
         public bool CanMoveDown => _parent.CanMoveDown;
         public bool HasUnsavedChanges => _parent.HasUnsavedChanges;
+
+        public ObservableCollection<ResourceOption> ResourceExplorerOptions => _parent.ResourceExplorerOptions;
+        public string ResourceSearchText { get => _parent.ResourceSearchText; set => _parent.ResourceSearchText = value; }
 
         public void Dispose()
         {

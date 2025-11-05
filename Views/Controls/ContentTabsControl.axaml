@@ -61,114 +61,104 @@
 
 		<!--  TAB EDITOR ISTRUZIONI  -->
 		<TabItem Header="✏️ Editor Istruzioni" IsEnabled="{Binding IsEditMode}">
-			<DockPanel Margin="10">
-				<StackPanel
-				  Margin="0,0,0,10"
-				  DockPanel.Dock="Top"
-				  Orientation="Horizontal"
-				  Spacing="8">
+			<Grid Margin="10" ColumnDefinitions="3*,2*" RowDefinitions="Auto,*">
+				<StackPanel Grid.Row="0" Grid.ColumnSpan="2"
+							Orientation="Horizontal" Spacing="8" Margin="0,0,0,10">
 					<Button Command="{Binding AddInstructionCommand}" Content="➕ Aggiungi" />
-					<Button
-					  Command="{Binding RemoveInstructionCommand}"
-					  Content="🗑️ Rimuovi"
-					  IsEnabled="{Binding CanRemoveInstruction}" />
-					<Button
-					  Command="{Binding MoveUpCommand}"
-					  Content="⬆️ Su"
-					  IsEnabled="{Binding CanMoveUp}" />
-					<Button
-					  Command="{Binding MoveDownCommand}"
-					  Content="⬇️ Giù"
-					  IsEnabled="{Binding CanMoveDown}" />
+					<Button Command="{Binding RemoveInstructionCommand}" Content="🗑️ Rimuovi" IsEnabled="{Binding CanRemoveInstruction}" />
+					<Button Command="{Binding MoveUpCommand}" Content="⬆️ Su" IsEnabled="{Binding CanMoveUp}" />
+					<Button Command="{Binding MoveDownCommand}" Content="⬇️ Giù" IsEnabled="{Binding CanMoveDown}" />
 					<Separator />
-					<Button
-					  Command="{Binding SaveChangesCommand}"
-					  Content="💾 Salva"
-					  IsEnabled="{Binding HasUnsavedChanges}" />
-					<Button
-					  Command="{Binding DiscardChangesCommand}"
-					  Content="↶ Scarta"
-					  IsEnabled="{Binding HasUnsavedChanges}" />
+					<Button Command="{Binding SaveChangesCommand}" Content="💾 Salva" IsEnabled="{Binding HasUnsavedChanges}" />
+					<Button Command="{Binding DiscardChangesCommand}" Content="↶ Scarta" IsEnabled="{Binding HasUnsavedChanges}" />
 				</StackPanel>
 
-				<ListBox ItemsSource="{Binding EditableInstructions}" SelectedItem="{Binding SelectedInstruction}">
-					<ListBox.ItemTemplate>
-						<DataTemplate x:DataType="models:EditableInstruction">
-							<Border
-							  Margin="2"
-							  Padding="6"
-							  BorderBrush="#DDD"
-							  BorderThickness="1"
-							  CornerRadius="3">
-								<Grid MinHeight="30" ColumnDefinitions="60,220,*,Auto">
-									<TextBlock
-									  Grid.Column="0"
-									  VerticalAlignment="Center"
-									  FontWeight="Bold"
-									  Text="{Binding Number, StringFormat='{}{0:D3}'}" />
-									<ComboBox
-									  Grid.Column="1"
-									  Margin="8,0"
-									  IsEnabled="{Binding DataContext.IsEditMode, ElementName=Root}"
-									  ItemsSource="{Binding DataContext.AvailableInstructions, ElementName=Root}"
-									  SelectedItem="{Binding Name, Mode=TwoWay}"
-									  SelectionChanged="OnInstructionSelectionChanged"
-									  Tag="{Binding}">
-										<!--  Force item display as text  -->
-										<ComboBox.ItemTemplate>
-											<DataTemplate>
-												<TextBlock FontFamily="Consolas" Text="{Binding}" />
-											</DataTemplate>
-										</ComboBox.ItemTemplate>
-									</ComboBox>
-									<ItemsControl Grid.Column="2" ItemsSource="{Binding VisibleParameterEntries}">
-										<ItemsControl.ItemsPanel>
-											<ItemsPanelTemplate>
-												<StackPanel Orientation="Horizontal" Spacing="4" />
-											</ItemsPanelTemplate>
-										</ItemsControl.ItemsPanel>
-										<ItemsControl.ItemTemplate>
-											<DataTemplate x:DataType="models:InstructionParameter">
-												<StackPanel Spacing="2">
-													<TextBox Width="140"
-															 Watermark="Filtro"
-															 Text="{Binding FilterText, Mode=TwoWay}"
-															 IsVisible="{Binding HasOptions}" />
-													<ComboBox Width="160"
-															  ItemsSource="{Binding FilteredOptions}"
-															  SelectedItem="{Binding SelectedOption, Mode=TwoWay}"
-															  IsVisible="{Binding HasOptions}">
-														<ComboBox.ItemTemplate>
-															<DataTemplate x:DataType="models:ResourceOption">
-																<TextBlock Text="{Binding Display}"
-																		   ToolTip.Tip="{Binding Item.Description}" />
-															</DataTemplate>
-														</ComboBox.ItemTemplate>
-													</ComboBox>
-													<TextBox Width="70"
-															 TextAlignment="Center"
-															 Watermark="{Binding Index, StringFormat='P{0}'}"
-															 Text="{Binding Value, Mode=TwoWay}"
-															 IsVisible="{Binding HasOptions, Converter={StaticResource InverseBooleanConverter}}" />
-													<Border BorderThickness="1"
-															CornerRadius="3"
-															Padding="2"
-															BorderBrush="{Binding IsValueValid, Converter={StaticResource BooleanToBrushConverter}}"
-															IsVisible="{Binding HasOptions}">
-														<TextBlock FontSize="10"
-																   Text="{Binding Value, StringFormat='Valore: {0}'}" />
-													</Border>
-												</StackPanel>
-											</DataTemplate>
-										</ItemsControl.ItemTemplate>
-									</ItemsControl>
-									<TextBlock Grid.Column="3" VerticalAlignment="Center" FontFamily="Consolas" FontSize="11" Foreground="{Binding IsValid, Converter={StaticResource BooleanToBrushConverter}}" Text="{Binding ValidationSummary}" />
-								</Grid>
-							</Border>
-						</DataTemplate>
-					</ListBox.ItemTemplate>
-				</ListBox>
-			</DockPanel>
+				<!-- Sinistra: lista istruzioni -->
+				<ScrollViewer Grid.Row="1" Grid.Column="0">
+					<ListBox ItemsSource="{Binding EditableInstructions}" SelectedItem="{Binding SelectedInstruction}">
+						<ListBox.ItemTemplate>
+							<DataTemplate x:DataType="models:EditableInstruction">
+								<Border Margin="2" Padding="6" BorderBrush="#DDD" BorderThickness="1" CornerRadius="3">
+									<StackPanel Spacing="4">
+										<StackPanel Orientation="Horizontal" Spacing="8">
+											<TextBlock Width="50" FontWeight="Bold"
+													   Text="{Binding Number, StringFormat='{}{0:D3}'}" />
+											<ComboBox Width="200"
+													  ItemsSource="{Binding DataContext.AvailableInstructions, ElementName=Root}"
+													  SelectedItem="{Binding Name, Mode=TwoWay}" />
+											<ItemsControl x:Name="ParentInstruction" ItemsSource="{Binding VisibleParameterEntries}">
+												<ItemsControl.ItemsPanel>
+													<ItemsPanelTemplate>
+														<StackPanel Orientation="Horizontal" Spacing="4" />
+													</ItemsPanelTemplate>
+												</ItemsControl.ItemsPanel>
+												<ItemsControl.ItemTemplate>
+													<DataTemplate x:DataType="models:InstructionParameter">
+														<StackPanel Orientation="Horizontal" Spacing="2">
+															<Button Padding="4"
+																Command="{Binding DataContext.ParameterClickCommand, ElementName=Root}"
+																CommandParameter="{Binding}"
+																Content="{Binding Value}"
+																ToolTip.Tip="Param {Binding Index}"
+																Background="{Binding IsSelected, Converter={StaticResource ParamSelectedBrushConverter}}" />
+														</StackPanel>
+													</DataTemplate>
+												</ItemsControl.ItemTemplate>
+											</ItemsControl>
+										</StackPanel>
+										<TextBlock FontSize="11"
+												   Foreground="{Binding IsValid, Converter={StaticResource BooleanToBrushConverter}}"
+												   Text="{Binding ValidationSummary}" />
+									</StackPanel>
+								</Border>
+							</DataTemplate>
+						</ListBox.ItemTemplate>
+					</ListBox>
+				</ScrollViewer>
+
+				<GridSplitter Grid.Row="1" Grid.Column="0" HorizontalAlignment="Right" Width="5" />
+
+				<!-- Destra: Explorer risorse -->
+				<DockPanel Grid.Row="1" Grid.Column="1" Margin="5,0,0,0">
+					<StackPanel DockPanel.Dock="Top" Spacing="6" Margin="0,0,0,8">
+						<TextBlock FontSize="14" FontWeight="Bold" Text="Explorer Risorse" />
+						<TextBlock Text="Istruzione selezionata:" FontWeight="Bold" />
+						<TextBlock Text="{Binding SelectedInstruction.Name}" />
+						<TextBlock Text="{Binding SelectedParameterIndex, StringFormat='Parametro selezionato: {0}'}" />
+						<TextBox Watermark="Filtro (ID o testo)" Text="{Binding ResourceSearchText, Mode=TwoWay}" />
+					</StackPanel>
+					<Border BorderBrush="#CCC" BorderThickness="1" CornerRadius="4" Padding="4">
+						<ScrollViewer>
+							<ItemsControl ItemsSource="{Binding ResourceExplorerOptions}">
+								<ItemsControl.ItemTemplate>
+									<DataTemplate x:DataType="models:ResourceOption">
+										<!-- Sostituisci lo StackPanel interno alla DataTemplate ResourceOption con questo -->
+										<Border Margin="2" Padding="6" BorderBrush="#CCC" BorderThickness="1" CornerRadius="3">
+											<!-- Grid permette l'allineamento verticale vero -->
+											<Grid ColumnDefinitions="Auto,Auto,*" VerticalAlignment="Center">
+												<Button Grid.Column="0"
+														VerticalAlignment="Center"
+														Margin="0,0,10,0"
+														Content="Usa"
+														Command="{Binding DataContext.ApplyResourceOptionCommand, ElementName=Root}"
+														CommandParameter="{Binding}" />
+												<TextBlock Grid.Column="1"
+														   VerticalAlignment="Center"
+														   Width="60"
+														   Text="{Binding Id}"
+														   FontFamily="Consolas" />
+												<TextBlock Grid.Column="2"
+														   VerticalAlignment="Center"
+														   Text="{Binding Display}" />
+											</Grid>
+										</Border>
+									</DataTemplate>
+								</ItemsControl.ItemTemplate>
+							</ItemsControl>
+						</ScrollViewer>
+					</Border>
+				</DockPanel>
+			</Grid>
 		</TabItem>
 	</TabControl>
 </UserControl>

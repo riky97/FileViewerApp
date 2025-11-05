@@ -4,16 +4,18 @@
   xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
   xmlns:conv="clr-namespace:FileViewerApp.Converters"
   RequestedThemeVariant="Light">
-  <Application.Resources>
-    <!-- Converters -->
-    <conv:BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter" />
-    <conv:InverseBooleanToVisibilityConverter x:Key="InverseBooleanToVisibilityConverter" />
-    <conv:BooleanToBrushConverter x:Key="BooleanToBrushConverter" />
-    <conv:InverseBooleanConverter x:Key="InverseBooleanConverter" />
-  </Application.Resources>
+	<Application.Resources>
+		<!-- Converters -->
+		<conv:BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter" />
+		<conv:InverseBooleanToVisibilityConverter x:Key="InverseBooleanToVisibilityConverter" />
+		<conv:BooleanToBrushConverter x:Key="BooleanToBrushConverter" />
+		<conv:InverseBooleanConverter x:Key="InverseBooleanConverter" />
+		<conv:SelectedParamIndexToBrushConverter x:Key="SelectedParamIndexToBrushConverter" />
+		<conv:ParamSelectedBrushConverter x:Key="ParamSelectedBrushConverter" />
+	</Application.Resources>
 
-  <Application.Styles>
-    <FluentTheme />
-	  <StyleInclude Source="avares://FileViewerApp/Styles/ThemeStyles.axaml" />
-  </Application.Styles>
+	<Application.Styles>
+		<FluentTheme />
+		<StyleInclude Source="avares://FileViewerApp/Styles/ThemeStyles.axaml" />
+	</Application.Styles>
 </Application>

@@ -74,6 +74,11 @@ namespace FileViewerApp.Models
             this.RaisePropertyChanged(nameof(HasFilteredOptions));
             this.RaisePropertyChanged(nameof(IsValueValid));
         }
+
+        private bool _instructionIsCurrent;
+        public bool InstructionIsCurrent { get => _instructionIsCurrent; set => this.RaiseAndSetIfChanged(ref _instructionIsCurrent, value); }
+        private bool _isSelected; // nuovo flag selezione globale parametro
+        public bool IsSelected { get => _isSelected; set => this.RaiseAndSetIfChanged(ref _isSelected, value); }
     }
 
     public class EditableInstruction : ReactiveObject, INotifyPropertyChanged
@@ -99,6 +104,8 @@ namespace FileViewerApp.Models
         private bool _trackingEnabled = true; // nuovo flag per controllo esplicito
 
         public static OpCodeService? OpCodeServiceProvider { get; set; }
+
+        private bool _isCurrent; // nuova proprietà per UI selezione
 
         public EditableInstruction()
         {
@@ -135,6 +142,17 @@ namespace FileViewerApp.Models
         public bool IsValid { get => _isValid; set => this.RaiseAndSetIfChanged(ref _isValid, value); }
         public bool IsModified { get => _isModified; set => this.RaiseAndSetIfChanged(ref _isModified, value); }
         public string ValidationSummary { get => _validationSummary; set => this.RaiseAndSetIfChanged(ref _validationSummary, value); }
+        public bool IsCurrent
+        {
+            get => _isCurrent;
+            set
+            {
+                if (_isCurrent == value) return;
+                this.RaiseAndSetIfChanged(ref _isCurrent, value);
+                foreach (var p in ParameterEntries)
+                    p.InstructionIsCurrent = _isCurrent;
+            }
+        }
 
         public int ParamCount
         {
