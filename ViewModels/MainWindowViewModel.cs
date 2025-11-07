@@ -45,6 +45,7 @@ namespace FileViewerApp.ViewModels
         private int _startOffset = 0x32;
         private int _recordCount = 100;
         private string _statusText = "Pronto";
+        private string _operationDescription = string.Empty; // testo mostrato accanto allo spinner
         private bool _isProcessing;
         private string _currentFileType = "Nessuno";
         private bool _isEditMode;
@@ -58,7 +59,17 @@ namespace FileViewerApp.ViewModels
         public ObservableCollection<EditableInstruction> EditableInstructions { get; } = new();
         public ObservableCollection<ResourceOption> ParameterPickerOptions { get; } = new();
         private int _selectedParameterIndex = -1;
-        public int SelectedParameterIndex { get => _selectedParameterIndex; set { this.RaiseAndSetIfChanged(ref _selectedParameterIndex, value); RefreshResourceExplorer(); } }
+        public int SelectedParameterIndex { get => _selectedParameterIndex; set { this.RaiseAndSetIfChanged(ref _selectedParameterIndex, value); RefreshResourceExplorer(); this.RaisePropertyChanged(nameof(SelectedParameterName)); } }
+        public string SelectedParameterName
+        {
+            get
+            {
+                if (SelectedInstruction == null || SelectedParameterIndex < 0 || SelectedParameterIndex >= SelectedInstruction.ParameterEntries.Count)
+                    return "(nessuno)";
+                var p = SelectedInstruction.ParameterEntries[SelectedParameterIndex];
+                return string.IsNullOrWhiteSpace(p.Name) ? SelectedParameterIndex.ToString() : p.Name;
+            }
+        }
         public ObservableCollection<ResourceOption> ResourceExplorerOptions { get; } = new();
         private string _resourceSearchText = string.Empty;
         public string ResourceSearchText { get => _resourceSearchText; set { this.RaiseAndSetIfChanged(ref _resourceSearchText, value); RefreshResourceExplorer(); } }
@@ -145,6 +156,7 @@ namespace FileViewerApp.ViewModels
                 SelectedParameterIndex = param.Index;
                 foreach (var p in EditableInstructions.SelectMany(e => e.ParameterEntries)) p.IsSelected = false;
                 param.IsSelected = true;
+                this.RaisePropertyChanged(nameof(SelectedParameterName));
             }, param => param != null);
 
             // Now initialize the control viewmodels so their bindings see valid command instances
@@ -256,6 +268,7 @@ namespace FileViewerApp.ViewModels
         public int RecordCount { get => _recordCount; set => this.RaiseAndSetIfChanged(ref _recordCount, value); }
         public string StatusText { get => _statusText; set => this.RaiseAndSetIfChanged(ref _statusText, value); }
         public bool IsProcessing { get => _isProcessing; set => this.RaiseAndSetIfChanged(ref _isProcessing, value); }
+        public string OperationDescription { get => _operationDescription; set => this.RaiseAndSetIfChanged(ref _operationDescription, value); }
         public string CurrentFileType { get => _currentFileType; set => this.RaiseAndSetIfChanged(ref _currentFileType, value); }
         public bool IsEditMode { get => _isEditMode; set { this.RaiseAndSetIfChanged(ref _isEditMode, value); UpdateCanEditState(); } }
         public bool HasUnsavedChanges { get => _hasUnsavedChanges; set { this.RaiseAndSetIfChanged(ref _hasUnsavedChanges, value); NotifyAllCommands(); } }
@@ -276,6 +289,7 @@ namespace FileViewerApp.ViewModels
                 foreach (var p in EditableInstructions.SelectMany(e => e.ParameterEntries)) p.IsSelected = false;
                 // Riesegui controllo validità parametri globale
                 NotifyAllCommands();
+                this.RaisePropertyChanged(nameof(SelectedParameterName));
             }
         }
 
@@ -381,6 +395,7 @@ namespace FileViewerApp.ViewModels
                     return;
                 }
 
+                OperationDescription = "Apertura file...";
                 IsProcessing = true;
                 var path = files[0].Path.LocalPath;
                 _currentFileBytes = await File.ReadAllBytesAsync(path);
@@ -400,7 +415,7 @@ namespace FileViewerApp.ViewModels
             {
                 UpdateStatus($"Errore apertura: {ex.Message}");
             }
-            finally { IsProcessing = false; }
+            finally { IsProcessing = false; OperationDescription = string.Empty; }
         }
 
         private async Task CloseFileAsync()
@@ -451,12 +466,22 @@ namespace FileViewerApp.ViewModels
                 return;
             }
 
-            if (HasUnsavedChanges)
-                await ApplyChangesToFile();
+            OperationDescription = "Salvataggio file...";
+            IsProcessing = true;
+            try
+            {
+                if (HasUnsavedChanges)
+                    await ApplyChangesToFile();
 
-            var outPath = file.Path.LocalPath;
-            var bytes = await _orchestrator.SaveFileAsync(_currentProcessedFile, outPath);
-            UpdateStatus($"Salvato {Path.GetFileName(outPath)} ({FormatFileSize(bytes.Length)})");
+                var outPath = file.Path.LocalPath;
+                var bytes = await _orchestrator.SaveFileAsync(_currentProcessedFile, outPath);
+                UpdateStatus($"Salvato {Path.GetFileName(outPath)} ({FormatFileSize(bytes.Length)})");
+            }
+            finally
+            {
+                IsProcessing = false;
+                OperationDescription = string.Empty;
+            }
         }
 
         private async Task ConvertFileAsync()
@@ -487,11 +512,21 @@ namespace FileViewerApp.ViewModels
                 return;
             }
 
-            if (HasUnsavedChanges)
-                await ApplyChangesToFile();
+            OperationDescription = "Conversione file...";
+            IsProcessing = true;
+            try
+            {
+                if (HasUnsavedChanges)
+                    await ApplyChangesToFile();
 
-            var bytes = await _orchestrator.ConvertAsync(_currentProcessedFile, target, file.Path.LocalPath);
-            UpdateStatus($"Convertito: {Path.GetFileName(file.Path.LocalPath)} ({FormatFileSize(bytes.Length)})");
+                var bytes = await _orchestrator.ConvertAsync(_currentProcessedFile, target, file.Path.LocalPath);
+                UpdateStatus($"Convertito: {Path.GetFileName(file.Path.LocalPath)} ({FormatFileSize(bytes.Length)})");
+            }
+            finally
+            {
+                IsProcessing = false;
+                OperationDescription = string.Empty;
+            }
         }
 
         private async Task RefreshAsync()
@@ -501,6 +536,7 @@ namespace FileViewerApp.ViewModels
                 UpdateStatus("Nessun file");
                 return;
             }
+            OperationDescription = "Aggiornamento...";
             IsProcessing = true;
             _currentProcessedFile = await _orchestrator.ProcessFileAsync(_currentProcessedFile.FilePath, useCache: false);
             await UpdateUIFromProcessedFile(_currentProcessedFile);
@@ -509,6 +545,7 @@ namespace FileViewerApp.ViewModels
             RebuildTreeViewInitial();
             UpdateStatus("Aggiornato");
             IsProcessing = false;
+            OperationDescription = string.Empty;
         }
 
         private async Task AddInstructionAsync()
@@ -588,33 +625,51 @@ namespace FileViewerApp.ViewModels
         private async Task SaveChangesAsync()
         {
             if (!HasUnsavedChanges || _currentFileBytes == null) return;
+            OperationDescription = "Salvataggio modifiche...";
             IsProcessing = true;
-            StatusText = "Salvataggio modifiche...";
-            await ApplyChangesToFile();
-            foreach (var instr in EditableInstructions)
-                instr.IsModified = false;
-            HasUnsavedChanges = false;
-            IsProcessing = false;
-            var summary = BuildPendingSummary();
-            StatusText = "Modifiche salvate";
-            AddHistory(HistoryActionType.Save, $"Salvataggio modifiche ({summary})", force: true);
-            ClearPendingChanges();
-            await UpdateHexViewAsync();
-            RebuildInstructionViewSimple();
-            RebuildTreeViewSimple();
+            try
+            {
+                StatusText = "Salvataggio modifiche...";
+                await ApplyChangesToFile();
+                foreach (var instr in EditableInstructions)
+                    instr.IsModified = false;
+                HasUnsavedChanges = false;
+                var summary = BuildPendingSummary();
+                StatusText = "Modifiche salvate";
+                AddHistory(HistoryActionType.Save, $"Salvataggio modifiche ({summary})", force: true);
+                ClearPendingChanges();
+                await UpdateHexViewAsync();
+                RebuildInstructionViewSimple();
+                RebuildTreeViewSimple();
+            }
+            finally
+            {
+                IsProcessing = false;
+                OperationDescription = string.Empty;
+            }
         }
 
         private async Task DiscardChangesAsync()
         {
             if (!HasUnsavedChanges || _currentProcessedFile == null) return;
-            await PopulateEditableInstructions(_currentProcessedFile);
-            HasUnsavedChanges = false;
-            RebuildInstructionViewSimple();
-            RebuildTreeViewInitial();
-            StatusText = "Modifiche scartate";
-            var discardSummary = BuildPendingSummary();
-            AddHistory(HistoryActionType.Discard, $"Scartate modifiche ({discardSummary})", force: true);
-            ClearPendingChanges();
+            OperationDescription = "Scarto modifiche...";
+            IsProcessing = true;
+            try
+            {
+                await PopulateEditableInstructions(_currentProcessedFile);
+                HasUnsavedChanges = false;
+                RebuildInstructionViewSimple();
+                RebuildTreeViewInitial();
+                StatusText = "Modifiche scartate";
+                var discardSummary = BuildPendingSummary();
+                AddHistory(HistoryActionType.Discard, $"Scartate modifiche ({discardSummary})", force: true);
+                ClearPendingChanges();
+            }
+            finally
+            {
+                IsProcessing = false;
+                OperationDescription = string.Empty;
+            }
         }
 
         private void RebuildInstructionViewSimple()
@@ -846,6 +901,8 @@ namespace FileViewerApp.ViewModels
             _ignoreInstructionChanged = true; // ignora eventi temporaneamente (post-revert)
             try
             {
+                OperationDescription = "Ripristino versione...";
+                IsProcessing = true;
                 var snap = _historyService.RevertTo(SelectedHistoryEntry.Id);
                 EditableInstructions.Clear();
                 var svc = _orchestrator.GetOpCodeService();

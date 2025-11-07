@@ -13,6 +13,7 @@
 		<conv:SelectedParamIndexToBrushConverter x:Key="SelectedParamIndexToBrushConverter" />
 		<conv:ParamSelectedBrushConverter x:Key="ParamSelectedBrushConverter" />
 		<conv:BooleanToOpacityConverter x:Key="BooleanToOpacityConverter" />
+		<conv:BooleanToThicknessConverter x:Key="BooleanToThicknessConverter" />
 	</Application.Resources>
 
 	<Application.Styles>

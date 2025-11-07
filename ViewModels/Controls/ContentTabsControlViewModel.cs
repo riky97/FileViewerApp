@@ -49,6 +49,7 @@ namespace FileViewerApp.ViewModels.Controls
         public InstructionNode? SelectedNode { get => _parent.SelectedNode; set => _parent.SelectedNode = value; }
         public EditableInstruction? SelectedInstruction { get => _parent.SelectedInstruction; set => _parent.SelectedInstruction = value; }
         public int SelectedParameterIndex { get => _parent.SelectedParameterIndex; set => _parent.SelectedParameterIndex = value; }
+        public string SelectedParameterName => _parent.SelectedParameterName;
         public ResourceOption? SelectedResourceOption { get => _parent.SelectedResourceOption; set => _parent.SelectedResourceOption = value; }
 
         // Command proxies

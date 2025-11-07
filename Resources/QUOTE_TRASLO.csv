@@ -1,0 +1,52 @@
+;AVVIC_CENTRO;0;
+;AVVIC_DX;150;quota avvicinamento DX
+;AVVIC_NAV1;-160;quota avvicinamento nav1 per gancio 3015
+;AVVIC_SX;-150;quota avvicinamento SX
+;CONT_ORIZ;3000;quota asse cont. orizzontale 0.01 gr
+;CONT_VERT;90000;quota asse cont. verticale 0.01 gr
+;GANC_3015_PRESA_DX;2035;quota gancio per presa dx 3015
+;GANC_3015_PRESA_SX;-2035;quota gancio per presa sx 3015
+;GANC_4020_CENTRO;-1825;quota gancio per posizione centrale 4020, was -1813
+;GANC_4020_NAV;-3475;was -3460
+;GANC_4020_NAV_DEP;-3468;
+;GANC_4020_PRESA_NAV;-2200;
+;GANC_4020_PRESA_DX;474;quota gancio per presa dx 4020
+;GANC_4020_PRESA_SX;-4100;quota gancio per presa sx 4020
+;GANCIO_3015_CENTRO;0;quota gancio per posizione centr
+;TOLL_AVVIC;500;tolleranza posizione motore avvic.
+;TOLL_CONTEN;3000;tolleranza motore contenitore
+;X_INIZ_RIC;-20;spostamento per inizio ricerca x
+;X_PRESA_DEP_NAV1_3015;43910;
+;X_PRESA_DEP_NAV1_4020;42906;
+;X_PRESA_DEP_DX;-700;spost. X per deposito o  presa, lato DX
+;X_PRESA_DEP_SX;300;spost. X per deposito o  presa, lasto SX
+;Z_DEP_LIV1_3015_DX;5800;spost. Z per deposito livello 1 3015, lato DX, 2012-4-6 era 6800
+;Z_DEP_LIV1_3015_SX;6800;spost. Z per deposito livello 1 3015, lato SX, 2012-4-6 era 7800
+;Z_DEP_LIV1_4020_DX;9000;spost. Z per deposito livello 1 4020 lato dx, 2012-4-6 era 10000
+;Z_DEP_LIV1_4020_SX;9000;spost. Z per deposito livello 1 4020 lato sx,2012-4-6 era 10000
+;Z_DEPOSITO_SX;14500;spost. Z per deposito generale, lato sx, 2012-4-6 era 13500
+;Z_DEPOSITO_DX;14400;spost. Z per deposito generale, lato dx, 2012-4-6 era 13400
+;Z_INIZ_RIC;-170;spostamento per inizio ricerca z generale
+;Z_INIZ_RIC_LIV1_3015;60;spost. Z per inizio ricerca livello 1 3015
+;Z_INIZ_RIC_LIV1_4020;60;spostamento per inizio ricerca z per primo piano 4020
+;Z_INIZ_RIC_S_ACS;50;spostamento z inizio ric. pos scarico ACS
+;Z_PRESA_DX;20000;spost. Z per presa generale, lato dx
+;Z_PRESA_SX;18800;spost. Z per presa generale,lato sx
+;Z_PRESA_LIV1_3015_DX;700;spost. Z per presa livello 1 3015, lato dx
+;Z_PRESA_LIV1_3015_SX;1700;spost. Z per presa livello 1 3015, lato sx
+;Z_PRESA_LIV1_4020_DX;5500;spost. Z per presa livello 1 4020, lato dx
+;Z_PRESA_LIV1_4020_SX;5500;spost. Z per presa livello 1 4020,lato sx
+;Z_PRESA_NAV1_3015;292;
+;Z_DEP_NAV1_3015_4020;230;
+;Z_PRESA_NAV1_4020;170;
+;X_OFFSET_4020_TO_3015;100300;
+;CAMPO_GETEDGE;70;prima era 100 ed era esagerato
+;Z_PRESA_NAV2_3015;284;
+;AVVIC_NAV2;-140;
+;Z_DEP_NAV2_3015_4020;230;
+;Z_PRESA_NAV2_4020;170;
+Gancio;pos inserim gancio DX 4020;0;
+Gancio;pos inserim gancio DX 3015;580;
+Gancio;pos inserim gancio SX 4020;-2113;
+Gancio;pos inserim gancio SX 3015;-580;
+Gancio;delta depos dopo inserimento;-20;

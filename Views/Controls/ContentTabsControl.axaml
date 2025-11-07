@@ -85,10 +85,7 @@
 						Content="⬇️ Giù"
 						IsEnabled="{Binding CanMoveDown}" />
 					<Separator />
-					<Button
-						Command="{Binding SaveChangesCommand}"
-						Content="💾 Salva"
-						IsEnabled="{Binding HasUnsavedChanges}" />
+					<Button Command="{Binding SaveChangesCommand}" Content="💾 Salva" />
 					<Button
 						Command="{Binding DiscardChangesCommand}"
 						Content="↶ Scarta"
@@ -135,18 +132,19 @@
 																IsVisible="{Binding HasResourceGroups}"
 																ToolTip.Tip="Param {Binding Index}" />
 
-															<!--  Se NON ci sono gruppi: TextBox editabile con validazione range  -->
+															<!--  Se NON ci sono gruppi: TextBox editabile con validazione/clamping range  -->
 															<Border
 																Padding="0"
-																BorderBrush="{Binding IsRangeValid, Converter={StaticResource BooleanToBrushConverter}}"
-																BorderThickness="1"
+																BorderBrush="Red"
+																BorderThickness="{Binding IsRangeValid, Converter={StaticResource BooleanToThicknessConverter}}"
 																CornerRadius="3"
 																IsVisible="{Binding HasResourceGroups, Converter={StaticResource InverseBooleanConverter}}">
 																<TextBox
-																	Width="60"
+																	Width="70"
 																	HorizontalContentAlignment="Center"
 																	FontFamily="Consolas"
-																	Text="{Binding Value, Mode=TwoWay}">
+																	Text="{Binding Value, Mode=TwoWay}"
+																	Watermark="{Binding MinValue} - {Binding MaxValue}">
 																	<ToolTip.Tip>
 																		<StackPanel>
 																			<TextBlock Text="Parametro {Binding Index}" />
@@ -162,7 +160,7 @@
 																FontSize="10"
 																Foreground="Red"
 																IsVisible="{Binding HasResourceGroups, Converter={StaticResource InverseBooleanConverter}}"
-																Opacity="{Binding IsRangeValid, Converter={StaticResource BooleanToOpacityConverter}}"
+																Opacity="{Binding IsRangeValid, Converter={StaticResource BooleanToOpacityConverter}, ConverterParameter=invert}"
 																Text="Valore fuori range" />
 														</StackPanel>
 													</DataTemplate>
@@ -201,7 +199,7 @@
 							Text="Explorer Risorse" />
 						<TextBlock FontWeight="Bold" Text="Istruzione selezionata:" />
 						<TextBlock Text="{Binding SelectedInstruction.Name}" />
-						<TextBlock Text="{Binding SelectedParameterIndex, StringFormat='Parametro selezionato: {0}'}" />
+						<TextBlock Text="{Binding SelectedParameterName, StringFormat='Parametro selezionato: {0}'}" />
 						<TextBox Text="{Binding ResourceSearchText, Mode=TwoWay}" Watermark="Filtro (ID o testo)" />
 					</StackPanel>
 					<Border

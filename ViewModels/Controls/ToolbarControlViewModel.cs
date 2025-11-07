@@ -36,6 +36,7 @@ public class ToolbarControlViewModel : ViewModelBase, IDisposable
 
     // State proxies
     public bool IsProcessing => _parent.IsProcessing;
+    public string OperationDescription => _parent.OperationDescription;
     public bool IsDefinitionsLoaded => _parent.IsDefinitionsLoaded;
     public string StatusText => _parent.StatusText;
 

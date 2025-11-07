@@ -1,0 +1,7 @@
+Timeout;Traslo;900;Timeout interazione con Traslo [s]
+Timeout;NavettaSu;50;Timeout sollevamento navetta [s]
+Timeout;NavettaGiu;70;Timeout abbassamento navetta [s]
+Timeout;SincNav;120;
+;TimeOutComAwm;600;Era 15
+;TimeOutComClient;600;Era 30
+;TimeOutComNavetta;600;Rea 120

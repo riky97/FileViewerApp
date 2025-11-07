@@ -1,59 +1,69 @@
 <UserControl
-  x:Class="FileViewerApp.Views.Controls.ToolbarControl"
-  xmlns="https://github.com/avaloniaui"
-  xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-  xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-  xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-  xmlns:vm="using:FileViewerApp.ViewModels.Controls"
-  x:DataType="vm:ToolbarControlViewModel"
-  mc:Ignorable="d">
+	x:Class="FileViewerApp.Views.Controls.ToolbarControl"
+	xmlns="https://github.com/avaloniaui"
+	xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+	xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+	xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+	xmlns:vm="using:FileViewerApp.ViewModels.Controls"
+	x:DataType="vm:ToolbarControlViewModel"
+	mc:Ignorable="d">
 
 	<Border
-	  Padding="8"
-	  Background="#FFFFFF"
-	  BorderBrush="#E0E0E0"
-	  BorderThickness="0,0,0,1">
+		Padding="8"
+		Background="#FFFFFF"
+		BorderBrush="#E0E0E0"
+		BorderThickness="0,0,0,1">
 
 		<StackPanel Orientation="Horizontal" Spacing="6">
 
-			<!--  Load Definitions (XML) - always enabled -->
-			<Button
-			  Command="{Binding LoadDefinitionsCommand}"
-			  ToolTip.Tip="Carica definizioni (.xml)">
+			<!--  Load Definitions (XML) - always enabled  -->
+			<Button Command="{Binding LoadDefinitionsCommand}" ToolTip.Tip="Carica definizioni (.xml)">
 				<StackPanel Orientation="Horizontal">
-					<TextBlock Margin="0,0,8,0" FontSize="16" Text="📥" />
+					<TextBlock
+						Margin="0,0,8,0"
+						FontSize="16"
+						Text="📥" />
 					<TextBlock Text="Carica definizioni (.xml)" />
 				</StackPanel>
 			</Button>
 
 			<!--  File Operations  -->
-			<Button
-			  Command="{Binding OpenFileCommand}"
-			  ToolTip.Tip="Apri file (Ctrl+O)">
+			<Button Command="{Binding OpenFileCommand}" ToolTip.Tip="Apri file (Ctrl+O)">
 				<StackPanel Orientation="Horizontal">
-					<TextBlock Margin="0,0,8,0" FontSize="16" Text="📁" />
+					<TextBlock
+						Margin="0,0,8,0"
+						FontSize="16"
+						Text="📁" />
 					<TextBlock Text="Apri File" />
 				</StackPanel>
 			</Button>
 
-			<Separator Width="1" Height="24" Margin="8,4" Background="#E0E0E0" />
+			<Separator
+				Width="1"
+				Height="24"
+				Margin="8,4"
+				Background="#E0E0E0" />
 
-			<Button
-			   Command="{Binding SaveFileCommand}"
-			   ToolTip.Tip="Salva file (Ctrl+S)">
+			<Button Command="{Binding SaveFileCommand}" ToolTip.Tip="Salva file (Ctrl+S)">
 				<StackPanel Orientation="Horizontal">
-					<TextBlock Margin="0,0,8,0" FontSize="16" Text="💾" />
+					<TextBlock
+						Margin="0,0,8,0"
+						FontSize="16"
+						Text="💾" />
 					<TextBlock Text="Salva" />
 				</StackPanel>
 			</Button>
 
 			<!--  Convert / Refresh  -->
 			<Button
-			  Background="#4CAF50"
-			  Command="{Binding ConvertFileCommand}"
-			  ToolTip.Tip="Converti formato file">
+				Background="#4CAF50"
+				Command="{Binding ConvertFileCommand}"
+				ToolTip.Tip="Converti formato file">
 				<StackPanel Orientation="Horizontal">
-					<TextBlock Margin="0,0,8,0" FontSize="16" Text="🔄" />
+					<TextBlock
+						Margin="0,0,8,0"
+						FontSize="16"
+						Text="🔄" />
 					<TextBlock Text="Converti" />
 				</StackPanel>
 			</Button>
@@ -69,38 +79,38 @@
       </Button>-->
 
 			<Separator
-			  Width="1"
-			  Height="24"
-			  Margin="8,4"
-			  Background="#E0E0E0" />
+				Width="1"
+				Height="24"
+				Margin="8,4"
+				Background="#E0E0E0" />
 
 			<!--  Close  -->
 			<Button
-			  Background="#F44336"
-			  Command="{Binding CloseFileCommand}"
-			  ToolTip.Tip="Chiudi file">
+				Background="#F44336"
+				Command="{Binding CloseFileCommand}"
+				ToolTip.Tip="Chiudi file">
 				<StackPanel Orientation="Horizontal">
 					<TextBlock
-					  Margin="0,0,8,0"
-					  FontSize="16"
-					  Text="❌" />
+						Margin="0,0,8,0"
+						FontSize="16"
+						Text="❌" />
 					<TextBlock Text="Chiudi" />
 				</StackPanel>
 			</Button>
 
 			<!--  Progress Indicator  -->
 			<StackPanel
-			  Margin="20,0,0,0"
-			  IsVisible="{Binding IsProcessing}"
-			  Orientation="Horizontal">
+				Margin="20,0,0,0"
+				IsVisible="{Binding IsProcessing}"
+				Orientation="Horizontal">
 				<TextBlock
-				  Margin="0,0,8,0"
-				  FontSize="16"
-				  Text="⏳" />
+					Margin="0,0,8,0"
+					FontSize="16"
+					Text="⏳" />
 				<TextBlock
-				  FontStyle="Italic"
-				  Foreground="#666666"
-				  Text="Elaborazione in corso..." />
+					FontStyle="Italic"
+					Foreground="#666666"
+					Text="{Binding OperationDescription}" />
 			</StackPanel>
 
 		</StackPanel>

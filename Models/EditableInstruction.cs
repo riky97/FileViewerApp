@@ -12,7 +12,23 @@ namespace FileViewerApp.Models
     {
         public int Index { get; }
         private int _value;
-        public int Value { get => _value; set => this.RaiseAndSetIfChanged(ref _value, value); }
+        private string _name = string.Empty; // Nome parametro da definizione (INFO.XML)
+        public string Name { get => _name; set => this.RaiseAndSetIfChanged(ref _name, value); }
+        public string DisplayName => string.IsNullOrWhiteSpace(Name) ? Index.ToString() : Name;
+        public int Value
+        {
+            get => _value;
+            set
+            {
+                if (_value == value) return;
+                // Nessun clamping: permetti stato "fuori range" per feedback utente e blocco salvataggio
+                this.RaiseAndSetIfChanged(ref _value, value);
+                if (!HasResourceGroups && IsNumericType)
+                {
+                    ValidateRange(); // aggiorna IsRangeValid (false se fuori intervallo)
+                }
+            }
+        }
         public InstructionParameter(int index, int value) { Index = index; _value = value; }
 
         // Metadata (filled from OpCodeInfo / INFO.XML)
@@ -34,12 +50,25 @@ namespace FileViewerApp.Models
             if (!string.IsNullOrWhiteSpace(type)) Type = type.Trim();
             MinValue = min;
             MaxValue = max;
-            if (!hasGroups && defaultValue.HasValue && _value == 0)
+            if (!hasGroups)
             {
-                _value = (int)Math.Round(defaultValue.Value);
-                this.RaisePropertyChanged(nameof(Value));
+                // Se c'è default e valore è 0 lo applico, ma NON clampo: voglio poter vedere valori fuori range provenienti dal file
+                if (defaultValue.HasValue && _value == 0)
+                {
+                    _value = (int)Math.Round(defaultValue.Value);
+                    this.RaisePropertyChanged(nameof(Value));
+                }
             }
             ValidateRange();
+        }
+
+        public void SetName(string? name)
+        {
+            if (!string.IsNullOrWhiteSpace(name))
+            {
+                Name = name.Trim();
+                this.RaisePropertyChanged(nameof(DisplayName));
+            }
         }
 
         private void ValidateRange()
@@ -456,6 +485,7 @@ namespace FileViewerApp.Models
                 double max = pinfo?.MaxValue ?? int.MaxValue;
                 double? def = pinfo?.DefaultValue;
                 ParameterEntries[i].SetMetadata(hasGroups, type, min, max, def);
+                ParameterEntries[i].SetName(pinfo?.Name);
             }
         }
 
