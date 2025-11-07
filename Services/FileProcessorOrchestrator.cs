@@ -112,7 +112,7 @@ namespace FileViewerApp.Services
             return processedFile;
         }
 
-        private async Task ProcessBinaryFile(ProcessedFile file)
+        private Task ProcessBinaryFile(ProcessedFile file)
         {
             // Extract header
             if (file.RawContent.Length >= 8)
@@ -129,6 +129,7 @@ namespace FileViewerApp.Services
             file.InstructionTree = GenerateInstructionTree(file.Instructions, file.Header);
 
             file.Messages.Add($"File binario processato: {file.Instructions.Count} istruzioni");
+            return Task.CompletedTask;
         }
 
         // Modifica il metodo ProcessTextFile
@@ -177,7 +178,7 @@ namespace FileViewerApp.Services
             file.Messages.Add($"Offset istruzioni: 0x32 (50 decimale)");
         }
 
-        private async Task ProcessOpCodeDefinitionFile(ProcessedFile file)
+        private Task ProcessOpCodeDefinitionFile(ProcessedFile file)
         {
             file.Messages.Add("File di definizione OpCode rilevato");
 
@@ -195,6 +196,7 @@ namespace FileViewerApp.Services
                 file.TextualView = "File binario - vedere vista Hex";
                 file.HexView = GenerateHexView(file.RawContent);
             }
+            return Task.CompletedTask;
         }
 
         #endregion

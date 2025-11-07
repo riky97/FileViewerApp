@@ -25,12 +25,19 @@ namespace FileViewerApp.Services
             {"CMD_VELOCITA","Cmd_Velocita"},
             {"CMD_LOGICA","Cmd_Logica"},
             {"CMD_ATM","Cmd_ATM"},
-            {"CMD_IF","Cmd_If"},
-            {"CMD_JOB","Cmd_job"},
+            {"JOB","JOB"},
             {"CMD_OP","Cmd_Op"},
             {"WR_EVENT","WR_EVENT"},
             {"SINC_TRASLO_CLIENT","SYNC"},
             {"ZONE","Zone"},
+            // Normalizzazione dei filename. NOTA: OP_MEM non esiste come file, alias gestito sotto.
+        };
+
+        // Alias di gruppi: chiave = RESGROUP richiesto, valore = lista di gruppi reali da unire.
+        // Richiesta feature: associare RESGROUP "op_mem" al CSV "Cmd_If".
+        private readonly Dictionary<string, string[]> _groupAliases = new(StringComparer.OrdinalIgnoreCase)
+        {
+            {"op_mem", new[]{"Cmd_If"}} // caso specifico richiesto
         };
 
         private readonly HashSet<string> _loadedFiles = new();
@@ -45,6 +52,7 @@ namespace FileViewerApp.Services
                 throw new DirectoryNotFoundException($"Resources directory non trovata: {_resourcesRoot}");
             LoadAllCsv();
             BuildFileIndexes();
+            Console.WriteLine($"[ResourceService] Caricate {_groups.Count} gruppi di risorse da {_loadedFiles.Count} file.");
         }
 
         private void LoadAllCsv()
@@ -140,8 +148,15 @@ namespace FileViewerApp.Services
         public bool FileExists(string fileKey) => _fileIndexes.ContainsKey(fileKey.ToLowerInvariant());
         public ResourceFileIndex? GetFileIndex(string fileKey)
         {
-            _fileIndexes.TryGetValue(fileKey.ToLowerInvariant(), out var idx);
-            return idx;
+            var keyLower = fileKey.ToLowerInvariant();
+            if (_fileIndexes.TryGetValue(keyLower, out var idx)) return idx;
+            // alias single-target: se alias definito e punta a un solo gruppo, restituisci quell'indice
+            if (_groupAliases.TryGetValue(keyLower, out var targets) && targets.Length == 1)
+            {
+                var aliasTarget = targets[0].ToLowerInvariant();
+                if (_fileIndexes.TryGetValue(aliasTarget, out var aliasIdx)) return aliasIdx;
+            }
+            return null;
         }
         public ResourceItem? TryGetById(string fileKey, int id)
         {
@@ -164,8 +179,24 @@ namespace FileViewerApp.Services
         // === API legacy basate su "group" (file) ===
         public IEnumerable<ResourceItem> GetGroup(string group)
         {
-            if (_groups.TryGetValue(group, out var list)) return list;
-            return Enumerable.Empty<ResourceItem>();
+            if (_groups.TryGetValue(group, out var list))
+            {
+                foreach (var item in list) yield return item;
+                yield break;
+            }
+            // alias multi-target: unisci i gruppi reali
+            if (_groupAliases.TryGetValue(group, out var targets))
+            {
+                foreach (var t in targets)
+                {
+                    if (_groups.TryGetValue(t, out var lst))
+                    {
+                        foreach (var item in lst) yield return item;
+                    }
+                }
+                yield break;
+            }
+            yield break;
         }
         public ResourceItem? FindByName(string group, string name)
         {

@@ -126,7 +126,7 @@ namespace FileViewerApp.ViewModels
             RemoveInstructionCommand = new AsyncRelayCommand(RemoveInstructionAsync, () => IsDefinitionsLoaded && CanRemoveInstruction);
             MoveUpCommand = new AsyncRelayCommand(MoveUpAsync, () => IsDefinitionsLoaded && CanMoveUp);
             MoveDownCommand = new AsyncRelayCommand(MoveDownAsync, () => IsDefinitionsLoaded && CanMoveDown);
-            SaveChangesCommand = new AsyncRelayCommand(SaveChangesAsync, () => IsDefinitionsLoaded && HasUnsavedChanges);
+            SaveChangesCommand = new AsyncRelayCommand(SaveChangesAsync, () => IsDefinitionsLoaded && HasUnsavedChanges && AreAllParametersValid());
             DiscardChangesCommand = new AsyncRelayCommand(DiscardChangesAsync, () => IsDefinitionsLoaded && HasUnsavedChanges);
 
             // Create expand/collapse commands
@@ -143,7 +143,7 @@ namespace FileViewerApp.ViewModels
                 if (instr != null && !ReferenceEquals(SelectedInstruction, instr))
                     SelectedInstruction = instr;
                 SelectedParameterIndex = param.Index;
-                foreach (var p in EditableInstructions.SelectMany(e=>e.ParameterEntries)) p.IsSelected = false;
+                foreach (var p in EditableInstructions.SelectMany(e => e.ParameterEntries)) p.IsSelected = false;
                 param.IsSelected = true;
             }, param => param != null);
 
@@ -162,7 +162,7 @@ namespace FileViewerApp.ViewModels
 
             RevertToHistoryCommand = new AsyncRelayCommand(RevertToHistoryAsync, () => CanRevertSelected);
             HistoryEntries.CollectionChanged += (_, __) => { this.RaisePropertyChanged(nameof(CanRevertSelected)); RevertToHistoryCommand.NotifyCanExecuteChanged(); };
-            
+
             // Command to select parameter in center panel
             SelectParameterCommand = new RelayCommand<int>(idx => { if (SelectedInstruction == null) return; SelectedParameterIndex = idx; }, idx => SelectedInstruction != null && idx >= 0 && idx < (SelectedInstruction?.ParamCount ?? 0));
             ApplyResourceOptionCommand = new RelayCommand<ResourceOption>(opt => ApplySelectedResourceOption(opt), opt => SelectedInstruction != null && SelectedParameterIndex >= 0 && opt?.Id.HasValue == true);
@@ -273,7 +273,9 @@ namespace FileViewerApp.ViewModels
                 NotifyAllCommands();
                 RefreshParameterOptions();
                 SelectedParameterIndex = -1;
-                foreach (var p in EditableInstructions.SelectMany(e=>e.ParameterEntries)) p.IsSelected = false;
+                foreach (var p in EditableInstructions.SelectMany(e => e.ParameterEntries)) p.IsSelected = false;
+                // Riesegui controllo validità parametri globale
+                NotifyAllCommands();
             }
         }
 
@@ -295,6 +297,35 @@ namespace FileViewerApp.ViewModels
                 NotifyAllCommands();
             }
             catch (Exception ex) { UpdateStatus($"Errore lista istruzioni: {ex.Message}"); }
+        }
+
+        private bool AreAllParametersValid()
+        {
+            // Tutte le istruzioni valide e ogni parametro range valido
+            foreach (var instr in EditableInstructions)
+            {
+                if (!instr.IsValid) return false;
+                foreach (var p in instr.ParameterEntries)
+                {
+                    if (!p.HasResourceGroups && p.IsNumericType && !p.IsRangeValid)
+                        return false;
+                }
+            }
+            return true;
+        }
+
+        private void SubscribeInstruction(EditableInstruction instr)
+        {
+            instr.InstructionChanged += (_, __) => NotifyAllCommands();
+            foreach (var p in instr.ParameterEntries)
+                p.PropertyChanged += (_, __2) => NotifyAllCommands();
+        }
+
+        private void UnsubscribeInstruction(EditableInstruction instr)
+        {
+            instr.InstructionChanged -= (_, __) => NotifyAllCommands(); // cannot remove anonymous; left intentionally minimal
+            foreach (var p in instr.ParameterEntries)
+                p.PropertyChanged -= (_, __2) => NotifyAllCommands();
         }
 
         public void OnInstructionNameChanged(EditableInstruction instruction, string newInstructionName)
@@ -619,7 +650,7 @@ namespace FileViewerApp.ViewModels
             ExpandAll();
         }
 
-        private async void RebuildTreeViewSimple()
+        private void RebuildTreeViewSimple()
         {
             InstructionTree.Clear();
             if (EditableInstructions.Count == 0) return;
@@ -639,12 +670,10 @@ namespace FileViewerApp.ViewModels
             }
 
             _currentProcessedFile!.InstructionTree = _orchestrator.GenerateInstructionTree(instructions, _currentProcessedFile!.Header);
-
             RebuildTreeViewInitial();
-
         }
 
-        private async Task UpdateUIFromProcessedFile(ProcessedFile processedFile)
+        private Task UpdateUIFromProcessedFile(ProcessedFile processedFile)
         {
             FileName = processedFile.FileName;
             FileSize = FormatFileSize(processedFile.FileSize);
@@ -664,10 +693,10 @@ namespace FileViewerApp.ViewModels
                 CharCount = 0;
             }
             DecodedData = $"=== FILE ===\nNome: {processedFile.FileName}\nTipo: {processedFile.FileType}\nDimensione: {FormatFileSize(processedFile.FileSize)}\nIstruzioni: {processedFile.Instructions.Count}\n";
-            await Task.CompletedTask;
+            return Task.CompletedTask;
         }
 
-        private async Task PopulateEditableInstructions(ProcessedFile processedFile)
+        private Task PopulateEditableInstructions(ProcessedFile processedFile)
         {
             EditableInstructions.Clear();
             var svc = _orchestrator.GetOpCodeService();
@@ -688,7 +717,7 @@ namespace FileViewerApp.ViewModels
             HasUnsavedChanges = false;
             foreach (var instruction in EditableInstructions)
                 instruction.LoadResourceOptions();
-            await Task.CompletedTask;
+            return Task.CompletedTask;
         }
 
         public void PopulateEditableInstructionsSync(ProcessedFile processedFile)
@@ -696,9 +725,9 @@ namespace FileViewerApp.ViewModels
             PopulateEditableInstructions(processedFile).GetAwaiter().GetResult();
         }
 
-        private async Task ApplyChangesToFile()
+        private Task ApplyChangesToFile()
         {
-            if (_currentProcessedFile == null) return;
+            if (_currentProcessedFile == null) return Task.CompletedTask;
 
             // Rebuild binary from editable instructions using 4-byte int layout
             // Header: preserve original header if available, else derive from file name
@@ -751,12 +780,12 @@ namespace FileViewerApp.ViewModels
             // Simpler: rebuild InstructionTree
             _currentProcessedFile.InstructionTree = _orchestrator.GenerateInstructionTree(_currentProcessedFile.Instructions, header);
 
-            await Task.CompletedTask;
+            return Task.CompletedTask;
         }
 
-        private async Task UpdateHexViewAsync()
+        private Task UpdateHexViewAsync()
         {
-            if (_currentFileBytes == null) return;
+            if (_currentFileBytes == null) return Task.CompletedTask;
             var sb = new StringBuilder();
             var max = Math.Min(_currentFileBytes.Length, 1024);
             for (int i = 0; i < max; i += 16)
@@ -779,7 +808,7 @@ namespace FileViewerApp.ViewModels
             if (_currentFileBytes.Length > max)
                 sb.AppendLine($"\n... ({max} di {_currentFileBytes.Length})");
             HexView = sb.ToString();
-            await Task.CompletedTask;
+            return Task.CompletedTask;
         }
 
         private void OnInstructionsCollectionChanged(object? sender, System.Collections.Specialized.NotifyCollectionChangedEventArgs e)

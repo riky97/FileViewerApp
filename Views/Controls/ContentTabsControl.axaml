@@ -1,14 +1,14 @@
 <UserControl
-  x:Class="FileViewerApp.Views.Controls.ContentTabsControl"
-  xmlns="https://github.com/avaloniaui"
-  xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-  xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-  xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-  xmlns:models="clr-namespace:FileViewerApp.Models"
-  xmlns:vm="clr-namespace:FileViewerApp.ViewModels.Controls"
-  x:Name="Root"
-  x:DataType="vm:ContentTabsControlViewModel"
-  mc:Ignorable="d">
+	x:Class="FileViewerApp.Views.Controls.ContentTabsControl"
+	xmlns="https://github.com/avaloniaui"
+	xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+	xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+	xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+	xmlns:models="clr-namespace:FileViewerApp.Models"
+	xmlns:vm="clr-namespace:FileViewerApp.ViewModels.Controls"
+	x:Name="Root"
+	x:DataType="vm:ContentTabsControlViewModel"
+	mc:Ignorable="d">
 
 	<TabControl>
 		<!--  TAB HEX  -->
@@ -43,49 +43,79 @@
 					<RowDefinition Height="*" />
 				</Grid.RowDefinitions>
 				<TextBlock
-				  Grid.Row="0"
-				  Margin="0,0,0,10"
-				  FontSize="14"
-				  FontWeight="Bold"
-				  Text="Lista Istruzioni" />
+					Grid.Row="0"
+					Margin="0,0,0,10"
+					FontSize="14"
+					FontWeight="Bold"
+					Text="Lista Istruzioni" />
 				<ScrollViewer Grid.Row="1">
 					<TextBox
-					  FontFamily="Consolas"
-					  FontSize="12"
-					  IsReadOnly="True"
-					  Text="{Binding InstructionView}"
-					  TextWrapping="NoWrap" />
+						FontFamily="Consolas"
+						FontSize="12"
+						IsReadOnly="True"
+						Text="{Binding InstructionView}"
+						TextWrapping="NoWrap" />
 				</ScrollViewer>
 			</Grid>
 		</TabItem>
 
 		<!--  TAB EDITOR ISTRUZIONI  -->
 		<TabItem Header="✏️ Editor Istruzioni" IsEnabled="{Binding IsEditMode}">
-			<Grid Margin="10" ColumnDefinitions="3*,2*" RowDefinitions="Auto,*">
-				<StackPanel Grid.Row="0" Grid.ColumnSpan="2"
-							Orientation="Horizontal" Spacing="8" Margin="0,0,0,10">
+			<Grid
+				Margin="10"
+				ColumnDefinitions="3*,2*"
+				RowDefinitions="Auto,*">
+				<StackPanel
+					Grid.Row="0"
+					Grid.ColumnSpan="2"
+					Margin="0,0,0,10"
+					Orientation="Horizontal"
+					Spacing="8">
 					<Button Command="{Binding AddInstructionCommand}" Content="➕ Aggiungi" />
-					<Button Command="{Binding RemoveInstructionCommand}" Content="🗑️ Rimuovi" IsEnabled="{Binding CanRemoveInstruction}" />
-					<Button Command="{Binding MoveUpCommand}" Content="⬆️ Su" IsEnabled="{Binding CanMoveUp}" />
-					<Button Command="{Binding MoveDownCommand}" Content="⬇️ Giù" IsEnabled="{Binding CanMoveDown}" />
+					<Button
+						Command="{Binding RemoveInstructionCommand}"
+						Content="🗑️ Rimuovi"
+						IsEnabled="{Binding CanRemoveInstruction}" />
+					<Button
+						Command="{Binding MoveUpCommand}"
+						Content="⬆️ Su"
+						IsEnabled="{Binding CanMoveUp}" />
+					<Button
+						Command="{Binding MoveDownCommand}"
+						Content="⬇️ Giù"
+						IsEnabled="{Binding CanMoveDown}" />
 					<Separator />
-					<Button Command="{Binding SaveChangesCommand}" Content="💾 Salva" IsEnabled="{Binding HasUnsavedChanges}" />
-					<Button Command="{Binding DiscardChangesCommand}" Content="↶ Scarta" IsEnabled="{Binding HasUnsavedChanges}" />
+					<Button
+						Command="{Binding SaveChangesCommand}"
+						Content="💾 Salva"
+						IsEnabled="{Binding HasUnsavedChanges}" />
+					<Button
+						Command="{Binding DiscardChangesCommand}"
+						Content="↶ Scarta"
+						IsEnabled="{Binding HasUnsavedChanges}" />
 				</StackPanel>
 
-				<!-- Sinistra: lista istruzioni -->
+				<!--  Sinistra: lista istruzioni  -->
 				<ScrollViewer Grid.Row="1" Grid.Column="0">
 					<ListBox ItemsSource="{Binding EditableInstructions}" SelectedItem="{Binding SelectedInstruction}">
 						<ListBox.ItemTemplate>
 							<DataTemplate x:DataType="models:EditableInstruction">
-								<Border Margin="2" Padding="6" BorderBrush="#DDD" BorderThickness="1" CornerRadius="3">
+								<Border
+									Margin="2"
+									Padding="6"
+									BorderBrush="#DDD"
+									BorderThickness="1"
+									CornerRadius="3">
 									<StackPanel Spacing="4">
 										<StackPanel Orientation="Horizontal" Spacing="8">
-											<TextBlock Width="50" FontWeight="Bold"
-													   Text="{Binding Number, StringFormat='{}{0:D3}'}" />
-											<ComboBox Width="200"
-													  ItemsSource="{Binding DataContext.AvailableInstructions, ElementName=Root}"
-													  SelectedItem="{Binding Name, Mode=TwoWay}" />
+											<TextBlock
+												Width="50"
+												FontWeight="Bold"
+												Text="{Binding Number, StringFormat='{}{0:D3}'}" />
+											<ComboBox
+												Width="200"
+												ItemsSource="{Binding DataContext.AvailableInstructions, ElementName=Root}"
+												SelectedItem="{Binding Name, Mode=TwoWay}" />
 											<ItemsControl x:Name="ParentInstruction" ItemsSource="{Binding VisibleParameterEntries}">
 												<ItemsControl.ItemsPanel>
 													<ItemsPanelTemplate>
@@ -94,21 +124,55 @@
 												</ItemsControl.ItemsPanel>
 												<ItemsControl.ItemTemplate>
 													<DataTemplate x:DataType="models:InstructionParameter">
-														<StackPanel Orientation="Horizontal" Spacing="2">
-															<Button Padding="4"
+														<StackPanel Orientation="Vertical" Spacing="2">
+															<!--  Se ci sono gruppi di risorse: mantieni bottone  -->
+															<Button
+																Padding="4"
+																Background="{Binding IsSelected, Converter={StaticResource ParamSelectedBrushConverter}}"
 																Command="{Binding DataContext.ParameterClickCommand, ElementName=Root}"
 																CommandParameter="{Binding}"
 																Content="{Binding Value}"
-																ToolTip.Tip="Param {Binding Index}"
-																Background="{Binding IsSelected, Converter={StaticResource ParamSelectedBrushConverter}}" />
+																IsVisible="{Binding HasResourceGroups}"
+																ToolTip.Tip="Param {Binding Index}" />
+
+															<!--  Se NON ci sono gruppi: TextBox editabile con validazione range  -->
+															<Border
+																Padding="0"
+																BorderBrush="{Binding IsRangeValid, Converter={StaticResource BooleanToBrushConverter}}"
+																BorderThickness="1"
+																CornerRadius="3"
+																IsVisible="{Binding HasResourceGroups, Converter={StaticResource InverseBooleanConverter}}">
+																<TextBox
+																	Width="60"
+																	HorizontalContentAlignment="Center"
+																	FontFamily="Consolas"
+																	Text="{Binding Value, Mode=TwoWay}">
+																	<ToolTip.Tip>
+																		<StackPanel>
+																			<TextBlock Text="Parametro {Binding Index}" />
+																			<TextBlock Text="Tipo: {Binding Type}" />
+																			<TextBlock Text="Range: {Binding MinValue} - {Binding MaxValue}" />
+																		</StackPanel>
+																	</ToolTip.Tip>
+																</TextBox>
+															</Border>
+
+															<!--  Messaggio di errore range (solo se invalido e senza gruppi)  -->
+															<TextBlock
+																FontSize="10"
+																Foreground="Red"
+																IsVisible="{Binding HasResourceGroups, Converter={StaticResource InverseBooleanConverter}}"
+																Opacity="{Binding IsRangeValid, Converter={StaticResource BooleanToOpacityConverter}}"
+																Text="Valore fuori range" />
 														</StackPanel>
 													</DataTemplate>
 												</ItemsControl.ItemTemplate>
 											</ItemsControl>
 										</StackPanel>
-										<TextBlock FontSize="11"
-												   Foreground="{Binding IsValid, Converter={StaticResource BooleanToBrushConverter}}"
-												   Text="{Binding ValidationSummary}" />
+										<TextBlock
+											FontSize="11"
+											Foreground="{Binding IsValid, Converter={StaticResource BooleanToBrushConverter}}"
+											Text="{Binding ValidationSummary}" />
 									</StackPanel>
 								</Border>
 							</DataTemplate>
@@ -116,40 +180,65 @@
 					</ListBox>
 				</ScrollViewer>
 
-				<GridSplitter Grid.Row="1" Grid.Column="0" HorizontalAlignment="Right" Width="5" />
+				<GridSplitter
+					Grid.Row="1"
+					Grid.Column="0"
+					Width="5"
+					HorizontalAlignment="Right" />
 
-				<!-- Destra: Explorer risorse -->
-				<DockPanel Grid.Row="1" Grid.Column="1" Margin="5,0,0,0">
-					<StackPanel DockPanel.Dock="Top" Spacing="6" Margin="0,0,0,8">
-						<TextBlock FontSize="14" FontWeight="Bold" Text="Explorer Risorse" />
-						<TextBlock Text="Istruzione selezionata:" FontWeight="Bold" />
+				<!--  Destra: Explorer risorse  -->
+				<DockPanel
+					Grid.Row="1"
+					Grid.Column="1"
+					Margin="5,0,0,0">
+					<StackPanel
+						Margin="0,0,0,8"
+						DockPanel.Dock="Top"
+						Spacing="6">
+						<TextBlock
+							FontSize="14"
+							FontWeight="Bold"
+							Text="Explorer Risorse" />
+						<TextBlock FontWeight="Bold" Text="Istruzione selezionata:" />
 						<TextBlock Text="{Binding SelectedInstruction.Name}" />
 						<TextBlock Text="{Binding SelectedParameterIndex, StringFormat='Parametro selezionato: {0}'}" />
-						<TextBox Watermark="Filtro (ID o testo)" Text="{Binding ResourceSearchText, Mode=TwoWay}" />
+						<TextBox Text="{Binding ResourceSearchText, Mode=TwoWay}" Watermark="Filtro (ID o testo)" />
 					</StackPanel>
-					<Border BorderBrush="#CCC" BorderThickness="1" CornerRadius="4" Padding="4">
+					<Border
+						Padding="4"
+						BorderBrush="#CCC"
+						BorderThickness="1"
+						CornerRadius="4">
 						<ScrollViewer>
 							<ItemsControl ItemsSource="{Binding ResourceExplorerOptions}">
 								<ItemsControl.ItemTemplate>
 									<DataTemplate x:DataType="models:ResourceOption">
-										<!-- Sostituisci lo StackPanel interno alla DataTemplate ResourceOption con questo -->
-										<Border Margin="2" Padding="6" BorderBrush="#CCC" BorderThickness="1" CornerRadius="3">
-											<!-- Grid permette l'allineamento verticale vero -->
-											<Grid ColumnDefinitions="Auto,Auto,*" VerticalAlignment="Center">
-												<Button Grid.Column="0"
-														VerticalAlignment="Center"
-														Margin="0,0,10,0"
-														Content="Usa"
-														Command="{Binding DataContext.ApplyResourceOptionCommand, ElementName=Root}"
-														CommandParameter="{Binding}" />
-												<TextBlock Grid.Column="1"
-														   VerticalAlignment="Center"
-														   Width="60"
-														   Text="{Binding Id}"
-														   FontFamily="Consolas" />
-												<TextBlock Grid.Column="2"
-														   VerticalAlignment="Center"
-														   Text="{Binding Display}" />
+										<!--  Sostituisci lo StackPanel interno alla DataTemplate ResourceOption con questo  -->
+										<Border
+											Margin="2"
+											Padding="6"
+											BorderBrush="#CCC"
+											BorderThickness="1"
+											CornerRadius="3">
+											<!--  Grid permette l'allineamento verticale vero  -->
+											<Grid VerticalAlignment="Center" ColumnDefinitions="Auto,Auto,*">
+												<Button
+													Grid.Column="0"
+													Margin="0,0,10,0"
+													VerticalAlignment="Center"
+													Command="{Binding DataContext.ApplyResourceOptionCommand, ElementName=Root}"
+													CommandParameter="{Binding}"
+													Content="Usa" />
+												<TextBlock
+													Grid.Column="1"
+													Width="60"
+													VerticalAlignment="Center"
+													FontFamily="Consolas"
+													Text="{Binding Id}" />
+												<TextBlock
+													Grid.Column="2"
+													VerticalAlignment="Center"
+													Text="{Binding Display}" />
 											</Grid>
 										</Border>
 									</DataTemplate>

@@ -15,10 +15,11 @@ namespace FileViewerApp.Services
         public ConversionService(OpCodeService opCodeService) => _opCodeService = opCodeService;
 
         #region TEXT → BINARY
-        public async Task<byte[]> ConvertTextToBinaryAsync(string textContent, string programName = "MAIN")
+        public Task<byte[]> ConvertTextToBinaryAsync(string textContent, string programName = "MAIN")
         {
             var instructions = ParseTextInstructions(textContent, out string headerName);
-            return GenerateBinaryFromInstructions(instructions, headerName ?? programName);
+            var data = GenerateBinaryFromInstructions(instructions, headerName ?? programName);
+            return Task.FromResult(data);
         }
         public async Task<byte[]> ConvertTextFileAsync(string path) => await ConvertTextToBinaryAsync(await File.ReadAllTextAsync(path), Path.GetFileNameWithoutExtension(path));
 
@@ -35,10 +36,15 @@ namespace FileViewerApp.Services
                 lines.Remove(headerLine);
             }
             foreach (var line in lines)
-                if (TryParseTextInstruction(line.Trim(), out var instr)) list.Add(instr);
+            {
+                if (TryParseTextInstruction(line.Trim(), out var instr) && instr != null)
+                {
+                    list.Add(instr);
+                }
+            }
             return list;
         }
-        private bool TryParseTextInstruction(string line, out Instruction instruction)
+        private bool TryParseTextInstruction(string line, out Instruction? instruction)
         {
             instruction = null;
             try
@@ -82,7 +88,12 @@ namespace FileViewerApp.Services
         #endregion
 
         #region BINARY → TEXT
-        public async Task<string> ConvertBinaryToTextAsync(byte[] binary) => GenerateTextFromInstructions(ExtractInstructionsFromBinary(binary, out string header), header);
+        public Task<string> ConvertBinaryToTextAsync(byte[] binary)
+        {
+            var instructions = ExtractInstructionsFromBinary(binary, out string header);
+            var text = GenerateTextFromInstructions(instructions, header);
+            return Task.FromResult(text);
+        }
         public async Task<string> ConvertBinaryFileAsync(string path) => await ConvertBinaryToTextAsync(await File.ReadAllBytesAsync(path));
 
         public List<Instruction> ExtractInstructionsFromBinary(byte[] data, out string header)

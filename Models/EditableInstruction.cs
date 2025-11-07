@@ -15,6 +15,40 @@ namespace FileViewerApp.Models
         public int Value { get => _value; set => this.RaiseAndSetIfChanged(ref _value, value); }
         public InstructionParameter(int index, int value) { Index = index; _value = value; }
 
+        // Metadata (filled from OpCodeInfo / INFO.XML)
+        private bool _hasResourceGroups; // true se il PAR ha uno o più RESGROUP definiti
+        public bool HasResourceGroups { get => _hasResourceGroups; set => this.RaiseAndSetIfChanged(ref _hasResourceGroups, value); }
+        private double _minValue = int.MinValue;
+        public double MinValue { get => _minValue; set => this.RaiseAndSetIfChanged(ref _minValue, value); }
+        private double _maxValue = int.MaxValue;
+        public double MaxValue { get => _maxValue; set => this.RaiseAndSetIfChanged(ref _maxValue, value); }
+        private string _type = "INT"; // default
+        public string Type { get => _type; set => this.RaiseAndSetIfChanged(ref _type, value); }
+        private bool _isRangeValid = true;
+        public bool IsRangeValid { get => _isRangeValid; private set => this.RaiseAndSetIfChanged(ref _isRangeValid, value); }
+        public bool IsNumericType => string.Equals(Type, "INT", StringComparison.OrdinalIgnoreCase) || string.Equals(Type, "NUM", StringComparison.OrdinalIgnoreCase);
+
+        public void SetMetadata(bool hasGroups, string? type, double min, double max, double? defaultValue)
+        {
+            HasResourceGroups = hasGroups;
+            if (!string.IsNullOrWhiteSpace(type)) Type = type.Trim();
+            MinValue = min;
+            MaxValue = max;
+            if (!hasGroups && defaultValue.HasValue && _value == 0)
+            {
+                _value = (int)Math.Round(defaultValue.Value);
+                this.RaisePropertyChanged(nameof(Value));
+            }
+            ValidateRange();
+        }
+
+        private void ValidateRange()
+        {
+            if (HasResourceGroups) { IsRangeValid = true; return; }
+            if (!IsNumericType) { IsRangeValid = true; return; }
+            IsRangeValid = _value >= MinValue && _value <= MaxValue;
+        }
+
         private ObservableCollection<ResourceOption>? _options;
         public ObservableCollection<ResourceOption>? Options => _options;
         public bool HasOptions => _options != null && _options.Count > 0;
@@ -30,6 +64,7 @@ namespace FileViewerApp.Models
                 if (value?.Id.HasValue == true && Value != value.Id.Value)
                 {
                     Value = value.Id.Value; // aggiorna Value -> triggers RaiseAndSetIfChanged
+                    ValidateRange();
                 }
             }
         }
@@ -409,6 +444,18 @@ namespace FileViewerApp.Models
                 }
                 System.Diagnostics.Debug.WriteLine($"[RES] Param {i} groups count={opts.Count()} value={_parameters[i]}");
                 ParameterEntries[i].SetOptions(opts, _parameters[i]);
+
+                // Metadata da OpCodeInfo se disponibile
+                var info = svc.GetOpCodeInfo(OpCode);
+                ParameterInfo? pinfo = null;
+                if (info != null && i < info.Parameters.Count)
+                    pinfo = info.Parameters[i];
+                var hasGroups = opts.Any();
+                var type = pinfo?.Type ?? null;
+                double min = pinfo?.MinValue ?? int.MinValue;
+                double max = pinfo?.MaxValue ?? int.MaxValue;
+                double? def = pinfo?.DefaultValue;
+                ParameterEntries[i].SetMetadata(hasGroups, type, min, max, def);
             }
         }
 

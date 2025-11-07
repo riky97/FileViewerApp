@@ -176,7 +176,12 @@ namespace FileViewerApp.Services
                 int paramIndex = 0;
                 foreach (var par in cmd.Elements("PAR"))
                 {
-                    var groups = par.Elements("RESGROUP").Select(r => r.Attribute("Name")?.Value).Where(v => !string.IsNullOrWhiteSpace(v)).Distinct(StringComparer.OrdinalIgnoreCase).ToList();
+                    var groups = par.Elements("RESGROUP")
+                        .Select(r => r.Attribute("Name")?.Value)
+                        .Where(v => !string.IsNullOrWhiteSpace(v))
+                        .Select(v => v!)
+                        .Distinct(StringComparer.OrdinalIgnoreCase)
+                        .ToList();
                     if (groups.Count > 0)
                     {
                         nameDict[paramIndex] = groups;
