@@ -1,0 +1,409 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<Root>
+  <CMD Name="FINE" ID="0" Vers="1" Active="True" IndentMode="NONE" Descr="fine programma" VersNote="Imported 12/05/2011 from INFO.CFG" ImgName="End" />
+  <CMD Name="NULLA" ID="1" Vers="1" Active="True" IndentMode="NONE" Descr="istruzione vuota" VersNote="Imported 12/05/2011 from INFO.CFG" ImgName="" />
+  <CMD Name="AMUOVI" ID="3" Vers="1" Active="True" IndentMode="NONE" Descr="Movimento di un asse a quota assoluta della zona corrente" VersNote="Imported 12/05/2011 from INFO.CFG" ImgName="Instruction">
+    <PAR Name="Asse" Value="1" Min="1" Max="20" Type="INT" Descr="">
+      <RESGROUP Name="AXIS" />
+    </PAR>
+    <PAR Name="Quota (mm)" Value="0" Min="-20000000" Max="20000000" Type="FLOAT" Descr="quota in mm (gradi se asse girevole)" />
+    <PAR Name="+=NA -=NC" Value="0" Min="-512" Max="512" Type="INT" Descr="ingresso o flag che arresta il moto: 0 = nessuno, positivo = arresta il moto quando assume valore 1, negativo =arresta il moto quando assume valore 0">
+      <RESGROUP Name="DIN" />
+      <RESGROUP Name="DOUT" />
+      <RESGROUP Name="FLAG" />
+    </PAR>
+  </CMD>
+  <CMD Name="RMUOVI" ID="4" Vers="1" Active="True" IndentMode="NONE" Descr="" VersNote="Imported 12/05/2011 from INFO.CFG" ImgName="Instruction">
+    <PAR Name="Asse" Value="1" Min="1" Max="20" Type="INT" Descr="">
+      <RESGROUP Name="AXIS" />
+    </PAR>
+    <PAR Name="spazio mov. (mm)" Value="0" Min="-10000000" Max="10000000" Type="FLOAT" Descr="" />
+    <PAR Name="+=NA -=NC" Value="0" Min="-512" Max="512" Type="INT" Descr="ingresso o flag che arresta il moto: 0 = nessuno, positivo = arresta il moto quando assume valore 1, negativo =arresta il moto quando assume valore 0">
+      <RESGROUP Name="DIN" />
+      <RESGROUP Name="DOUT" />
+      <RESGROUP Name="FLAG" />
+    </PAR>
+  </CMD>
+  <CMD Name="INIZ MEM" ID="5" Vers="1" Active="True" IndentMode="NONE" Descr="Inizializza una memoria ad un valore" VersNote="Imported 12/05/2011 from INFO.CFG" ImgName="Instruction">
+    <PAR Name="Mem" Value="1" Min="1" Max="1024" Type="INT" Descr="Memoria da inizializzare">
+      <RESGROUP Name="MEM" />
+    </PAR>
+    <PAR Name="Valore" Value="0" Min="-10000000" Max="10000000" Type="INT" Descr="Valore da assegnare alla memoria">
+      <RESGROUP Name="Cmd_ATM" />
+      <RESGROUP Name="Costanti" />
+    </PAR>
+  </CMD>
+  <CMD Name="LOGICA" ID="7" Vers="1" Active="True" IndentMode="NONE" Descr="Valuta una combinazione logica AND o OR comprendendo fino a 6 elementi" VersNote="Imported 12/05/2011 from INFO.CFG" ImgName="Instruction">
+    <PAR Name="Operazione" Value="0" Min="0" Max="2" Type="INT" Descr="0=AND, 1=OR">
+      <RESGROUP Name="Cmd_Logica" />
+    </PAR>
+    <PAR Name="Risultato" Value="1" Min="1" Max="512" Type="INT" Descr="flag / uscita dove scrivere il risultato">
+      <RESGROUP Name="DIN" />
+      <RESGROUP Name="DOUT" />
+      <RESGROUP Name="FLAG" />
+    </PAR>
+    <PAR Name="1°Elemento" Value="0" Min="-512" Max="512" Type="INT" Descr="negativo = numero dell'ingresso / uscita / flag da prendere invertito, 0 = nulla da aggiungere all'operazione">
+      <RESGROUP Name="DIN" />
+      <RESGROUP Name="DOUT" />
+      <RESGROUP Name="FLAG" />
+    </PAR>
+    <PAR Name="2°Elemento" Value="0" Min="-512" Max="512" Type="INT" Descr="negativo = numero dell'ingresso / uscita / flag da prendere invertito, 0 = nulla da aggiungere all'operazione">
+      <RESGROUP Name="DIN" />
+      <RESGROUP Name="DOUT" />
+      <RESGROUP Name="FLAG" />
+    </PAR>
+    <PAR Name="3°Elemento" Value="0" Min="-512" Max="512" Type="INT" Descr="negativo = numero dell'ingresso / uscita / flag da prendere invertito, 0 = nulla da aggiungere all'operazione">
+      <RESGROUP Name="DIN" />
+      <RESGROUP Name="DOUT" />
+      <RESGROUP Name="FLAG" />
+    </PAR>
+    <PAR Name="4°Elemento" Value="0" Min="-512" Max="512" Type="INT" Descr="negativo = numero dell'ingresso / uscita / flag da prendere invertito, 0 = nulla da aggiungere all'operazione">
+      <RESGROUP Name="DIN" />
+      <RESGROUP Name="DOUT" />
+      <RESGROUP Name="FLAG" />
+    </PAR>
+    <PAR Name="5°Elemento" Value="0" Min="-512" Max="512" Type="INT" Descr="negativo = numero dell'ingresso / uscita / flag da prendere invertito, 0 = nulla da aggiungere all'operazione">
+      <RESGROUP Name="DIN" />
+      <RESGROUP Name="DOUT" />
+      <RESGROUP Name="FLAG" />
+    </PAR>
+    <PAR Name="6°Elemento" Value="0" Min="-512" Max="512" Type="INT" Descr="negativo = numero dell'ingresso / uscita / flag da prendere invertito, 0 = nulla da aggiungere all'operazione">
+      <RESGROUP Name="DIN" />
+      <RESGROUP Name="DOUT" />
+      <RESGROUP Name="FLAG" />
+    </PAR>
+  </CMD>
+  <CMD Name="AMUOVI MEM" ID="9" Vers="1" Active="True" IndentMode="NONE" Descr="" VersNote="Imported 12/05/2011 from INFO.CFG" ImgName="Instruction">
+    <PAR Name="asse" Value="1" Min="1" Max="20" Type="INT" Descr="Asse da muovere">
+      <RESGROUP Name="AXIS" />
+    </PAR>
+    <PAR Name="mem[quota(0,01 mm)]" Value="1" Min="1" Max="1024" Type="INT" Descr="Memoria dove è scritta la quota">
+      <RESGROUP Name="MEM" />
+    </PAR>
+    <PAR Name="+=NA -=NC" Value="0" Min="-512" Max="512" Type="INT" Descr="ingresso o flag che arresta il moto: 0 = nessuno, positivo = arresta il moto quando assume valore 1, negativo =arresta il moto quando assume valore 0">
+      <RESGROUP Name="DIN" />
+      <RESGROUP Name="DOUT" />
+      <RESGROUP Name="FLAG" />
+    </PAR>
+  </CMD>
+  <CMD Name="VELOCITA" ID="10" Vers="1" Active="True" IndentMode="NONE" Descr="Seleziona la velocità di riferimento per uno o più assi" VersNote="Imported 12/05/2011 from INFO.CFG" ImgName="Instruction">
+    <PAR Name="perc." Value="1" Min="1" Max="100" Type="INT" Descr="Velocità %">
+      <RESGROUP Name="Cmd_Velocita" />
+    </PAR>
+    <PAR Name="asse" Value="0" Min="0" Max="20" Type="INT" Descr="Asse da movimentare (0=tutti gli assi coinvolti nel movimento di zona, -1=tutti)">
+      <RESGROUP Name="AXIS" />
+    </PAR>
+  </CMD>
+  <CMD Name="AZZERA" ID="12" Vers="1" Active="True" IndentMode="NONE" Descr="" VersNote="Imported 12/05/2011 from INFO.CFG" ImgName="Instruction">
+    <PAR Name="Asse" Value="1" Min="1" Max="5" Type="INT" Descr="">
+      <RESGROUP Name="AXIS" />
+    </PAR>
+  </CMD>
+  <CMD Name="IF" ID="13" Vers="1" Active="True" IndentMode="ADD_INDENT" Descr="IF condizionato su DI/DO/FLAGS" VersNote="Imported 12/05/2011 from INFO.CFG" ImgName="If">
+    <PAR Name="n. flag/din/dout" Value="0" Min="-512" Max="512" Type="INT" Descr="Condizione: parametro = 1 o not">
+      <RESGROUP Name="DIN" />
+      <RESGROUP Name="DOUT" />
+      <RESGROUP Name="FLAG" />
+    </PAR>
+  </CMD>
+  <CMD Name="ELSE" ID="14" Vers="1" Active="True" IndentMode="REMOVE_AND_ADD_INDENT" Descr="ELSE da usare all'uinterno di un'istruzione IF" VersNote="Imported 12/05/2011 from INFO.CFG" ImgName="Else" />
+  <CMD Name="END IF" ID="15" Vers="1" Active="True" IndentMode="REMOVE_INDENT" Descr="command to close an IF instruction" VersNote="Imported 12/05/2011 from INFO.CFG" ImgName="Endif" />
+  <CMD Name="FORZA" ID="16" Vers="1" Active="True" IndentMode="NONE" Descr="Controlla un output o una flag" VersNote="Imported 12/05/2011 from INFO.CFG" ImgName="Instruction">
+    <PAR Name="n. flag/din/dout" Value="0" Min="0" Max="512" Type="INT" Descr="Identificatore dell'output">
+      <RESGROUP Name="DIN" />
+      <RESGROUP Name="DOUT" />
+      <RESGROUP Name="FLAG" />
+    </PAR>
+    <PAR Name="Valore" Value="0" Min="0" Max="1" Type="BOOL" Descr="Valore da associare">
+      <RESGROUP Name="BOOL" />
+    </PAR>
+  </CMD>
+  <CMD Name="ASPETTA" ID="17" Vers="1" Active="True" IndentMode="NONE" Descr="Sospende l'esecuzione del programma finché un DI / DO/ Flag assumono un determinato valore" VersNote="Imported 12/05/2011 from INFO.CFG" ImgName="Aspetta">
+    <PAR Name="n. flag/din/dout" Value="1" Min="1" Max="512" Type="INT" Descr="Digital input, output or flag whose value determinates the wait status">
+      <RESGROUP Name="DIN" />
+      <RESGROUP Name="DOUT" />
+      <RESGROUP Name="FLAG" />
+    </PAR>
+    <PAR Name="val" Value="0" Min="0" Max="1" Type="BOOL" Descr="Value to wait for to restart execution">
+      <RESGROUP Name="BOOL" />
+    </PAR>
+    <PAR Name="tmas (0=inf)" Value="0" Min="0" Max="86400" Type="FLOAT" Descr="Maximum time amount to wait (0=indefinite)" />
+    <PAR Name="n. flag su timeout" Value="0" Min="0" Max="512" Type="INT" Descr="Digital output or flag to assing value 1 in case of timeout (0=Stop on timeout)">
+      <RESGROUP Name="DIN" />
+      <RESGROUP Name="DOUT" />
+      <RESGROUP Name="FLAG" />
+    </PAR>
+  </CMD>
+  <CMD Name="PIU" ID="19" Vers="1" Active="True" IndentMode="NONE" Descr="Esegue in contemporanea l'istruzione precedente e successiva" VersNote="Imported 12/05/2011 from INFO.CFG" ImgName="Piu" />
+  <CMD Name="PAUSA" ID="20" Vers="1" Active="True" IndentMode="NONE" Descr="Sospende l'esecuzione del programma per un tempo specificato" VersNote="Imported 12/05/2011 from INFO.CFG" ImgName="Aspetta">
+    <PAR Name="Tempo" Value="0" Min="0" Max="360000" Type="FLOAT" Descr="Tempo di pausa" />
+  </CMD>
+  <CMD Name="ACCEL" ID="21" Vers="1" Active="True" IndentMode="NONE" Descr="Seleziona l'accelerazione di riferimento per uno o più assi" VersNote="Imported 12/05/2011 from INFO.CFG" ImgName="Instruction">
+    <PAR Name="perc." Value="1" Min="1" Max="100" Type="INT" Descr="Per assi controllati in %, su inverter non ha effetto" />
+    <PAR Name="asse" Value="0" Min="0" Max="20" Type="INT" Descr="Asse da movimentare (0=tutti gli assi coinvolti nel movimento di zona, -1=tutti)">
+      <RESGROUP Name="AXIS" />
+    </PAR>
+  </CMD>
+  <CMD Name="AZIONA" ID="36" Vers="1" Active="True" IndentMode="NONE" Descr="Accende un'uscita fin quando non arriva uno specifico ingresso" VersNote="Imported 12/05/2011 from INFO.CFG" ImgName="Instruction">
+    <PAR Name="n. flag/dout" Value="0" Min="0" Max="512" Type="INT" Descr="Output da attivare">
+      <RESGROUP Name="DIN" />
+      <RESGROUP Name="DOUT" />
+      <RESGROUP Name="FLAG" />
+    </PAR>
+    <PAR Name="Valore" Value="0" Min="0" Max="1" Type="BOOL" Descr="Valore output">
+      <RESGROUP Name="BOOL" />
+    </PAR>
+    <PAR Name="n. flag/din" Value="0" Min="0" Max="512" Type="INT" Descr="Input da attendere">
+      <RESGROUP Name="DIN" />
+      <RESGROUP Name="FLAG" />
+    </PAR>
+    <PAR Name="Valore" Value="0" Min="0" Max="1" Type="BOOL" Descr="Valore input">
+      <RESGROUP Name="BOOL" />
+    </PAR>
+    <PAR Name="Tempo max" Value="0" Min="0" Max="99999" Type="FLOAT" Descr="Tempo massimo per eseguire il comando" />
+    <PAR Name="Reset" Value="0" Min="0" Max="1" Type="BOOL" Descr="Una volta eseguito il comando: se 0 mantiene lo stato attuale dell'output se 1 riporta l'output allo stato percedente">
+      <RESGROUP Name="BOOL" />
+    </PAR>
+  </CMD>
+  <CMD Name="LABEL" ID="37" Vers="1" Active="True" IndentMode="NONE" Descr="command to identify an entry point for the CALL instruction (see CALL instruction)" VersNote="Imported 12/05/2011 from INFO.CFG" ImgName="Label">
+    <PAR Name="Label" Value="0" Min="0" Max="200" Type="INT" Descr="Label identifier" />
+  </CMD>
+  <CMD Name="CALL" ID="38" Vers="1" Active="True" IndentMode="NONE" Descr="command to execute an external set of instructions (see LABEL - ENDCALL instruction)" VersNote="Imported 12/05/2011 from INFO.CFG" ImgName="Call">
+    <PAR Name="Label" Value="0" Min="0" Max="200" Type="INT" Descr="Label to call (0=first line of the program)" />
+    <PAR Name="Prog Num" Value="0" Min="-512" Max="200" Type="INT" Descr="Program number where to find the label (0=this program)">
+      <RESGROUP Name="PROGRAM" />
+    </PAR>
+    <PAR Name="Iterations" Value="0" Min="0" Max="32000" Type="INT" Descr="Number of iterations (0=the execution jumps without returning here)" />
+  </CMD>
+  <CMD Name="ENDCALL" ID="39" Vers="1" Active="True" IndentMode="NONE" Descr="command to close a CALL instruction on a specified LABEL" VersNote="Imported 12/05/2011 from INFO.CFG" ImgName="Label" />
+  <CMD Name="STOP" ID="40" Vers="1" Active="True" IndentMode="NONE" Descr="" VersNote="Imported 12/05/2011 from INFO.CFG" ImgName="Stop" />
+  <CMD Name="IMPULSO" ID="49" Vers="1" Active="True" IndentMode="NONE" Descr="Accende un uscita per un tempo specificato" VersNote="Imported 12/05/2011 from INFO.CFG" ImgName="Instruction">
+    <PAR Name="n. flag/dout" Value="1" Min="1" Max="512" Type="INT" Descr="Output da accendere (DO=1)">
+      <RESGROUP Name="DOUT" />
+      <RESGROUP Name="FLAG" />
+    </PAR>
+    <PAR Name="Tempo" Value="0" Min="0" Max="99999,99" Type="FLOAT" Descr="Tempo di accensione" />
+  </CMD>
+  <CMD Name="SET PRESA" ID="54" Vers="1" Active="True" IndentMode="NONE" Descr="" VersNote="" ImgName="">
+    <PAR Name="" Value="0" Min="-99999" Max="99999" Type="FLOAT" Descr="" />
+    <PAR Name="" Value="0" Min="0" Max="65535" Type="INT" Descr="" />
+    <PAR Name="" Value="0" Min="0" Max="65535" Type="INT" Descr="" />
+    <PAR Name="" Value="0" Min="0" Max="65535" Type="INT" Descr="" />
+    <PAR Name="" Value="0" Min="0" Max="65535" Type="INT" Descr="" />
+    <PAR Name="" Value="0" Min="0" Max="65535" Type="INT" Descr="" />
+    <PAR Name="" Value="0" Min="0" Max="65535" Type="INT" Descr="" />
+    <PAR Name="" Value="0" Min="0" Max="65535" Type="INT" Descr="" />
+  </CMD>
+  <CMD Name="RIL. PEZZO" ID="57" Vers="1" Active="True" IndentMode="NONE" Descr="" VersNote="" ImgName="" />
+  <CMD Name="ANTICIPO" ID="63" Vers="1" Active="True" IndentMode="NONE" Descr="" VersNote="" ImgName="">
+    <PAR Name="" Value="1" Min="1" Max="20" Type="INT" Descr="" />
+    <PAR Name="" Value="0" Min="-999999" Max="999999" Type="FLOAT" Descr="" />
+  </CMD>
+  <CMD Name="MIS. SPESS" ID="65" Vers="1" Active="True" IndentMode="NONE" Descr="" VersNote="Imported 12/05/2011 from INFO.CFG" ImgName="">
+    <PAR Name="" Value="0" Min="0" Max="250" Type="FLOAT" Descr="" />
+    <PAR Name="" Value="0" Min="0" Max="10" Type="FLOAT" Descr="" />
+  </CMD>
+  <CMD Name="CHECK I/O" ID="71" Vers="1" Active="True" IndentMode="NONE" Descr="Verifica che un ingresso sia uguale ad un valore specificato" VersNote="Imported 12/05/2011 from INFO.CFG" ImgName="Instruction">
+    <PAR Name="IOF da monitorare" Value="1" Min="1" Max="512" Type="INT" Descr="">
+      <RESGROUP Name="DIN" />
+      <RESGROUP Name="FLAG" />
+    </PAR>
+    <PAR Name="Stato normale di PAR1" Value="0" Min="0" Max="1" Type="BOOL" Descr="">
+      <RESGROUP Name="BOOL" />
+    </PAR>
+    <PAR Name="DO/FLAG che viene alzata in caso di stato diverso" Value="0" Min="0" Max="512" Type="INT" Descr="">
+      <RESGROUP Name="FLAG" />
+    </PAR>
+  </CMD>
+  <CMD Name="END CHECK" ID="72" Vers="1" Active="True" IndentMode="NONE" Descr="Termina il controllo" VersNote="Imported 12/05/2011 from INFO.CFG" ImgName="Instruction">
+    <PAR Name="DIN/Flag che si smette di monitorare" Value="0" Min="0" Max="512" Type="INT" Descr="">
+      <RESGROUP Name="DIN" />
+      <RESGROUP Name="FLAG" />
+    </PAR>
+  </CMD>
+  <CMD Name="SEL ZONA" ID="73" Vers="1" Active="True" IndentMode="NONE" Descr="" VersNote="" ImgName="">
+    <PAR Name="Zona" Value="0" Min="0" Max="3" Type="INT" Descr="">
+      <RESGROUP Name="Zone" />
+    </PAR>
+  </CMD>
+  <CMD Name="MUOVI ZONA" ID="74" Vers="1" Active="True" IndentMode="NONE" Descr="" VersNote="Imported 12/05/2011 from INFO.CFG" ImgName="Instruction">
+    <PAR Name="" Value="0" Min="0" Max="5" Type="INT" Descr="">
+      <RESGROUP Name="Zone" />
+    </PAR>
+    <PAR Name="" Value="0" Min="-9999999" Max="9999999" Type="FLOAT" Descr="" />
+    <PAR Name="" Value="0" Min="-9999999" Max="9999999" Type="FLOAT" Descr="" />
+    <PAR Name="" Value="0" Min="-9999999" Max="9999999" Type="FLOAT" Descr="" />
+    <PAR Name="" Value="0" Min="-9999999" Max="9999999" Type="FLOAT" Descr="" />
+  </CMD>
+  <CMD Name="FILTRO" ID="75" Vers="1" Active="True" IndentMode="NONE" Descr="Imposta il grado di ammorbidimento del profilo di velocità" VersNote="Imported 12/05/2011 from INFO.CFG" ImgName="Instruction">
+    <PAR Name="Filtro" Value="0" Min="0" Max="100" Type="INT" Descr="" />
+  </CMD>
+  <CMD Name="JOG" ID="76" Vers="1" Active="True" IndentMode="NONE" Descr="" VersNote="Imported 12/05/2011 from INFO.CFG" ImgName="Instruction">
+    <PAR Name="Asse" Value="1" Min="1" Max="6" Type="INT" Descr="Asse da spostare" />
+    <PAR Name="Direzzione" Value="0" Min="0" Max="1" Type="BOOL" Descr="">
+      <RESGROUP Name="BOOL" />
+    </PAR>
+    <PAR Name="Vel" Value="0" Min="-100" Max="100" Type="FLOAT" Descr="Percentuale rispetto alla massima" />
+  </CMD>
+  <CMD Name="VUOTO" ID="81" Vers="1" Active="True" IndentMode="NONE" Descr="" VersNote="" ImgName="">
+    <PAR Name="" Value="0" Min="0" Max="1" Type="INT" Descr="">
+      <RESGROUP Name="BOOL" />
+    </PAR>
+  </CMD>
+  <CMD Name="END SPESS." ID="88" Vers="1" Active="True" IndentMode="NONE" Descr="" VersNote="" ImgName="" />
+  <CMD Name="WR_EVENT" ID="92" Vers="1" Active="True" IndentMode="NONE" Descr="" VersNote="Scrive una stringa nel file events" ImgName="Instruction">
+    <PAR Name="ID Stringa" Value="0" Min="0" Max="49" Type="INT" Descr="">
+      <RESGROUP Name="WR_EVENT" />
+    </PAR>
+    <PAR Name="Mem" Value="0" Min="0" Max="1024" Type="INT" Descr="">
+      <RESGROUP Name="MEM" />
+    </PAR>
+    <PAR Name="Mem" Value="0" Min="0" Max="1024" Type="INT" Descr="">
+      <RESGROUP Name="MEM" />
+    </PAR>
+    <PAR Name="Mem" Value="0" Min="0" Max="1024" Type="INT" Descr="">
+      <RESGROUP Name="MEM" />
+    </PAR>
+    <PAR Name="Mem" Value="0" Min="0" Max="1024" Type="INT" Descr="">
+      <RESGROUP Name="MEM" />
+    </PAR>
+    <PAR Name="Mem" Value="0" Min="0" Max="1024" Type="INT" Descr="">
+      <RESGROUP Name="MEM" />
+    </PAR>
+    <PAR Name="Mem" Value="0" Min="0" Max="1024" Type="INT" Descr="">
+      <RESGROUP Name="MEM" />
+    </PAR>
+    <PAR Name="Mem" Value="0" Min="0" Max="1024" Type="INT" Descr="">
+      <RESGROUP Name="MEM" />
+    </PAR>
+  </CMD>
+  <CMD Name="G_MISSIONE" ID="94" Vers="1" Active="True" IndentMode="NONE" Descr="" VersNote="" ImgName="" />
+  <CMD Name="JOB" ID="95" Vers="1" Active="True" IndentMode="NONE" Descr="" VersNote="" ImgName="">
+    <PAR Name="" Value="0" Min="-1" Max="100" Type="INT" Descr="">
+      <RESGROUP Name="Cmd_job" />
+    </PAR>
+  </CMD>
+  <CMD Name="ERRORE" ID="96" Vers="1" Active="True" IndentMode="NONE" Descr="Manda in errore il robot" VersNote="Imported 12/05/2011 from INFO.CFG" ImgName="Error">
+    <PAR Name="Error Code" Value="1" Min="1" Max="300" Type="INT" Descr="">
+      <RESGROUP Name="ERROR" />
+    </PAR>
+  </CMD>
+  <CMD Name="PROCESSO" ID="97" Vers="1" Active="True" IndentMode="NONE" Descr="Esegue un processo" VersNote="Imported 12/05/2011 from INFO.CFG" ImgName="Call">
+    <PAR Name="Programma" Value="1" Min="1" Max="200" Type="INT" Descr="">
+      <RESGROUP Name="PROGRAM" />
+    </PAR>
+    <PAR Name="Ripetizioni" Value="0" Min="0" Max="99999" Type="INT" Descr="Se 0 cicla in continuo" />
+  </CMD>
+  <CMD Name="GANCIO" ID="100" Vers="1" Active="True" IndentMode="NONE" Descr="" VersNote="Imported 12/05/2011 from INFO.CFG" ImgName="Instruction">
+    <PAR Name="" Value="1" Min="1" Max="4" Type="INT" Descr="" />
+    <PAR Name="" Value="0" Min="-9999999" Max="9999999" Type="FLOAT" Descr="" />
+    <PAR Name="" Value="1" Min="1" Max="2" Type="INT" Descr="" />
+  </CMD>
+  <CMD Name="ASPETTA MEM" ID="101" Vers="1" Active="True" IndentMode="NONE" Descr="" VersNote="Imported 12/05/2011 from INFO.CFG" ImgName="Aspetta">
+    <PAR Name="Mem" Value="1" Min="1" Max="512" Type="INT" Descr="memoria da controllare">
+      <RESGROUP Name="MEM" />
+    </PAR>
+    <PAR Name="MemValMin" Value="0" Min="0" Max="512" Type="INT" Descr="memoria contenente il valore minimo accettato (0 = senza limite inferiore)">
+      <RESGROUP Name="MEM" />
+    </PAR>
+    <PAR Name="MemValMax" Value="0" Min="0" Max="512" Type="INT" Descr="memoria contenente il valore massimo accettato (0 = senza limite superiore)">
+      <RESGROUP Name="MEM" />
+    </PAR>
+    <PAR Name="Tempo" Value="0" Min="0" Max="86400" Type="FLOAT" Descr="attesa massima in secondi (0 = indefinitamente)">
+      <RESGROUP Name="TimeOut" />
+    </PAR>
+    <PAR Name="Flag" Value="0" Min="0" Max="512" Type="INT" Descr="flag / uscita da mettere a 1 in caso di timeout (0 = stop con errore timeout)">
+      <RESGROUP Name="DOUT" />
+      <RESGROUP Name="FLAG" />
+    </PAR>
+  </CMD>
+  <CMD Name="OP. MEM" ID="102" Vers="1" Active="True" IndentMode="NONE" Descr="" VersNote="Imported 12/05/2011 from INFO.CFG" ImgName="Aspetta">
+    <PAR Name="" Value="1" Min="1" Max="1024" Type="INT" Descr="Prima Memoria">
+      <RESGROUP Name="MEM" />
+    </PAR>
+    <PAR Name="" Value="1" Min="1" Max="4" Type="INT" Descr="Operatore">
+      <RESGROUP Name="Cmd_Op" />
+    </PAR>
+    <PAR Name="" Value="1" Min="1" Max="1024" Type="INT" Descr="Seconda memoria">
+      <RESGROUP Name="MEM" />
+    </PAR>
+    <PAR Name="" Value="1" Min="1" Max="1024" Type="INT" Descr="Dove scrivere il risultato">
+      <RESGROUP Name="MEM" />
+    </PAR>
+  </CMD>
+  <CMD Name="OP. NUM" ID="103" Vers="1" Active="True" IndentMode="NONE" Descr="" VersNote="Imported 12/05/2011 from INFO.CFG" ImgName="Instruction">
+    <PAR Name="" Value="1" Min="1" Max="1024" Type="INT" Descr="Memoria">
+      <RESGROUP Name="MEM" />
+    </PAR>
+    <PAR Name="" Value="1" Min="1" Max="4" Type="INT" Descr="Operatore">
+      <RESGROUP Name="Cmd_Op" />
+    </PAR>
+    <PAR Name="" Value="0" Min="-9999999" Max="9999999" Type="INT" Descr="Numero" />
+    <PAR Name="" Value="1" Min="1" Max="1024" Type="INT" Descr="Dove scrivere il risultato">
+      <RESGROUP Name="MEM" />
+    </PAR>
+  </CMD>
+  <CMD Name="IF_MEM" ID="104" Vers="2" Active="True" IndentMode="ADD_INDENT" Descr="" VersNote="aggiunta memoria per il compare" ImgName="If">
+    <PAR Name="mem conf." Value="1" Min="1" Max="1024" Type="INT" Descr="Prima memoria">
+      <RESGROUP Name="MEM" />
+    </PAR>
+    <PAR Name="cmp" Value="0" Min="-2" Max="2" Type="INT" Descr="Criterio di comparazione">
+      <RESGROUP Name="Cmd_If" />
+    </PAR>
+    <PAR Name="mem cmp" Value="1" Min="1" Max="1024" Type="INT" Descr="Seconda memoria">
+      <RESGROUP Name="MEM" />
+    </PAR>
+    <PAR Name="mem TOLL" Value="0" Min="0" Max="1024" Type="INT" Descr="+/- seconda memoria">
+      <RESGROUP Name="MEM" />
+    </PAR>
+  </CMD>
+  <CMD Name="IF_NUM" ID="105" Vers="1" Active="True" IndentMode="ADD_INDENT" Descr="" VersNote="Imported 12/05/2011 from INFO.CFG" ImgName="If">
+    <PAR Name="Mem" Value="1" Min="1" Max="1024" Type="INT" Descr="Memoria">
+      <RESGROUP Name="MEM" />
+    </PAR>
+    <PAR Name="Comparator" Value="0" Min="-2" Max="2" Type="INT" Descr="Criterio di comparazione">
+      <RESGROUP Name="Cmd_If" />
+    </PAR>
+    <PAR Name="Paragone" Value="0" Min="-9999999" Max="9999999" Type="INT" Descr="Valore di paragone">
+      <RESGROUP Name="Costanti" />
+      <RESGROUP Name="Cmd_ATM" />
+    </PAR>
+  </CMD>
+  <CMD Name="SET TERNA" ID="106" Vers="1" Active="True" IndentMode="NONE" Descr="" VersNote="" ImgName="" />
+  <CMD Name="OK PRESA" ID="107" Vers="1" Active="True" IndentMode="NONE" Descr="" VersNote="" ImgName="" />
+  <CMD Name="ALLIN CELLA" ID="108" Vers="1" Active="False" IndentMode="NONE" Descr="" VersNote="Imported 12/05/2011 from INFO.CFG" ImgName="Instruction">
+    <PAR Name="" Value="1" Min="1" Max="255" Type="INT" Descr="" />
+  </CMD>
+  <CMD Name="MOV CELLA" ID="109" Vers="1" Active="True" IndentMode="NONE" Descr="" VersNote="Imported 12/05/2011 from INFO.CFG" ImgName="Instruction">
+    <PAR Name="" Value="1" Min="1" Max="255" Type="INT" Descr="" />
+  </CMD>
+  <CMD Name="CHECK LOC" ID="110" Vers="1" Active="True" IndentMode="NONE" Descr="" VersNote="Imported 12/05/2011 from INFO.CFG" ImgName="Instruction">
+    <PAR Name="" Value="1" Min="1" Max="255" Type="INT" Descr="" />
+  </CMD>
+  <CMD Name="WAIT MISSION" ID="111" Vers="1" Active="True" IndentMode="NONE" Descr="" VersNote="Imported 12/05/2011 from INFO.CFG" ImgName="Aspetta" />
+  <CMD Name="STATUS" ID="112" Vers="1" Active="True" IndentMode="NONE" Descr="" VersNote="Imported 12/05/2011 from INFO.CFG" ImgName="Instruction">
+    <PAR Name="" Value="0" Min="0" Max="6" Type="INT" Descr="" />
+  </CMD>
+  <CMD Name="CLIENT" ID="113" Vers="1" Active="True" IndentMode="NONE" Descr="" VersNote="Imported 12/05/2011 from INFO.CFG" ImgName="Instruction">
+    <PAR Name="" Value="1" Min="1" Max="4" Type="INT" Descr="" />
+  </CMD>
+  <CMD Name="ATM" ID="114" Vers="1" Active="True" IndentMode="NONE" Descr="" VersNote="Imported 12/05/2011 from INFO.CFG" ImgName="Instruction" />
+  <CMD Name="MAGAZZINO" ID="115" Vers="1" Active="True" IndentMode="NONE" Descr="" VersNote="Imported 12/05/2011 from INFO.CFG" ImgName="Instruction" />
+  <CMD Name="VERIF NCP" ID="116" Vers="1" Active="True" IndentMode="NONE" Descr="" VersNote="Imported 12/05/2011 from INFO.CFG" ImgName="" />
+  <CMD Name="COPIA ZONA" ID="117" Vers="1" Active="True" IndentMode="NONE" Descr="" VersNote="" ImgName="">
+    <PAR Name="" Value="0" Min="0" Max="5" Type="INT" Descr="" />
+    <PAR Name="" Value="1" Min="1" Max="5" Type="INT" Descr="" />
+  </CMD>
+  <CMD Name="GET EDGE" ID="119" Vers="1" Active="True" IndentMode="NONE" Descr="" VersNote="Imported 12/05/2011 from INFO.CFG" ImgName="">
+    <PAR Name="" Value="1" Min="1" Max="3" Type="INT" Descr="" />
+    <PAR Name="" Value="0" Min="-255" Max="255" Type="INT" Descr="" />
+    <PAR Name="" Value="0" Min="-9999999" Max="9999999" Type="FLOAT" Descr="" />
+    <PAR Name="" Value="0" Min="0" Max="9999999" Type="FLOAT" Descr="" />
+    <PAR Name="" Value="0" Min="0" Max="9999999" Type="FLOAT" Descr="" />
+    <PAR Name="" Value="0" Min="0" Max="255" Type="INT" Descr="" />
+    <PAR Name="" Value="0" Min="0" Max="10" Type="INT" Descr="" />
+  </CMD>
+  <CMD Name="CHECKRUN ASPS" ID="120" Vers="1" Active="True" IndentMode="NONE" Descr="" VersNote="" ImgName="" />
+  <CMD Name="RESET MAGAZ" ID="121" Vers="1" Active="True" IndentMode="NONE" Descr="" VersNote="" ImgName="" />
+  <CMD Name="CASS ASPS" ID="122" Vers="1" Active="True" IndentMode="NONE" Descr="" VersNote="" ImgName="" />
+</Root>
