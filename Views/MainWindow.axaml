@@ -77,30 +77,6 @@
         <!--  Status bar  -->
         <controls:StatusBarControl Grid.Row="2" DataContext="{Binding}" />
 
-        <!--  Full window overlay spinner  -->
-        <Border
-            Grid.RowSpan="3"
-            Background="#80000000"
-            IsVisible="{Binding IsProcessing}"
-            ZIndex="1000">
-            <Grid>
-                <StackPanel
-                    HorizontalAlignment="Center"
-                    VerticalAlignment="Center"
-                    Spacing="16">
-                    <controls:SpinnerControl />
-                    <TextBlock
-                        FontSize="18"
-                        FontWeight="SemiBold"
-                        Foreground="White"
-                        Text="{Binding OperationDescription}" />
-                    <TextBlock
-                        FontStyle="Italic"
-                        Foreground="#E0E0E0"
-                        Text="Attendere..." />
-                </StackPanel>
-            </Grid>
-        </Border>
     </Grid>
 
 </Window>

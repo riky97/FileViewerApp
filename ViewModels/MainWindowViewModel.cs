@@ -899,10 +899,10 @@ namespace FileViewerApp.ViewModels
             _isReverting = true;
             _suppressInstructionEvents = true; // sopprimi durante la ricostruzione
             _ignoreInstructionChanged = true; // ignora eventi temporaneamente (post-revert)
+            OperationDescription = "Ripristino versione...";
+            IsProcessing = true;
             try
             {
-                OperationDescription = "Ripristino versione...";
-                IsProcessing = true;
                 var snap = _historyService.RevertTo(SelectedHistoryEntry.Id);
                 EditableInstructions.Clear();
                 var svc = _orchestrator.GetOpCodeService();
@@ -949,6 +949,7 @@ namespace FileViewerApp.ViewModels
                 RevertToHistoryCommand.NotifyCanExecuteChanged();
                 NotifyAllCommands();
                 StatusText = $"{DateTime.Now:HH:mm:ss} - Revert completato";
+                IsProcessing = false; OperationDescription = string.Empty;
 #if DEBUG
                 Debug.WriteLine("[DEBUG] Revert completato");
 #endif
