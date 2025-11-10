@@ -11,6 +11,7 @@ public partial class ContentTabsControl : UserControl
     public ContentTabsControl()
     {
         InitializeComponent();
+        this.AttachedToVisualTree += (_, __) => HookSelectionChanged();
     }
 
     private void OnInstructionSelectionChanged(object? sender, SelectionChangedEventArgs e)
@@ -29,6 +30,29 @@ public partial class ContentTabsControl : UserControl
                 // fallback for older wiring
                 mainVm.OnInstructionNameChanged(instr, newName);
             }
+        }
+    }
+
+    private void HookSelectionChanged()
+    {
+        if (DataContext is ContentTabsControlViewModel vm)
+        {
+            vm.PropertyChanged += (s, e) =>
+            {
+                if (e.PropertyName == nameof(vm.SelectedInstruction))
+                {
+                    ScrollToSelected(vm.SelectedInstruction);
+                }
+            };
+        }
+    }
+
+    private void ScrollToSelected(EditableInstruction? instr)
+    {
+        if (instr == null) return;
+        if (this.FindControl<ListBox>("InstructionsList") is ListBox list)
+        {
+            list.ScrollIntoView(instr);
         }
     }
 }

@@ -94,7 +94,10 @@
 
 				<!--  Sinistra: lista istruzioni  -->
 				<ScrollViewer Grid.Row="1" Grid.Column="0">
-					<ListBox ItemsSource="{Binding EditableInstructions}" SelectedItem="{Binding SelectedInstruction}">
+					<ListBox
+						x:Name="InstructionsList"
+						ItemsSource="{Binding EditableInstructions}"
+						SelectedItem="{Binding SelectedInstruction}">
 						<ListBox.ItemTemplate>
 							<DataTemplate x:DataType="models:EditableInstruction">
 								<Border
