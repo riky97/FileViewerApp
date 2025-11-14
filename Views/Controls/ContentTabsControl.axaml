@@ -108,6 +108,7 @@
 							<ContextMenu>
 								<MenuItem Command="{Binding CopyInstructionsCommand}" Header="Copia" />
 								<MenuItem Command="{Binding CutInstructionsCommand}" Header="Taglia" />
+								<MenuItem Command="{Binding RemoveInstructionCommand}" Header="Rimuovi" IsEnabled="{Binding CanRemoveInstruction}" />
 								<MenuItem Command="{Binding PasteInstructionsCommand}" Header="Incolla" />
 								<MenuItem Command="{Binding CancelCutCommand}" Header="Annulla Taglio" />
 							</ContextMenu>

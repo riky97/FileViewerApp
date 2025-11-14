@@ -571,19 +571,35 @@ namespace FileViewerApp.ViewModels
         private async Task AddInstructionAsync()
         {
             if (!IsEditMode) return;
+            // Determine insertion index: after selected instruction if any, else at end
+            int insertionIndex = EditableInstructions.Count; // default append
+            if (SelectedInstruction != null)
+            {
+                int selIndex = EditableInstructions.IndexOf(SelectedInstruction);
+                if (selIndex >= 0)
+                    insertionIndex = selIndex + 1; // insert right after selected
+            }
+
             var newInstr = new EditableInstruction
             {
-                Number = EditableInstructions.Count + 1,
+                Number = insertionIndex + 1, // provisional, will be renumbered
                 OpCode = 1,
                 Name = "NULLA",
                 IsModified = true,
                 DiffKind = InstructionDiffKind.Added
             };
-            EditableInstructions.Add(newInstr);
+
+            if (insertionIndex >= 0 && insertionIndex < EditableInstructions.Count)
+                EditableInstructions.Insert(insertionIndex, newInstr);
+            else
+                EditableInstructions.Add(newInstr);
+
+            RenumberInstructions(); // ensure all Numbers updated
+            SelectedInstruction = newInstr; // focus the newly added instruction for immediate editing
             HasUnsavedChanges = true;
             UpdateCanEditState();
             StatusText = "Aggiunta istruzione";
-            AppendPending(PendingChangeType.Add, $"Add #{EditableInstructions.Count}");
+            AppendPending(PendingChangeType.Add, $"Add #{newInstr.Number}");
             RecomputeDiff();
             await Task.CompletedTask;
         }
