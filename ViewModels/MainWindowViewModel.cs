@@ -665,6 +665,9 @@ namespace FileViewerApp.ViewModels
                 await UpdateHexViewAsync();
                 RebuildInstructionViewSimple();
                 RebuildTreeViewSimple();
+                // Dopo un salvataggio il nuovo stato diventa baseline per la diff e lo scarto selettivo
+                CaptureBaseline();
+                RecomputeDiff();
             }
             finally
             {
@@ -675,25 +678,49 @@ namespace FileViewerApp.ViewModels
 
         private async Task DiscardChangesAsync()
         {
-            if (!HasUnsavedChanges || _currentProcessedFile == null) return;
-            OperationDescription = "Scarto modifiche...";
+            if (!HasUnsavedChanges) return;
+            OperationDescription = "Scarto modifiche non salvate...";
             IsProcessing = true;
             try
             {
-                await PopulateEditableInstructions(_currentProcessedFile);
+                // Ricostruisci completamente lo stato partendo dalla baseline salvata
+                var svc = _orchestrator.GetOpCodeService();
+                var restored = new List<EditableInstruction>();
+                foreach (var b in _baseline.OrderBy(b => b.Number))
+                {
+                    var info = svc.GetOpCodeInfo(b.OpCode);
+                    var e = new EditableInstruction
+                    {
+                        Number = b.Number,
+                        OpCode = b.OpCode,
+                        Name = b.Name,
+                        ParamCount = info?.ParamCount ?? 8
+                    };
+                    e.BeginSilentUpdate();
+                    e.SetParameters((int[])b.Params.Clone());
+                    e.EndSilentUpdate();
+                    e.EnableModificationTracking();
+                    e.IsModified = false;
+                    e.DiffKind = InstructionDiffKind.Unchanged;
+                    e.LoadResourceOptions();
+                    restored.Add(e);
+                }
+                EditableInstructions.Clear();
+                foreach (var r in restored) EditableInstructions.Add(r);
+                RenumberInstructions();
                 HasUnsavedChanges = false;
-                RebuildInstructionViewSimple();
-                RebuildTreeViewInitial();
-                StatusText = "Modifiche scartate";
-                var discardSummary = BuildPendingSummary();
-                AddHistory(HistoryActionType.Discard, $"Scartate modifiche ({discardSummary})", force: true);
                 ClearPendingChanges();
+                StatusText = "Modifiche non salvate scartate";
+                RebuildInstructionViewSimple();
+                RebuildTreeViewSimple();
+                RecomputeDiff();
             }
             finally
             {
                 IsProcessing = false;
                 OperationDescription = string.Empty;
             }
+            await Task.CompletedTask;
         }
 
         private void RebuildInstructionViewSimple()
@@ -744,7 +771,8 @@ namespace FileViewerApp.ViewModels
                     Parameters = e.GetParameters()
                 }).ToList();
 
-            string header = _currentProcessedFile?.Header;
+            // Ensure non-null header to avoid CS8600 nullable warning
+            string header = _currentProcessedFile?.Header ?? string.Empty;
             if (string.IsNullOrWhiteSpace(header))
             {
                 var fileBase = Path.GetFileNameWithoutExtension(_currentProcessedFile?.FileName ?? "TEMP");
