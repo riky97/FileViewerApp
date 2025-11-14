@@ -5,7 +5,6 @@ namespace FileViewerApp.Enums
         Unchanged,
         Added,
         Modified,
-        Removed,
         CutPending
     }
 
