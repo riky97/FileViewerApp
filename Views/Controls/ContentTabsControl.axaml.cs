@@ -79,6 +79,11 @@ public partial class ContentTabsControl : UserControl
                             if (vm.PasteInstructionsCommand.CanExecute(null)) vm.PasteInstructionsCommand.Execute(null);
                             e.Handled = true;
                         }
+                        else if (e.Key == Key.K) // Ctrl+K annulla taglio
+                        {
+                            if (vm.CancelCutCommand.CanExecute(null)) vm.CancelCutCommand.Execute(null);
+                            e.Handled = true;
+                        }
                     }
                 };
             }

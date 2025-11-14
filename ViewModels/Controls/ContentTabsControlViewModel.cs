@@ -65,6 +65,7 @@ namespace FileViewerApp.ViewModels.Controls
         public ICommand CopyInstructionsCommand => _parent.CopyInstructionsCommand;
         public ICommand CutInstructionsCommand => _parent.CutInstructionsCommand;
         public ICommand PasteInstructionsCommand => _parent.PasteInstructionsCommand;
+        public ICommand CancelCutCommand => _parent.CancelCutCommand;
 
         // State proxies used by XAML
         public bool IsEditMode => _parent.IsEditMode;

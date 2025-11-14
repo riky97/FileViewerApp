@@ -95,6 +95,7 @@ namespace FileViewerApp.ViewModels
         public IAsyncRelayCommand CopyInstructionsCommand { get; }
         public IAsyncRelayCommand CutInstructionsCommand { get; }
         public IAsyncRelayCommand PasteInstructionsCommand { get; }
+        public IAsyncRelayCommand CancelCutCommand { get; }
 
         // Command to explicitly load XML definitions
         public IAsyncRelayCommand LoadDefinitionsCommand { get; }
@@ -152,6 +153,7 @@ namespace FileViewerApp.ViewModels
             CopyInstructionsCommand = new AsyncRelayCommand(CopyInstructionsAsync, () => IsDefinitionsLoaded && _selectedInstructions.Count > 0);
             CutInstructionsCommand = new AsyncRelayCommand(CutInstructionsAsync, () => IsDefinitionsLoaded && _selectedInstructions.Count > 0 && IsEditMode);
             PasteInstructionsCommand = new AsyncRelayCommand(PasteInstructionsAsync, () => IsDefinitionsLoaded && IsEditMode);
+            CancelCutCommand = new AsyncRelayCommand(CancelCutAsync, () => IsDefinitionsLoaded && IsEditMode && _cutBuffer != null && _cutBuffer.Count > 0);
 
             // Create expand/collapse commands
             ExpandAllCommand = new RelayCommand(ExpandAll);
@@ -1235,6 +1237,7 @@ namespace FileViewerApp.ViewModels
             CopyInstructionsCommand.NotifyCanExecuteChanged();
             CutInstructionsCommand.NotifyCanExecuteChanged();
             PasteInstructionsCommand.NotifyCanExecuteChanged();
+            CancelCutCommand.NotifyCanExecuteChanged();
         }
         private void UpdateStatus(string msg)
         {
@@ -1431,7 +1434,16 @@ namespace FileViewerApp.ViewModels
             foreach (var instr in _cutBuffer)
                 instr.IsCutPending = false;
             _cutBuffer.Clear();
+            CancelCutCommand.NotifyCanExecuteChanged();
         }
+
+        private Task CancelCutAsync()
+        {
+            ClearCutVisualState();
+            UpdateStatus("Taglio annullato");
+            return Task.CompletedTask;
+        }
+
 
         private class PasteInstructionDto
         {
