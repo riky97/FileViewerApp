@@ -62,6 +62,9 @@ namespace FileViewerApp.ViewModels.Controls
         public ICommand SelectParameterCommand => _parent.SelectParameterCommand;
         public ICommand ApplyResourceOptionCommand => _parent.ApplyResourceOptionCommand;
         public ICommand ParameterClickCommand => _parent.ParameterClickCommand;
+        public ICommand CopyInstructionsCommand => _parent.CopyInstructionsCommand;
+        public ICommand CutInstructionsCommand => _parent.CutInstructionsCommand;
+        public ICommand PasteInstructionsCommand => _parent.PasteInstructionsCommand;
 
         // State proxies used by XAML
         public bool IsEditMode => _parent.IsEditMode;
@@ -69,6 +72,13 @@ namespace FileViewerApp.ViewModels.Controls
         public bool CanMoveUp => _parent.CanMoveUp;
         public bool CanMoveDown => _parent.CanMoveDown;
         public bool HasUnsavedChanges => _parent.HasUnsavedChanges;
+        public System.Collections.Generic.IReadOnlyList<EditableInstruction> SelectedInstructions => _parent.SelectedInstructions;
+
+        public void UpdateSelectedInstructions(System.Collections.Generic.List<EditableInstruction> list)
+        {
+            _parent.UpdateSelectedInstructions(list);
+            this.RaisePropertyChanged(nameof(SelectedInstructions));
+        }
 
         public ObservableCollection<ResourceOption> ResourceExplorerOptions => _parent.ResourceExplorerOptions;
         public string ResourceSearchText { get => _parent.ResourceSearchText; set => _parent.ResourceSearchText = value; }

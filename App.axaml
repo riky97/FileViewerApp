@@ -14,6 +14,7 @@
 		<conv:ParamSelectedBrushConverter x:Key="ParamSelectedBrushConverter" />
 		<conv:BooleanToOpacityConverter x:Key="BooleanToOpacityConverter" />
 		<conv:BooleanToThicknessConverter x:Key="BooleanToThicknessConverter" />
+		<conv:CutPendingToOpacityConverter x:Key="CutPendingToOpacityConverter" />
 	</Application.Resources>
 
 	<Application.Styles>

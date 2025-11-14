@@ -170,6 +170,7 @@ namespace FileViewerApp.Models
         public static OpCodeService? OpCodeServiceProvider { get; set; }
 
         private bool _isCurrent; // nuova proprietà per UI selezione
+        private bool _isCutPending; // nuovo stato per taglio (visual blur finché non incollato)
 
         public EditableInstruction()
         {
@@ -216,6 +217,12 @@ namespace FileViewerApp.Models
                 foreach (var p in ParameterEntries)
                     p.InstructionIsCurrent = _isCurrent;
             }
+        }
+
+        public bool IsCutPending
+        {
+            get => _isCutPending;
+            set => this.RaiseAndSetIfChanged(ref _isCutPending, value);
         }
 
         public int ParamCount

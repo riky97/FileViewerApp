@@ -1,5 +1,6 @@
 using Avalonia.Controls;
 using Avalonia.Interactivity;
+using Avalonia.Input;
 using FileViewerApp.Models;
 using FileViewerApp.ViewModels;
 using FileViewerApp.ViewModels.Controls;
@@ -44,6 +45,43 @@ public partial class ContentTabsControl : UserControl
                     ScrollToSelected(vm.SelectedInstruction);
                 }
             };
+            if (this.FindControl<ListBox>("InstructionsList") is ListBox list)
+            {
+                list.SelectionChanged += (s, e) =>
+                {
+                    var sel = list.SelectedItems;
+                    var collected = new System.Collections.Generic.List<EditableInstruction>();
+                    if (sel != null)
+                    {
+                        foreach (var item in sel)
+                        {
+                            if (item is EditableInstruction ei) collected.Add(ei);
+                        }
+                    }
+                    vm.UpdateSelectedInstructions(collected);
+                };
+                list.KeyDown += (s, e) =>
+                {
+                    if (e.KeyModifiers.HasFlag(KeyModifiers.Control))
+                    {
+                        if (e.Key == Key.C)
+                        {
+                            if (vm.CopyInstructionsCommand.CanExecute(null)) vm.CopyInstructionsCommand.Execute(null);
+                            e.Handled = true;
+                        }
+                        else if (e.Key == Key.X)
+                        {
+                            if (vm.CutInstructionsCommand.CanExecute(null)) vm.CutInstructionsCommand.Execute(null);
+                            e.Handled = true;
+                        }
+                        else if (e.Key == Key.V)
+                        {
+                            if (vm.PasteInstructionsCommand.CanExecute(null)) vm.PasteInstructionsCommand.Execute(null);
+                            e.Handled = true;
+                        }
+                    }
+                };
+            }
         }
     }
 

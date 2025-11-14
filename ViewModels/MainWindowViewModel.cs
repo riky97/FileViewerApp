@@ -22,6 +22,8 @@ using Avalonia.Layout;
 using Avalonia.Media;
 using Avalonia.Controls.Primitives;
 using System.Diagnostics;
+using System.Text.Json;
+using Avalonia.Input.Platform;
 
 namespace FileViewerApp.ViewModels
 {
@@ -89,6 +91,11 @@ namespace FileViewerApp.ViewModels
         public IAsyncRelayCommand SaveChangesCommand { get; }
         public IAsyncRelayCommand DiscardChangesCommand { get; }
 
+        // Copy/Cut/Paste commands for instructions
+        public IAsyncRelayCommand CopyInstructionsCommand { get; }
+        public IAsyncRelayCommand CutInstructionsCommand { get; }
+        public IAsyncRelayCommand PasteInstructionsCommand { get; }
+
         // Command to explicitly load XML definitions
         public IAsyncRelayCommand LoadDefinitionsCommand { get; }
 
@@ -104,6 +111,8 @@ namespace FileViewerApp.ViewModels
         public string DiffText { get => _diffText; set => this.RaiseAndSetIfChanged(ref _diffText, value); }
 
         private readonly List<PendingChange> _pendingChanges = new();
+        private List<EditableInstruction> _selectedInstructions = new();
+        public IReadOnlyList<EditableInstruction> SelectedInstructions => _selectedInstructions;
 
         private enum PendingChangeType { Add, Remove, Move }
         private record PendingChange(PendingChangeType Type, string Detail);
@@ -139,6 +148,10 @@ namespace FileViewerApp.ViewModels
             MoveDownCommand = new AsyncRelayCommand(MoveDownAsync, () => IsDefinitionsLoaded && CanMoveDown);
             SaveChangesCommand = new AsyncRelayCommand(SaveChangesAsync, () => IsDefinitionsLoaded && HasUnsavedChanges && AreAllParametersValid());
             DiscardChangesCommand = new AsyncRelayCommand(DiscardChangesAsync, () => IsDefinitionsLoaded && HasUnsavedChanges);
+
+            CopyInstructionsCommand = new AsyncRelayCommand(CopyInstructionsAsync, () => IsDefinitionsLoaded && _selectedInstructions.Count > 0);
+            CutInstructionsCommand = new AsyncRelayCommand(CutInstructionsAsync, () => IsDefinitionsLoaded && _selectedInstructions.Count > 0 && IsEditMode);
+            PasteInstructionsCommand = new AsyncRelayCommand(PasteInstructionsAsync, () => IsDefinitionsLoaded && IsEditMode);
 
             // Create expand/collapse commands
             ExpandAllCommand = new RelayCommand(ExpandAll);
@@ -290,6 +303,7 @@ namespace FileViewerApp.ViewModels
                 // Riesegui controllo validità parametri globale
                 NotifyAllCommands();
                 this.RaisePropertyChanged(nameof(SelectedParameterName));
+                NotifyAllCommands(); // ensure copy/cut enable updates
             }
         }
 
@@ -1218,6 +1232,9 @@ namespace FileViewerApp.ViewModels
             RevertToHistoryCommand.NotifyCanExecuteChanged();
             _applySelectedParameterOptionCommand?.NotifyCanExecuteChanged();
             ApplyResourceOptionCommand?.NotifyCanExecuteChanged();
+            CopyInstructionsCommand.NotifyCanExecuteChanged();
+            CutInstructionsCommand.NotifyCanExecuteChanged();
+            PasteInstructionsCommand.NotifyCanExecuteChanged();
         }
         private void UpdateStatus(string msg)
         {
@@ -1314,5 +1331,113 @@ namespace FileViewerApp.ViewModels
         }
 
         public ContentTabsControlViewModel ContentTabsViewModel => ContentTabsControlViewModel; // alias per XAML legacy
+
+        // Update selection list from UI (multi-select)
+        public void UpdateSelectedInstructions(List<EditableInstruction> list)
+        {
+            _selectedInstructions = list ?? new List<EditableInstruction>();
+            this.RaisePropertyChanged(nameof(SelectedInstructions));
+            NotifyAllCommands();
+        }
+
+        private const string ClipboardSignature = "FVAPP-INSTR:";
+
+        private async Task CopyInstructionsAsync()
+        {
+            if (_selectedInstructions.Count == 0 || _currentWindow?.Clipboard == null) return;
+            // Clear previous cut state if any
+            ClearCutVisualState();
+            var payload = _selectedInstructions
+                .OrderBy(i => i.Number)
+                .Select(i => new PasteInstructionDto
+                {
+                    OpCode = i.OpCode,
+                    Name = i.Name,
+                    Params = i.GetParameters().Take(i.ParamCount).ToArray()
+                }).ToList();
+            var json = JsonSerializer.Serialize(payload);
+            await _currentWindow.Clipboard.SetTextAsync(ClipboardSignature + json);
+            UpdateStatus($"Copiate {_selectedInstructions.Count} istruzioni");
+        }
+
+        private async Task CutInstructionsAsync()
+        {
+            if (_selectedInstructions.Count == 0) return;
+            // Copy but keep items; mark visually
+            await CopyInstructionsAsync();
+            ClearCutVisualState(); // ensure no previous leftover
+            _cutBuffer = _selectedInstructions.ToList();
+            foreach (var instr in _cutBuffer)
+            {
+                instr.IsCutPending = true;
+            }
+            UpdateStatus($"Tagliate (in attesa incolla) {_cutBuffer.Count} istruzioni");
+        }
+
+        private async Task PasteInstructionsAsync()
+        {
+            if (_currentWindow?.Clipboard == null) return;
+            var text = await _currentWindow.Clipboard.TryGetTextAsync();
+            if (string.IsNullOrWhiteSpace(text) || !text.StartsWith(ClipboardSignature)) return;
+            var json = text.Substring(ClipboardSignature.Length);
+            List<PasteInstructionDto>? items;
+            try
+            {
+                items = JsonSerializer.Deserialize<List<PasteInstructionDto>>(json);
+            }
+            catch
+            {
+                UpdateStatus("Formato clipboard non valido");
+                return;
+            }
+            if (items == null || items.Count == 0) return;
+
+            int insertIndex = SelectedInstruction != null ? EditableInstructions.IndexOf(SelectedInstruction) + 1 : EditableInstructions.Count;
+            var svc = _orchestrator.GetOpCodeService();
+            foreach (var dto in items)
+            {
+                var info = svc.GetOpCodeByName(dto.Name) ?? svc.GetOpCodeInfo(dto.OpCode);
+                var newInstr = new EditableInstruction
+                {
+                    OpCode = info?.Id ?? dto.OpCode,
+                    Name = info?.Name ?? dto.Name,
+                    ParamCount = info?.ParamCount ?? 8,
+                    IsModified = true
+                };
+                newInstr.SetParameters(dto.Params ?? Array.Empty<int>());
+                EditableInstructions.Insert(insertIndex++, newInstr);
+            }
+            // If we have a cut buffer matching the clipboard content, remove originals now
+            if (_cutBuffer?.Count > 0)
+            {
+                foreach (var instr in _cutBuffer)
+                {
+                    EditableInstructions.Remove(instr);
+                }
+                _cutBuffer.Clear();
+                ClearCutVisualState();
+            }
+            RenumberInstructions();
+            HasUnsavedChanges = true;
+            UpdateStatus($"Incollate {items.Count} istruzioni");
+            RebuildInstructionViewSimple();
+            RebuildTreeViewSimple();
+        }
+
+        private List<EditableInstruction>? _cutBuffer;
+        private void ClearCutVisualState()
+        {
+            if (_cutBuffer == null) return;
+            foreach (var instr in _cutBuffer)
+                instr.IsCutPending = false;
+            _cutBuffer.Clear();
+        }
+
+        private class PasteInstructionDto
+        {
+            public int OpCode { get; set; }
+            public string Name { get; set; } = string.Empty;
+            public int[]? Params { get; set; }
+        }
     }
 }
