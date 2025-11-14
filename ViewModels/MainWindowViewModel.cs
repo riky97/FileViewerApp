@@ -371,16 +371,49 @@ namespace FileViewerApp.ViewModels
                 var info = svc.GetOpCodeByName(newInstructionName);
                 if (info == null)
                 {
+                    // Normalizza: rimuove spazi e underscore per confronto flessibile
+                    string Normalize(string s) => new string(s.Where(c => c != ' ' && c != '_').ToArray()).ToUpperInvariant();
+                    var targetNorm = Normalize(newInstructionName);
+                    // Prova a trovare nome equivalente fra quelli disponibili
+                    var altName = svc.GetAllOpCodeNames().FirstOrDefault(n => Normalize(n) == targetNorm);
+                    if (altName != null)
+                        info = svc.GetOpCodeByName(altName);
+                }
+                if (info == null)
+                {
+                    // Fallback: mappa manuale sinonimi noti
+                    var synonyms = new Dictionary<string,int>(StringComparer.OrdinalIgnoreCase)
+                    {
+                        {"INIZ_MEM", 5},{"INIZ MEM",5},
+                        {"END_IF",15},{"END IF",15},
+                        {"IF_NUM",105},{"IF NUM",105},
+                        {"IF_STR",110},{"IF STR",110}
+                    };
+                    if (synonyms.TryGetValue(newInstructionName.Trim(), out var op))
+                    {
+                        var resolved = svc.GetOpCodeInfo(op);
+                        if (resolved != null) info = resolved;
+                    }
+                }
+                if (info == null)
+                {
                     StatusText = $"Istruzione '{newInstructionName}' non trovata";
                     return;
                 }
+                // Set OpCode first: model setter now applies ParamCount + default params + resource options.
                 instruction.OpCode = info.Id;
-                instruction.Name = info.Name;
-                instruction.ParamCount = info.ParamCount; // limit visible params
+                instruction.Name = info.Name; // Name property marks modified already; keep alignment.
+                // ParamCount & defaults handled by OpCode setter. No manual SetParameters needed here.
+                // Se il loader non fornisce dettagli parametri (Parameters vuoto) azzera eventuali nomi precedenti per evitare confusione
+                if (info.Parameters.Count == 0)
+                {
+                    foreach (var p in instruction.ParameterEntries)
+                        p.Name = string.Empty;
+                }
                 instruction.IsModified = true;
                 HasUnsavedChanges = true;
                 StatusText = $"Modificata istruzione {instruction.Number:D3}";
-                instruction.LoadResourceOptions();
+                // Resource options already reloaded by OpCode setter.
             }
             catch (Exception ex)
             {

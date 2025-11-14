@@ -140,7 +140,9 @@
 												<ComboBox
 													Width="200"
 													ItemsSource="{Binding DataContext.AvailableInstructions, ElementName=Root}"
-													SelectedItem="{Binding Name, Mode=TwoWay}" />
+													SelectedItem="{Binding Name, Mode=TwoWay}"
+													Tag="{Binding}"
+													SelectionChanged="OnInstructionSelectionChanged" />
 												<ItemsControl x:Name="ParentInstruction" ItemsSource="{Binding VisibleParameterEntries}">
 													<ItemsControl.ItemsPanel>
 														<ItemsPanelTemplate>

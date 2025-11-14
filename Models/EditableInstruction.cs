@@ -290,8 +290,30 @@ namespace FileViewerApp.Models
                 {
                     _opCode = value;
                     this.RaisePropertyChanged();
+                    // Apply definition defaults (param count + default values) if available
+                    var svc = OpCodeServiceProvider;
+                    var info = svc?.GetOpCodeInfo(_opCode);
+                    if (info != null)
+                    {
+                        // Determine effective param count (use Parameters.Count if ParamCount not set)
+                        var paramList = info.Parameters ?? new List<ParameterInfo>();
+                        var effectiveCount = info.ParamCount > 0 ? info.ParamCount : paramList.Count;
+                        ParamCount = effectiveCount;
+                        // Build default parameter array (size 8)
+                        var defaults = new int[8];
+                        for (int i = 0; i < effectiveCount && i < paramList.Count && i < 8; i++)
+                        {
+                            defaults[i] = (int)Math.Round(paramList[i].DefaultValue);
+                        }
+                        // Apply defaults (this updates entries + instruction text internally)
+                        SetParameters(defaults);
+                    }
+                    else
+                    {
+                        // Fallback: still ensure instruction text reflects new opcode
+                        UpdateInstructionText();
+                    }
                     LoadResourceOptions();
-                    UpdateInstructionText();
                     MarkAsModified();
                     ValidateInstruction();
                 }
