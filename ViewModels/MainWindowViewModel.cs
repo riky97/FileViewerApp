@@ -114,6 +114,9 @@ namespace FileViewerApp.ViewModels
         private readonly List<PendingChange> _pendingChanges = new();
         private List<EditableInstruction> _selectedInstructions = new();
         public IReadOnlyList<EditableInstruction> SelectedInstructions => _selectedInstructions;
+        // Summary testuale delle modifiche pendenti (aggiunte/rimozioni/spostamenti) per UI
+        private string _pendingChangesSummary = "Nessuna modifica";
+        public string PendingChangesSummary { get => _pendingChangesSummary; private set => this.RaiseAndSetIfChanged(ref _pendingChangesSummary, value); }
 
         // Diff tracking for visual gutter
         private List<(int Number, int OpCode, int[] Params, string Name)> _baseline = new();
@@ -290,7 +293,7 @@ namespace FileViewerApp.ViewModels
         public string OperationDescription { get => _operationDescription; set => this.RaiseAndSetIfChanged(ref _operationDescription, value); }
         public string CurrentFileType { get => _currentFileType; set => this.RaiseAndSetIfChanged(ref _currentFileType, value); }
         public bool IsEditMode { get => _isEditMode; set { this.RaiseAndSetIfChanged(ref _isEditMode, value); UpdateCanEditState(); } }
-        public bool HasUnsavedChanges { get => _hasUnsavedChanges; set { this.RaiseAndSetIfChanged(ref _hasUnsavedChanges, value); NotifyAllCommands(); } }
+        public bool HasUnsavedChanges { get => _hasUnsavedChanges; set { this.RaiseAndSetIfChanged(ref _hasUnsavedChanges, value); NotifyAllCommands(); UpdatePendingSummary(); } }
         public bool CanEdit { get => _canEdit; set => this.RaiseAndSetIfChanged(ref _canEdit, value); }
         public EditableInstruction? SelectedInstruction
         {
@@ -1263,6 +1266,7 @@ namespace FileViewerApp.ViewModels
         private void AppendPending(PendingChangeType type, string detail)
         {
             _pendingChanges.Add(new PendingChange(type, detail));
+            UpdatePendingSummary();
         }
         private string BuildPendingSummary()
         {
@@ -1276,7 +1280,24 @@ namespace FileViewerApp.ViewModels
             if (moves > 0) parts.Add($"Spostate: {moves}");
             return string.Join(", ", parts);
         }
-        private void ClearPendingChanges() => _pendingChanges.Clear();
+        private void ClearPendingChanges()
+        {
+            _pendingChanges.Clear();
+            UpdatePendingSummary();
+        }
+        private void UpdatePendingSummary()
+        {
+            if (!HasUnsavedChanges || _pendingChanges.Count == 0)
+            {
+                PendingChangesSummary = HasUnsavedChanges ? "Modifiche presenti" : "Nessuna modifica";
+            }
+            else
+            {
+                PendingChangesSummary = BuildPendingSummary();
+            }
+        }
+                // Aggiorna riepilogo quando cambia stato globale modifiche
+                // (Rimosso metodo parziale di change notification; gestione integrata nel setter.)
         private bool _isReverting = false; // flag per ignorare eventi durante revert
         private bool _suppressInstructionEvents = false; // sopprime OnInstructionChanged temporaneamente
         private bool _ignoreInstructionChanged = false; // ignora eventi temporaneamente (post-revert)

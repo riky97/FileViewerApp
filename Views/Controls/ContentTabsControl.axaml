@@ -65,37 +65,51 @@
 				Margin="10"
 				ColumnDefinitions="3*,2*"
 				RowDefinitions="Auto,*">
-				<StackPanel
+				<Grid
 					Grid.Row="0"
 					Grid.ColumnSpan="2"
 					Margin="0,0,0,10"
-					Orientation="Horizontal"
-					Spacing="8">
-					<Button Command="{Binding AddInstructionCommand}" Content="➕ Aggiungi" />
-					<Button
-						Command="{Binding RemoveInstructionCommand}"
-						Content="🗑️ Rimuovi"
-						IsEnabled="{Binding CanRemoveInstruction}" />
-					<Button
-						Command="{Binding MoveUpCommand}"
-						Content="⬆️ Su"
-						IsEnabled="{Binding CanMoveUp}" />
-					<Button
-						Command="{Binding MoveDownCommand}"
-						Content="⬇️ Giù"
-						IsEnabled="{Binding CanMoveDown}" />
-					<!-- <Separator />
-					<Button Command="{Binding CopyInstructionsCommand}" Content="📄 Copia" />
-					<Button Command="{Binding CutInstructionsCommand}" Content="✂️ Taglia" />
-					<Button Command="{Binding PasteInstructionsCommand}" Content="📌 Incolla" />
-					<Button Command="{Binding CancelCutCommand}" Content="⛔ Annulla Taglio" /> -->
-					<Separator />
-					<Button Command="{Binding SaveChangesCommand}" Content="💾 Salva" />
-					<Button
-						Command="{Binding DiscardChangesCommand}"
-						Content="↶ Scarta"
-						IsEnabled="{Binding HasUnsavedChanges}" />
-				</StackPanel>
+					ColumnDefinitions="Auto,*">
+					<StackPanel
+						Grid.Column="0"
+						Orientation="Horizontal"
+						Spacing="8">
+						<Button Command="{Binding AddInstructionCommand}" Content="➕ Aggiungi" />
+						<Button
+							Command="{Binding RemoveInstructionCommand}"
+							Content="🗑️ Rimuovi"
+							IsEnabled="{Binding CanRemoveInstruction}" />
+						<Button
+							Command="{Binding MoveUpCommand}"
+							Content="⬆️ Su"
+							IsEnabled="{Binding CanMoveUp}" />
+						<Button
+							Command="{Binding MoveDownCommand}"
+							Content="⬇️ Giù"
+							IsEnabled="{Binding CanMoveDown}" />
+						<!-- <Separator />
+						<Button Command="{Binding CopyInstructionsCommand}" Content="📄 Copia" />
+						<Button Command="{Binding CutInstructionsCommand}" Content="✂️ Taglia" />
+						<Button Command="{Binding PasteInstructionsCommand}" Content="📌 Incolla" />
+						<Button Command="{Binding CancelCutCommand}" Content="⛔ Annulla Taglio" />-->
+						<Separator />
+						<Button Command="{Binding SaveChangesCommand}" Content="💾 Salva" />
+						<Button
+							Command="{Binding DiscardChangesCommand}"
+							Content="↶ Scarta"
+							IsEnabled="{Binding HasUnsavedChanges}" />
+					</StackPanel>
+
+					<TextBlock
+						Grid.Column="1"
+						Margin="12,0,0,0"
+						VerticalAlignment="Center"
+						FontSize="12"
+						FontStyle="Italic"
+						Foreground="{Binding HasUnsavedChanges, Converter={StaticResource BooleanToBrushConverter}}"
+						Text="{Binding PendingChangesSummary}"
+						TextWrapping="Wrap" />
+				</Grid>
 
 				<!--  Sinistra: lista istruzioni  -->
 				<ScrollViewer Grid.Row="1" Grid.Column="0">
@@ -108,7 +122,10 @@
 							<ContextMenu>
 								<MenuItem Command="{Binding CopyInstructionsCommand}" Header="Copia" />
 								<MenuItem Command="{Binding CutInstructionsCommand}" Header="Taglia" />
-								<MenuItem Command="{Binding RemoveInstructionCommand}" Header="Rimuovi" IsEnabled="{Binding CanRemoveInstruction}" />
+								<MenuItem
+									Command="{Binding RemoveInstructionCommand}"
+									Header="Rimuovi"
+									IsEnabled="{Binding CanRemoveInstruction}" />
 								<MenuItem Command="{Binding PasteInstructionsCommand}" Header="Incolla" />
 								<MenuItem Command="{Binding CancelCutCommand}" Header="Annulla Taglio" />
 							</ContextMenu>
@@ -141,8 +158,8 @@
 													Width="200"
 													ItemsSource="{Binding DataContext.AvailableInstructions, ElementName=Root}"
 													SelectedItem="{Binding Name, Mode=TwoWay}"
-													Tag="{Binding}"
-													SelectionChanged="OnInstructionSelectionChanged" />
+													SelectionChanged="OnInstructionSelectionChanged"
+													Tag="{Binding}" />
 												<ItemsControl x:Name="ParentInstruction" ItemsSource="{Binding VisibleParameterEntries}">
 													<ItemsControl.ItemsPanel>
 														<ItemsPanelTemplate>

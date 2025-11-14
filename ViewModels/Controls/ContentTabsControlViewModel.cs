@@ -73,6 +73,7 @@ namespace FileViewerApp.ViewModels.Controls
         public bool CanMoveUp => _parent.CanMoveUp;
         public bool CanMoveDown => _parent.CanMoveDown;
         public bool HasUnsavedChanges => _parent.HasUnsavedChanges;
+        public string PendingChangesSummary => _parent.PendingChangesSummary;
         public System.Collections.Generic.IReadOnlyList<EditableInstruction> SelectedInstructions => _parent.SelectedInstructions;
 
         public void UpdateSelectedInstructions(System.Collections.Generic.List<EditableInstruction> list)
