@@ -115,6 +115,10 @@ namespace FileViewerApp.ViewModels
         private List<EditableInstruction> _selectedInstructions = new();
         public IReadOnlyList<EditableInstruction> SelectedInstructions => _selectedInstructions;
 
+        // Diff tracking for visual gutter
+        private List<(int Number, int OpCode, int[] Params, string Name)> _baseline = new();
+        private HashSet<int> _removedNumbers = new();
+
         private enum PendingChangeType { Add, Remove, Move }
         private record PendingChange(PendingChangeType Type, string Detail);
 
@@ -567,17 +571,20 @@ namespace FileViewerApp.ViewModels
         private async Task AddInstructionAsync()
         {
             if (!IsEditMode) return;
-            EditableInstructions.Add(new EditableInstruction
+            var newInstr = new EditableInstruction
             {
                 Number = EditableInstructions.Count + 1,
                 OpCode = 1,
                 Name = "NULLA",
-                IsModified = true
-            });
+                IsModified = true,
+                DiffKind = InstructionDiffKind.Added
+            };
+            EditableInstructions.Add(newInstr);
             HasUnsavedChanges = true;
             UpdateCanEditState();
             StatusText = "Aggiunta istruzione";
             AppendPending(PendingChangeType.Add, $"Add #{EditableInstructions.Count}");
+            RecomputeDiff();
             await Task.CompletedTask;
         }
 
@@ -591,6 +598,7 @@ namespace FileViewerApp.ViewModels
             UpdateCanEditState();
             StatusText = "Rimossa istruzione";
             AppendPending(PendingChangeType.Remove, $"Del #{removedNum}");
+            RecomputeDiff();
             await Task.CompletedTask;
         }
 
@@ -726,27 +734,32 @@ namespace FileViewerApp.ViewModels
             InstructionTree.Clear();
             if (EditableInstructions.Count == 0) return;
 
-            List<Instruction> instructions = new List<Instruction>();
-
-            foreach (var ei in EditableInstructions)
-            {
-                var instr = new Instruction
+            var instructions = EditableInstructions
+                .OrderBy(e => e.Number)
+                .Select(e => new Instruction
                 {
-                    Number = ei.Number,
-                    OpCode = ei.OpCode,
-                    Name = ei.Name,
-                    Parameters = ei.GetParameters()
-                };
-                instructions.Add(instr);
-            }
+                    Number = e.Number,
+                    OpCode = e.OpCode,
+                    Name = e.Name,
+                    Parameters = e.GetParameters()
+                }).ToList();
 
-            _currentProcessedFile!.InstructionTree = _orchestrator.GenerateInstructionTree(instructions, _currentProcessedFile!.Header);
-            RebuildTreeViewInitial();
+            string header = _currentProcessedFile?.Header;
+            if (string.IsNullOrWhiteSpace(header))
+            {
+                var fileBase = Path.GetFileNameWithoutExtension(_currentProcessedFile?.FileName ?? "TEMP");
+                header = $" 106{fileBase}";
+            }
+            header = header.PadRight(8).Substring(0, 8);
+
+            var nodes = _orchestrator.GenerateInstructionTree(instructions, header);
+            foreach (var n in nodes)
+                InstructionTree.Add(n);
+            ExpandAll();
         }
 
         private Task UpdateUIFromProcessedFile(ProcessedFile processedFile)
         {
-            FileName = processedFile.FileName;
             FileSize = FormatFileSize(processedFile.FileSize);
             CurrentFileType = processedFile.FileType.ToString();
             HexView = processedFile.HexView;
@@ -788,6 +801,8 @@ namespace FileViewerApp.ViewModels
             HasUnsavedChanges = false;
             foreach (var instruction in EditableInstructions)
                 instruction.LoadResourceOptions();
+            CaptureBaseline();
+            RecomputeDiff();
             return Task.CompletedTask;
         }
 
@@ -906,6 +921,15 @@ namespace FileViewerApp.ViewModels
 #endif
             UpdateAllButtonStates();
             NotifyAllCommands();
+            if (sender is EditableInstruction && (
+                e.PropertyName == nameof(EditableInstruction.OpCode) ||
+                e.PropertyName == nameof(EditableInstruction.Name) ||
+                e.PropertyName == nameof(EditableInstruction.ParamCount) ||
+                (e.PropertyName != null && e.PropertyName.StartsWith("Param")) ||
+                e.PropertyName == nameof(EditableInstruction.InstructionText)))
+            {
+                RebuildTreeViewSimple();
+            }
         }
 
         private async Task RevertToHistoryAsync()
@@ -914,11 +938,11 @@ namespace FileViewerApp.ViewModels
             if (!await ShowRevertConfirmationAsync()) return;
             _isReverting = true;
             _suppressInstructionEvents = true; // sopprimi durante la ricostruzione
-            _ignoreInstructionChanged = true; // ignora eventi temporaneamente (post-revert)
             OperationDescription = "Ripristino versione...";
             IsProcessing = true;
             try
             {
+                RecomputeDiff();
                 var snap = _historyService.RevertTo(SelectedHistoryEntry.Id);
                 EditableInstructions.Clear();
                 var svc = _orchestrator.GetOpCodeService();
@@ -1039,6 +1063,7 @@ namespace FileViewerApp.ViewModels
                 if (index >= 0 && index + 1 < HistoryEntries.Count)
                     previous = HistoryEntries[index + 1];
 
+                RecomputeDiff(); // Recompute diff after removing instruction
                 if (previous == null)
                 {
                     DiffText = $"Entry #{SelectedHistoryEntry.Id} (nessun snapshot precedente)\nNessuna diff disponibile";
@@ -1425,6 +1450,7 @@ namespace FileViewerApp.ViewModels
             UpdateStatus($"Incollate {items.Count} istruzioni");
             RebuildInstructionViewSimple();
             RebuildTreeViewSimple();
+            RecomputeDiff();
         }
 
         private List<EditableInstruction>? _cutBuffer;
@@ -1441,9 +1467,52 @@ namespace FileViewerApp.ViewModels
         {
             ClearCutVisualState();
             UpdateStatus("Taglio annullato");
+            RecomputeDiff();
             return Task.CompletedTask;
         }
 
+        // Baseline snapshot for visual diff
+        private void CaptureBaseline()
+        {
+            _baseline = EditableInstructions
+                .Select(i => (i.Number, i.OpCode, i.GetParameters(), i.Name))
+                .ToList();
+            _removedNumbers.Clear();
+            foreach (var i in EditableInstructions)
+                i.DiffKind = InstructionDiffKind.Unchanged;
+        }
+
+        private void RecomputeDiff()
+        {
+            var currentMap = EditableInstructions.ToDictionary(i => i.Number);
+            var baselineNumbers = _baseline.Select(b => b.Number).ToHashSet();
+
+            // Removed instructions (in baseline but not in current list)
+            _removedNumbers = new HashSet<int>(baselineNumbers.Except(currentMap.Keys));
+
+            // Added or Modified
+            foreach (var i in EditableInstructions)
+            {
+                if (!baselineNumbers.Contains(i.Number))
+                {
+                    i.DiffKind = InstructionDiffKind.Added;
+                    continue;
+                }
+                var b = _baseline.First(x => x.Number == i.Number);
+                if (b.OpCode != i.OpCode || b.Name != i.Name || !ParamsEqual(b.Params, i.GetParameters()))
+                    i.DiffKind = i.DiffKind == InstructionDiffKind.Added ? InstructionDiffKind.Added : InstructionDiffKind.Modified;
+                else if (i.DiffKind != InstructionDiffKind.CutPending)
+                    i.DiffKind = InstructionDiffKind.Unchanged;
+            }
+        }
+
+        private bool ParamsEqual(int[] a, int[] b)
+        {
+            if (a.Length != b.Length) return false;
+            for (int i = 0; i < a.Length; i++)
+                if (a[i] != b[i]) return false;
+            return true;
+        }
 
         private class PasteInstructionDto
         {

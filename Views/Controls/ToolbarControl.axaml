@@ -68,16 +68,6 @@
 				</StackPanel>
 			</Button>
 
-			<!--<Button
-        Background="#FF9800"
-        Command="{Binding RefreshCommand}"
-        ToolTip.Tip="Aggiorna file (F5)">
-        <StackPanel Orientation="Horizontal">
-          <TextBlock Margin="0,0,8,0" FontSize="16" Text="🔁" />
-          <TextBlock Text="Aggiorna" />
-        </StackPanel>
-      </Button>-->
-
 			<Separator
 				Width="1"
 				Height="24"

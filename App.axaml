@@ -15,6 +15,7 @@
 		<conv:BooleanToOpacityConverter x:Key="BooleanToOpacityConverter" />
 		<conv:BooleanToThicknessConverter x:Key="BooleanToThicknessConverter" />
 		<conv:CutPendingToOpacityConverter x:Key="CutPendingToOpacityConverter" />
+		<conv:DiffKindToBrushConverter x:Key="DiffKindToBrushConverter" />
 	</Application.Resources>
 
 	<Application.Styles>

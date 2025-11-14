@@ -84,11 +84,11 @@
 						Command="{Binding MoveDownCommand}"
 						Content="⬇️ Giù"
 						IsEnabled="{Binding CanMoveDown}" />
-					<Separator />
+					<!-- <Separator />
 					<Button Command="{Binding CopyInstructionsCommand}" Content="📄 Copia" />
 					<Button Command="{Binding CutInstructionsCommand}" Content="✂️ Taglia" />
 					<Button Command="{Binding PasteInstructionsCommand}" Content="📌 Incolla" />
-					<Button Command="{Binding CancelCutCommand}" Content="⛔ Annulla Taglio" />
+					<Button Command="{Binding CancelCutCommand}" Content="⛔ Annulla Taglio" /> -->
 					<Separator />
 					<Button Command="{Binding SaveChangesCommand}" Content="💾 Salva" />
 					<Button
@@ -114,83 +114,93 @@
 						</ListBox.ContextMenu>
 						<ListBox.ItemTemplate>
 							<DataTemplate x:DataType="models:EditableInstruction">
-								<Border
-									Margin="2"
-									Padding="6"
-									BorderBrush="#DDD"
-									BorderThickness="1"
-									CornerRadius="3"
-									Opacity="{Binding IsCutPending, Converter={StaticResource CutPendingToOpacityConverter}}">
-									<StackPanel Spacing="4">
-										<StackPanel Orientation="Horizontal" Spacing="8">
+								<Grid Margin="0" ColumnDefinitions="4,*">
+									<!--  Gutter laterale per indicatore diff  -->
+									<Border
+										Grid.Column="0"
+										Width="4"
+										Background="{Binding DiffKind, Converter={StaticResource DiffKindToBrushConverter}}"
+										CornerRadius="2,0,0,2" />
+									<!--  Contenuto istruzione  -->
+									<Border
+										Grid.Column="1"
+										Margin="2"
+										Padding="6"
+										BorderBrush="#DDD"
+										BorderThickness="1"
+										CornerRadius="3"
+										Opacity="{Binding IsCutPending, Converter={StaticResource CutPendingToOpacityConverter}}">
+										<StackPanel Spacing="4">
+											<StackPanel Orientation="Horizontal" Spacing="8">
+												<TextBlock
+													Width="50"
+													FontWeight="Bold"
+													Text="{Binding Number, StringFormat='{}{0:D3}'}" />
+												<ComboBox
+													Width="200"
+													ItemsSource="{Binding DataContext.AvailableInstructions, ElementName=Root}"
+													SelectedItem="{Binding Name, Mode=TwoWay}" />
+												<ItemsControl x:Name="ParentInstruction" ItemsSource="{Binding VisibleParameterEntries}">
+													<ItemsControl.ItemsPanel>
+														<ItemsPanelTemplate>
+															<StackPanel Orientation="Horizontal" Spacing="4" />
+														</ItemsPanelTemplate>
+													</ItemsControl.ItemsPanel>
+													<ItemsControl.ItemTemplate>
+														<DataTemplate x:DataType="models:InstructionParameter">
+															<StackPanel Orientation="Vertical" Spacing="2">
+																<!--  Se ci sono gruppi di risorse: mantieni bottone  -->
+																<Button
+																	Padding="4"
+																	Background="{Binding IsSelected, Converter={StaticResource ParamSelectedBrushConverter}}"
+																	Command="{Binding DataContext.ParameterClickCommand, ElementName=Root}"
+																	CommandParameter="{Binding}"
+																	Content="{Binding Value}"
+																	IsVisible="{Binding HasResourceGroups}"
+																	ToolTip.Tip="Param {Binding Index}" />
+
+																<!--  Se NON ci sono gruppi: TextBox editabile con validazione/clamping range  -->
+																<Border
+																	Padding="0"
+																	BorderBrush="Red"
+																	BorderThickness="{Binding IsRangeValid, Converter={StaticResource BooleanToThicknessConverter}}"
+																	CornerRadius="3"
+																	IsVisible="{Binding HasResourceGroups, Converter={StaticResource InverseBooleanConverter}}">
+																	<TextBox
+																		Width="70"
+																		HorizontalContentAlignment="Center"
+																		FontFamily="Consolas"
+																		Text="{Binding Value, Mode=TwoWay}"
+																		Watermark="{Binding MinValue} - {Binding MaxValue}">
+																		<ToolTip.Tip>
+																			<StackPanel>
+																				<TextBlock Text="Parametro {Binding Index}" />
+																				<TextBlock Text="Tipo: {Binding Type}" />
+																				<TextBlock Text="Range: {Binding MinValue} - {Binding MaxValue}" />
+																			</StackPanel>
+																		</ToolTip.Tip>
+																	</TextBox>
+																</Border>
+
+																<!--  Messaggio di errore range (solo se invalido e senza gruppi)  -->
+																<TextBlock
+																	FontSize="10"
+																	Foreground="Red"
+																	IsVisible="{Binding HasResourceGroups, Converter={StaticResource InverseBooleanConverter}}"
+																	Opacity="{Binding IsRangeValid, Converter={StaticResource BooleanToOpacityConverter}, ConverterParameter=invert}"
+																	Text="Valore fuori range" />
+															</StackPanel>
+														</DataTemplate>
+													</ItemsControl.ItemTemplate>
+												</ItemsControl>
+											</StackPanel>
 											<TextBlock
-												Width="50"
-												FontWeight="Bold"
-												Text="{Binding Number, StringFormat='{}{0:D3}'}" />
-											<ComboBox
-												Width="200"
-												ItemsSource="{Binding DataContext.AvailableInstructions, ElementName=Root}"
-												SelectedItem="{Binding Name, Mode=TwoWay}" />
-											<ItemsControl x:Name="ParentInstruction" ItemsSource="{Binding VisibleParameterEntries}">
-												<ItemsControl.ItemsPanel>
-													<ItemsPanelTemplate>
-														<StackPanel Orientation="Horizontal" Spacing="4" />
-													</ItemsPanelTemplate>
-												</ItemsControl.ItemsPanel>
-												<ItemsControl.ItemTemplate>
-													<DataTemplate x:DataType="models:InstructionParameter">
-														<StackPanel Orientation="Vertical" Spacing="2">
-															<!--  Se ci sono gruppi di risorse: mantieni bottone  -->
-															<Button
-																Padding="4"
-																Background="{Binding IsSelected, Converter={StaticResource ParamSelectedBrushConverter}}"
-																Command="{Binding DataContext.ParameterClickCommand, ElementName=Root}"
-																CommandParameter="{Binding}"
-																Content="{Binding Value}"
-																IsVisible="{Binding HasResourceGroups}"
-																ToolTip.Tip="Param {Binding Index}" />
-
-															<!--  Se NON ci sono gruppi: TextBox editabile con validazione/clamping range  -->
-															<Border
-																Padding="0"
-																BorderBrush="Red"
-																BorderThickness="{Binding IsRangeValid, Converter={StaticResource BooleanToThicknessConverter}}"
-																CornerRadius="3"
-																IsVisible="{Binding HasResourceGroups, Converter={StaticResource InverseBooleanConverter}}">
-																<TextBox
-																	Width="70"
-																	HorizontalContentAlignment="Center"
-																	FontFamily="Consolas"
-																	Text="{Binding Value, Mode=TwoWay}"
-																	Watermark="{Binding MinValue} - {Binding MaxValue}">
-																	<ToolTip.Tip>
-																		<StackPanel>
-																			<TextBlock Text="Parametro {Binding Index}" />
-																			<TextBlock Text="Tipo: {Binding Type}" />
-																			<TextBlock Text="Range: {Binding MinValue} - {Binding MaxValue}" />
-																		</StackPanel>
-																	</ToolTip.Tip>
-																</TextBox>
-															</Border>
-
-															<!--  Messaggio di errore range (solo se invalido e senza gruppi)  -->
-															<TextBlock
-																FontSize="10"
-																Foreground="Red"
-																IsVisible="{Binding HasResourceGroups, Converter={StaticResource InverseBooleanConverter}}"
-																Opacity="{Binding IsRangeValid, Converter={StaticResource BooleanToOpacityConverter}, ConverterParameter=invert}"
-																Text="Valore fuori range" />
-														</StackPanel>
-													</DataTemplate>
-												</ItemsControl.ItemTemplate>
-											</ItemsControl>
+												FontSize="11"
+												Foreground="{Binding IsValid, Converter={StaticResource BooleanToBrushConverter}}"
+												Text="{Binding ValidationSummary}" />
 										</StackPanel>
-										<TextBlock
-											FontSize="11"
-											Foreground="{Binding IsValid, Converter={StaticResource BooleanToBrushConverter}}"
-											Text="{Binding ValidationSummary}" />
-									</StackPanel>
-								</Border>
+									</Border>
+								</Grid>
 							</DataTemplate>
 						</ListBox.ItemTemplate>
 					</ListBox>

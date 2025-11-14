@@ -5,6 +5,7 @@ using System.Collections.ObjectModel;
 using System.Collections.Generic; // aggiunto
 using FileViewerApp.Services; // aggiunto per OpCodeService
 using ReactiveUI;
+using FileViewerApp.Enums;
 
 namespace FileViewerApp.Models
 {
@@ -13,7 +14,15 @@ namespace FileViewerApp.Models
         public int Index { get; }
         private int _value;
         private string _name = string.Empty; // Nome parametro da definizione (INFO.XML)
-        public string Name { get => _name; set => this.RaiseAndSetIfChanged(ref _name, value); }
+        public string Name 
+        { 
+            get => _name; 
+            set 
+            { 
+                // Parameter name comes from metadata; changing it should NOT mark instruction modified.
+                this.RaiseAndSetIfChanged(ref _name, value); 
+            } 
+        }
         public string DisplayName => string.IsNullOrWhiteSpace(Name) ? Index.ToString() : Name;
         public int Value
         {
@@ -171,6 +180,7 @@ namespace FileViewerApp.Models
 
         private bool _isCurrent; // nuova proprietà per UI selezione
         private bool _isCutPending; // nuovo stato per taglio (visual blur finché non incollato)
+        private InstructionDiffKind _diffKind = InstructionDiffKind.Unchanged;
 
         public EditableInstruction()
         {
@@ -203,7 +213,19 @@ namespace FileViewerApp.Models
         }
 
         public int Number { get => _number; set => this.RaiseAndSetIfChanged(ref _number, value); }
-        public string Name { get => _name; set => this.RaiseAndSetIfChanged(ref _name, value); }
+        public string Name 
+        { 
+            get => _name; 
+            set 
+            { 
+                if (_name == value) return; 
+                this.RaiseAndSetIfChanged(ref _name, value); 
+                if (!_suppressChanges && _trackingEnabled) 
+                {
+                    MarkAsModified();
+                }
+            } 
+        }
         public bool IsValid { get => _isValid; set => this.RaiseAndSetIfChanged(ref _isValid, value); }
         public bool IsModified { get => _isModified; set => this.RaiseAndSetIfChanged(ref _isModified, value); }
         public string ValidationSummary { get => _validationSummary; set => this.RaiseAndSetIfChanged(ref _validationSummary, value); }
@@ -222,7 +244,19 @@ namespace FileViewerApp.Models
         public bool IsCutPending
         {
             get => _isCutPending;
-            set => this.RaiseAndSetIfChanged(ref _isCutPending, value);
+            set
+            {
+                if (this.RaiseAndSetIfChanged(ref _isCutPending, value) && value)
+                {
+                    DiffKind = InstructionDiffKind.CutPending;
+                }
+            }
+        }
+
+        public InstructionDiffKind DiffKind
+        {
+            get => _diffKind;
+            set => this.RaiseAndSetIfChanged(ref _diffKind, value);
         }
 
         public int ParamCount
@@ -389,6 +423,8 @@ namespace FileViewerApp.Models
         {
             if (_suppressChanges || !_trackingEnabled) return;
             IsModified = true;
+            if (DiffKind == InstructionDiffKind.Unchanged)
+                DiffKind = InstructionDiffKind.Modified;
             InstructionChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(IsModified)));
         }
 
