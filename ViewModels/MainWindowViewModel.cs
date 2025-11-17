@@ -706,6 +706,8 @@ namespace FileViewerApp.ViewModels
             try
             {
                 StatusText = "Salvataggio modifiche...";
+                // Rimuovi eventuali placeholder di taglio prima di consolidare lo stato
+                ClearCutVisualState();
                 await ApplyChangesToFile();
                 foreach (var instr in EditableInstructions)
                     instr.IsModified = false;
@@ -1022,6 +1024,8 @@ namespace FileViewerApp.ViewModels
             IsProcessing = true;
             try
             {
+                // Qualsiasi placeholder di taglio va eliminato al revert
+                ClearCutVisualState();
                 RecomputeDiff();
                 var snap = _historyService.RevertTo(SelectedHistoryEntry.Id);
                 EditableInstructions.Clear();
@@ -1050,6 +1054,9 @@ namespace FileViewerApp.ViewModels
                 RebuildTreeViewSimple();
                 await ApplyChangesToFile(); // sincronizza modello file
                 ResetUnsavedChanges();
+                // Il nuovo stato diventa baseline: nessun placeholder dopo revert
+                CaptureBaseline();
+                RecomputeDiff();
                 AddHistory(HistoryActionType.Revert, $"Revert a #{SelectedHistoryEntry.Id}");
             }
             catch (Exception ex)
